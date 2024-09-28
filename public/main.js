@@ -6,6 +6,9 @@ function initMap() {
         zoomControl: false // Disable the zoom control
     });
 
+
+    
+
     // Fetch the Mapbox token from the server
     fetch('/mapbox-token')
         .then(response => response.json())
