@@ -1,0 +1,94 @@
+:root {
+    --margin: 0;
+    --padding: 0;
+    --hero-height: 60vh;
+    --hero-bg-light: url('https://bungendorerfs.org/images/hero.jpg');
+    --hero-bg-dark: url('https://bungendorerfs.org/images/hero-dark.jpg');
+    --prepare-bg-light: url('https://bungendorerfs.org/images/prepare.jpg');
+    --prepare-bg-dark: url('https://bungendorerfs.org/images/prepare-dark.jpg');
+    --info-bg-light: url('https://bungendorerfs.org/images/info.jpg');
+    --info-bg-dark: url('https://bungendorerfs.org/images/info-dark.jpg');
+    --membership-bg-light: url('https://bungendorerfs.org/images/membership.jpg');
+    --membership-bg-dark: url('https://bungendorerfs.org/images/membership-dark.jpg');
+    --events-bg-light: url('https://bungendorerfs.org/images/events.jpg');
+    --events-bg-dark: url('https://bungendorerfs.org/images/events-dark.jpg');
+}
+
+body {
+    font-family: var(--font-family);
+    margin: var(--margin);
+    padding: var(--padding);
+}
+
+.hero {
+    position: relative;
+    height: var(--hero-height);
+    background: var(--hero-bg-light) no-repeat center center/cover;
+}
+
+.prepare {
+    background-image: var(--prepare-bg-light);
+}
+
+.info {
+    background-image: var(--info-bg-light);
+}
+
+.membership {
+    background-image: var(--membership-bg-light);
+}
+
+.events {
+    background-image: var(--events-bg-light);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+.leaflet-marker-icon  {
+    all: unset; /* Reset all inherited styles */
+    display: inline-block; /* Ensure it displays as an inline-block element */
+    width: auto; /* Set width to auto */
+    height: auto; /* Set height to auto */
+    border: none; /* Remove any border */
+    background: none; /* Remove any background */
+    padding: 0; /* Remove any padding */
+    margin: 0; /* Remove any margin */
+    cursor: pointer; /* Ensure it has a pointer cursor */
+}
+
+.leaflet-control {
+    all: unset; /* Reset all inherited styles */
+    display: inline-block; /* Ensure it displays as an inline-block element */
+    width: auto; /* Set width to auto */
+    height: auto; /* Set height to auto */
+    border: none; /* Remove any border */
+    background: none; /* Remove any background */
+    padding: 0; /* Remove any padding */
+    margin: 0; /* Remove any margin */
+    cursor: pointer; /* Ensure it has a pointer cursor */
+}
+
+@media (prefers-color-scheme: dark) {
+    .hero {
+        background: var(--hero-bg-dark) no-repeat center center/cover;
+    }
+
+    .prepare {
+        background-image: var(--prepare-bg-dark);
+    }
+
+    .info {
+        background-image: var(--info-bg-dark);
+    }
+
+    .membership {
+        background-image: var(--membership-bg-dark);
+    }
+
+    .events {
+        background-image: var(--events-bg-dark);
+    }
+}
+

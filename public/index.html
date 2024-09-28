@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Bungendore Volunteer Rural Fire Brigade</title>
+        <!-- Link to Pico CSS for styling -->
+        <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+        <!-- Link to custom CSS file -->
+        <link rel="stylesheet" href="main.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    </head>
+    
+    <body>
+        <main class="container">
+            <!-- Header section with navigation -->
+            <header>
+                <nav>
+                    <ul>
+                        <li><a href="#prepare">Prepare for Bushfires</a></li>
+                        <li><a href="#info">Fire Information in Our Area</a></li>
+                        <li><a href="#membership">Membership</a></li>
+                        <li><a href="#events">Community Events</a></li>
+                    </ul>
+                </nav>
+            </header>
+    
+            <!-- Hero section with main heading -->
+            <div class="hero">
+                <h1>Bungendore Volunteer Rural Fire Brigade</h1>
+            </div>
+    
+            <!-- Grid section with article cards -->
+            <div class="grid">
+                <article>
+                    <h3>Prepare for Bushfires</h3>
+                    <p>Learn how to prepare your property and family for bushfires.</p>
+                    <p><a href="#prepare">Learn More</a></p>
+                </article>
+                <article>
+                    <h3>Fire Information in Our Area</h3>
+                    <p>Stay updated with the latest fire information in our area.</p>
+                    <p><a href="#info">Learn More</a></p>
+                </article>
+            </div>
+            <div class="grid">
+                <article>
+                    <h3>Membership</h3>
+                    <p>Join our brigade and help protect our community.</p>
+                    <p><a href="#membership">Learn More</a></p>
+                </article>
+                <article>
+                    <h3>Community Events</h3>
+                    <p>Participate in our community events and support our brigade.</p>
+                    <p><a href="#events">Learn More</a></p>
+                </article>
+            </div>
+    
+        <!-- Detailed sections for each topic with responsive grid -->
+        <article id="prepare">
+            <h3>Prepare for Bushfires</h3>
+            <div class="grid">
+                <img src="https://bungendorerfs.org/images/prepare.jpg" alt="Prepare for Bushfires">
+                <p>Detailed information on how to prepare your property and family for bushfires.</p>
+            </div>
+        </article>
+        <article id="info">
+            <h3>Fire Information in Our Area</h3>
+            <div class="">
+                
+                <p>Stay updated with the latest fire information in our area.</p>
+                <!-- Map section -->
+                <div id="map" style="height: 500px; width: 100%;"></div>
+            </div>
+        </article>
+        <article id="membership">
+            <h3>Membership</h3>
+            <div class="grid">
+                <img src="https://bungendorerfs.org/images/membership.jpg" alt="Membership">
+                <p>Join our brigade and help protect our community.</p>
+            </div>
+        </article>
+        <article id="events">
+            <h3>Community Events</h3>
+            <div class="grid">
+                
+                <p>Participate in our community events and support our brigade.</p>
+                <img src="https://bungendorerfs.org/images/events.jpg" alt="Community Events">
+            </div>
+        </article>
+        </main>
+
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="main.js"></script>
+
+</body>
+
+</html>
