@@ -53,24 +53,26 @@ function initMap() {
                     });
                 } catch (error) {
                     console.error('Error creating icon:', error);
-                    return L.divIcon({
-                        html: '<i class="fa fa-fire" style="font-size: 32px; color: grey;"></i>',
-                        iconSize: [32, 32],
-                        className: 'custom-div-icon'
-                    });
+                    // return L.divIcon({
+                    //     html: '<i class="fa fa-fire" style="font-size: 32px; color: grey;"></i>',
+                    //     iconSize: [32, 32],
+                    //     className: 'custom-div-icon'
+                    // });
                 }
             }
 
             // Fallback icon in case custom icons fail
             var defaultIcon = L.divIcon({
-                html: '<i class="fa fa-fire" style="font-size: 32px; color: red;"></i>',
+                html: '<i class="fa fa-fire" style="font-size: 32px; color: grey;"></i>',
                 iconSize: [32, 32],
                 className: 'custom-div-icon'
             });
 
-            var adviceIcon = createIcon('./Images/advice.png') || defaultIcon;
-            var watchAndActIcon = createIcon('./Images/watch-and-act.png') || defaultIcon;
-            var emergencyWarningIcon = createIcon('./Images/emergency-warning.png') || defaultIcon;
+            var adviceIcon = createIcon('/Images/advice.png') || defaultIcon;
+            var watchAndActIcon = createIcon('/Images/watch-and-act.png') || defaultIcon;
+            var emergencyWarningIcon = createIcon('/Images/emergency-warning.png') || defaultIcon;
+            var otherIcon = createIcon('/Images/other.png') || defaultIcon;
+
 
             // Create a feature group to hold the markers
             var markers = L.featureGroup();
@@ -96,7 +98,7 @@ function initMap() {
                             } else if (feature.properties.category.includes("Emergency Warning")) {
                                 icon = emergencyWarningIcon;
                             } else {
-                                icon = defaultIcon;
+                                icon = otherIcon;
                             }
                             var marker = L.marker(latlng, { icon: icon });
                             markers.addLayer(marker); // Add marker to the feature group
@@ -110,12 +112,11 @@ function initMap() {
                         }
                     }).addTo(map);
 
-                    // Fit the map view to the bounds of the markers
-                    map.fitBounds(markers.getBounds());
-                    // Zoom out one level
-                    map.once('zoomend', function () {
-                        map.zoomOut(1);
+                    // Fit the map view to the bounds of the markers with 10% padding
+                    map.fitBounds(markers.getBounds(), {
+                        padding: [map.getSize().x * 0.1, map.getSize().y * 0.1] // 10% padding on each side
                     });
+
                 })
                 .catch(error => console.error('Error fetching GeoJSON data:', error));
 

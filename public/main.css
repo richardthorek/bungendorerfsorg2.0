@@ -46,6 +46,24 @@ html {
     scroll-behavior: smooth;
 }
 
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background: var(--pico-card-background-color) !important;
+    color: var(--pico-card-text-color) !important;
+}
+
+.leaflet-popup-content {
+    color: var(--pico-card-text-color);
+    margin: 0;
+    background: var(--pico-card-background-color);
+    padding: 1em; /* Add padding for better spacing */
+    border: 1px solid var(--pico-card-border-color, #ddd); /* Add a border with a fallback color */
+    border-radius: 4px; /* Add rounded corners */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+    font-family: var(--pico-font-family, Arial, sans-serif); /* Use a CSS variable for font family, fallback to Arial */
+    font-size: var(--pico-font-size, 1rem); /* Use a CSS variable for font size, fallback to 1rem */
+    line-height: var(--pico-line-height, 1.5); /* Use a CSS variable for line height, fallback to 1.5 */
+}
+
 .leaflet-marker-icon  {
     all: unset; /* Reset all inherited styles */
     display: inline-block; /* Ensure it displays as an inline-block element */
