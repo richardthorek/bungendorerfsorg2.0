@@ -54,7 +54,7 @@ function initMap() {
                 } catch (error) {
                     console.error('Error creating icon:', error);
                     return L.divIcon({
-                        html: '<i class="fa fa-fire" style="font-size: 32px; color: red;"></i>',
+                        html: '<i class="fa fa-fire" style="font-size: 32px; color: grey;"></i>',
                         iconSize: [32, 32],
                         className: 'custom-div-icon'
                     });
