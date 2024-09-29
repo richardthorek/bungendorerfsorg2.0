@@ -3,8 +3,9 @@
 document.addEventListener('DOMContentLoaded', function () {
   const githubRepo = 'https://github.com/richardthorek/bungendorerfsorg2.0'; // Replace with your GitHub username/repo
   const contentIds = ['prepareContent', 'fireInfoContent', 'membershipContent', 'eventsContent'];
-  const localBasePath = 'public/Content/';
-  const githubBasePath = `https://api.github.com/repos/${githubRepo}/contents/`;
+  const localBasePath = '/public/Content/';
+  const githubBasePath = `https://api.github.com/repos/${githubRepo}/contents`;
+  
 
   function fetchMarkdownContent(contentId, filePath) {
       const readmeUrl = `${githubBasePath}${filePath}`;
