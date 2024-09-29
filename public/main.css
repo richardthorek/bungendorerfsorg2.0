@@ -110,3 +110,33 @@ html {
     }
 }
 
+@media (max-width: 765px) {
+    .summaryCard {
+        display: none;
+    }
+   
+}
+
+
+
+#pageNav {
+    margin: 0;
+    padding: 0;
+   
+}
+
+#pageNav nav {
+    background-color: var(--pico-card-background-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000; /* Ensure it stays on top */
+    display: flex;
+    justify-content: center
+
+}
+
+main {
+    margin-top: 3em;
+}
