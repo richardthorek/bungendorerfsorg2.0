@@ -19,6 +19,8 @@
     <article class="container-fluid" id="pageNav">
         <nav>
             <ul>
+                <li><img src="/Images/logo.png" alt="Bungendore Volunteer Rural Fire Brigade Logo" class="nav-logo">
+                </li>
                 <li><a class="contrast" href="#prepare">Prepare</a></li>
                 <li><a class="contrast" href="#info">Fire Information</a></li>
                 <li><a class="contrast" href="#membership">Membership</a></li>
@@ -37,60 +39,108 @@
 
         <!-- Hero section with main heading -->
         <div class="hero">
-            <h1>Bungendore Volunteer Rural Fire Brigade</h1>
+            <hgroup>
+                <div><img src="/Images/logo.png" alt="Bungendore Volunteer Rural Fire Brigade Logo" class="logo"></div>
+                <div>
+                    <h1>Bungendore Volunteer Rural Fire Brigade</h1>
+                </div>
+            </hgroup>
         </div>
 
         <!-- Grid section with article cards -->
         <div class="grid">
             <article class="summaryCard">
-                <h3>Prepare for Bushfires</h3>
-                <p>Learn how to prepare your property and family for bushfires.</p>
-                <p><a href="#prepare">Learn More</a></p>
-            </article>
-            <article class="summaryCard">
-                <h3>Fire Information in Our Area</h3>
+                <header class="red">
+                    <h3>Fire Information in Our Area</h3>
+                </header>
                 <p>Stay updated with the latest fire information in our area.</p>
                 <p><a href="#info">Learn More</a></p>
+            </article>
+            <article class="summaryCard">
+                <header class="amber">
+                    <h3>Prepare for Bushfires</h3>
+                </header>
+                <p>Learn how to prepare your property and family for bushfires.</p>
+                <p><a href="#prepare">Learn More</a></p>
             </article>
         </div>
         <div class="grid">
             <article class="summaryCard">
-                <h3>Membership</h3>
+                <header class="blue">
+                    <h3>Membership</h3>
+                </header>
                 <p>Join our brigade and help protect our community.</p>
                 <p><a href="#membership">Learn More</a></p>
             </article>
             <article class="summaryCard">
-                <h3>Community Events</h3>
+                <header class="green">
+                    <h3>Community Events</h3>
+                </header>
                 <p>Participate in our community events and support our brigade.</p>
                 <p><a href="#events">Learn More</a></p>
             </article>
         </div>
 
         <!-- Detailed sections for each topic with responsive grid -->
-        <article id="prepare">
-            <h3>Prepare for Bushfires</h3>
-            <div class="grid">
-                <img src="https://bungendorerfs.org/images/prepare.jpg" alt="Prepare for Bushfires">
-                <div id="prepareContent"></div>
-            </div>
-        </article>
         <article id="info">
-            <h3>Fire Information in Our Area</h3>
+            <header class="red">
+                <h3>Fire Information in Our Area</h3>
+            </header>
             <div class="">
                 <div id="fireInfoContent"></div>
                 <!-- Map section -->
                 <div id="map" style="height: 500px; width: 100%;"></div>
             </div>
         </article>
-        <article id="membership">
-            <h3>Membership</h3>
+        <article id="prepare">
+            <header class="amber">
+                <h3>Prepare for Bushfires</h3>
+            </header>
             <div class="grid">
-                <img src="https://bungendorerfs.org/images/membership.jpg" alt="Membership">
-                <div id="membershipContent"></div>
+                <img src="https://bungendorerfs.org/images/prepare.jpg" alt="Prepare for Bushfires">
+                
+            
+            <div>
+                <div id="BFDPContent"></div>
+                <div id="prepareContent"></div>
+            </div>
             </div>
         </article>
+
+
+        <article id="membership">
+            <header class="blue">
+                <h3>Membership</h3>
+            </header>
+            <div class="grid">
+
+                <div id="membershipContent"></div>
+            </div>
+            <div class="grid">
+                <img src="https://bungendorerfs.org/images/membership.jpg" alt="Membership">
+                <form>
+                    <label>If you'd like more information we can reach out to you</label>
+                    <fieldset>
+                        <label>
+                            Name
+                            <input name="name" placeholder="Name" autocomplete="Name" />
+                        </label>
+                        <label>
+                            Email
+                            <input type="email" name="email" placeholder="Email" autocomplete="email" />
+                        </label>
+                    </fieldset>
+
+                    <input type="submit" value="Submit" />
+                </form>
+            </div>
+
+        </article>
         <article id="events">
-            <h3>Community Events</h3>
+            <header class="green">
+
+                <h3>Community Events</h3>
+            </header>
             <div class="grid">
                 <div id="eventsContent"></div>
                 <img src="https://bungendorerfs.org/images/events.jpg" alt="Community Events">

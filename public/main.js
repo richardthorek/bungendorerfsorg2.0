@@ -1,8 +1,8 @@
 // Initialize the Leaflet map
 function initMap() {
     var map = L.map('map', {
-        center: [-33.8688, 151.2093], // Centered on New South Wales, Australia
-        zoom: 6,
+        center: [-35.25870948687002, 149.4431761913284], // Centered on New South Wales, Australia
+        zoom: 10,
         zoomControl: false // Disable the zoom control
     });
 
@@ -129,4 +129,58 @@ function initMap() {
 // Ensure the map is initialized after the DOM content is loaded
 document.addEventListener('DOMContentLoaded', function () {
     initMap();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const heroLogo = document.querySelector('.hero .logo');
+    const navLogo = document.querySelector('.nav-logo');
+
+    function toggleNavLogo() {
+        const heroLogoRect = heroLogo.getBoundingClientRect();
+        if (heroLogoRect.bottom < 0) {
+            navLogo.classList.add('visible');
+        } else {
+            navLogo.classList.remove('visible');
+        }
+    }
+
+    window.addEventListener('scroll', toggleNavLogo);
+    toggleNavLogo(); // Initial check
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const BFDPContent = document.getElementById('BFDPContent');
+
+    function isBushfireDangerPeriod() {
+        const now = new Date();
+        const month = now.getMonth() + 1; // getMonth() is zero-based
+        return month >= 10 || month <= 3;
+    }
+
+    const inDangerPeriod = isBushfireDangerPeriod();
+    const statusText = inDangerPeriod ? "We are currently in the bushfire danger period. If you would like to light a fire any larger than a cooking fire you must;" : "We are not currently in the bushfire danger period. If you would like to light a fire any larger than a cooking fire you must;";
+
+    const tableHTML = `
+        <p>${statusText}</p>
+        <table>
+                    <tr>
+                <td>Not light your fire on days of total fire ban or high fire danger</td>
+                <td><input type="checkbox" checked disabled></td>
+            </tr>
+            <tr>
+                <td>Notify your neighbours</td>
+                <td><input type="checkbox" checked disabled></td>
+            </tr>
+            <tr>
+                <td>Notify the RFS of your burn</td>
+                <td><input type="checkbox" ${inDangerPeriod ? '' : 'checked'} disabled></td>
+            </tr>
+            <tr>
+                <td>Have been issued a fire permit</td>
+                <td><input type="checkbox" ${inDangerPeriod ? 'checked' : ''} disabled></td>
+            </tr>
+        </table>
+    `;
+
+    BFDPContent.innerHTML = tableHTML;
 });

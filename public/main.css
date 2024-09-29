@@ -3,15 +3,51 @@
     --padding: 0;
     --hero-height: 60vh;
     --hero-bg-light: url('https://bungendorerfs.org/images/hero.jpg');
-    --hero-bg-dark: url('https://bungendorerfs.org/images/hero-dark.jpg');
     --prepare-bg-light: url('https://bungendorerfs.org/images/prepare.jpg');
-    --prepare-bg-dark: url('https://bungendorerfs.org/images/prepare-dark.jpg');
     --info-bg-light: url('https://bungendorerfs.org/images/info.jpg');
-    --info-bg-dark: url('https://bungendorerfs.org/images/info-dark.jpg');
     --membership-bg-light: url('https://bungendorerfs.org/images/membership.jpg');
-    --membership-bg-dark: url('https://bungendorerfs.org/images/membership-dark.jpg');
     --events-bg-light: url('https://bungendorerfs.org/images/events.jpg');
-    --events-bg-dark: url('https://bungendorerfs.org/images/events-dark.jpg');
+    --rfs-core-red: #e5281B;
+    --rfs-lime: #cbdb2a;
+    --rfs-amber: #fbb034;
+    --rfs-blue: #215e9e;
+    --rfs-green: #008550;
+
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --hero-bg: url('https://bungendorerfs.org/images/hero-dark.jpg');
+        --prepare-bg: url('https://bungendorerfs.org/images/prepare-dark.jpg');
+        --info-bg: url('https://bungendorerfs.org/images/info-dark.jpg');
+        --membership-bg: url('https://bungendorerfs.org/images/membership-dark.jpg');
+        --events-bg: url('https://bungendorerfs.org/images/events-dark.jpg');
+        --rfs-lime: #929e1b;
+        --rfs-core-red: #b71c1c;
+        --rfs-amber:#da992c;
+        --rfs-blue: #17406c;
+        --rfs-green: #01633c;
+    }
+}
+
+.red {
+    background-color: var(--rfs-core-red);
+}
+
+.amber {
+    background-color: var(--rfs-amber);
+}
+
+.lime {
+    background-color: var(--rfs-lime);
+}
+
+.blue {
+    background-color: var(--rfs-blue);
+}
+
+.green {
+    background-color: var(--rfs-green);
 }
 
 body {
@@ -23,23 +59,58 @@ body {
 .hero {
     position: relative;
     height: var(--hero-height);
-    background: var(--hero-bg-light) no-repeat center center/cover;
+    background: var(--hero-bg) no-repeat center center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 500px) {
+    .nav-logo {
+        display: none !important;
+    }
+}
+
+.nav-logo {
+    height: 100%;
+    max-height: 2em; 
+    /* Adjust this value to match the height of the heading */
+    margin-right: 1em; 
+    /* Adjust spacing as needed */
+    display: none;
+}
+
+.nav-logo.visible {
+    display: block; /* Show the nav logo when it becomes visible */
+}
+
+.hero .logo {
+    height: 100%;
+    max-height: 5em; 
+    /* Adjust this value to match the height of the heading */
+    margin-right: 1em; 
+    /* Adjust spacing as needed */
+}
+
+.hero h1 {
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .prepare {
-    background-image: var(--prepare-bg-light);
+    background-image: var(--prepare-bg);
 }
 
 .info {
-    background-image: var(--info-bg-light);
+    background-image: var(--info-bg);
 }
 
 .membership {
-    background-image: var(--membership-bg-light);
+    background-image: var(--membership-bg);
 }
 
 .events {
-    background-image: var(--events-bg-light);
+    background-image: var(--events-bg);
 }
 
 html {
@@ -88,37 +159,6 @@ html {
     cursor: pointer; /* Ensure it has a pointer cursor */
 }
 
-@media (prefers-color-scheme: dark) {
-    .hero {
-        background: var(--hero-bg-dark) no-repeat center center/cover;
-    }
-
-    .prepare {
-        background-image: var(--prepare-bg-dark);
-    }
-
-    .info {
-        background-image: var(--info-bg-dark);
-    }
-
-    .membership {
-        background-image: var(--membership-bg-dark);
-    }
-
-    .events {
-        background-image: var(--events-bg-dark);
-    }
-}
-
-@media (max-width: 765px) {
-    .summaryCard {
-        display: none;
-    }
-   
-}
-
-
-
 #pageNav {
     margin: 0;
     padding: 0;
@@ -126,7 +166,7 @@ html {
 }
 
 #pageNav nav {
-    background-color: var(--pico-card-background-color);
+    background-color: var(--rfs-core-red);
     position: fixed;
     top: 0;
     left: 0;
