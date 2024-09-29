@@ -6,21 +6,24 @@ function initMap() {
         zoomControl: false // Disable the zoom control
     });
 
-
-    
-
-    // Fetch the Mapbox token from the server
-    fetch('/mapbox-token')
+    // Fetch the Mapbox token from an external URL using a POST request
+    fetch('https://prod-13.eastasia.logic.azure.com:443/workflows/a1e2c15b9b8c4bc09f218255271f73b4/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=59cN9YlOmJPsmVOoixCmKXD2ZDhmk4ZjGEE-IXL1hOQ', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ request: 'mapbox-token' })
+    })
         .then(response => response.json())
         .then(data => {
             var accessToken = data.token;
 
-            // Define light and dark mode tile layers using Mapbox
-            var lightTileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/light-v10/tiles/{z}/{x}/{y}?access_token=${accessToken}`, {
+            // Define navigation guidance light and dark mode tile layers using Mapbox
+            var lightTileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-day-v4/tiles/{z}/{x}/{y}?access_token=${accessToken}`, {
                 attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> contributors'
             });
 
-            var darkTileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/dark-v10/tiles/{z}/{x}/{y}?access_token=${accessToken}`, {
+            var darkTileLayer = L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-night-v4/tiles/{z}/{x}/{y}?access_token=${accessToken}`, {
                 attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> contributors'
             });
 
