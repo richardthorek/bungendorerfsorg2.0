@@ -18,7 +18,8 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --hero-bg: url('/Images/hero1.jpg');;
+        --hero-bg: url('/Images/hero1.jpg');
+        ;
         --prepare-bg: url('https://bungendorerfs.org/images/prepare-dark.jpg');
         --info-bg: url('https://bungendorerfs.org/images/info-dark.jpg');
         --membership-bg: url('https://bungendorerfs.org/images/membership-dark.jpg');
@@ -26,10 +27,11 @@
         --rfs-logo: url('/Images/logo.png');
         --rfs-lime: #929e1b;
         --rfs-core-red: #b71c1c;
-        --rfs-amber:#da992c;
+        --rfs-amber: #da992c;
         --rfs-blue: #17406c;
         --rfs-green: #01633c;
     }
+
     .hero .logo {
         background: var(--logo-dark) no-repeat center center/contain;
     }
@@ -83,6 +85,7 @@ body {
     .nav-logo {
         display: none !important;
     }
+
     .summary-card {
         display: none !important;
     }
@@ -96,15 +99,16 @@ body {
 
 .nav-logo {
     height: 100%;
-    max-height: 2em; 
+    max-height: 2em;
     /* Adjust this value to match the height of the heading */
-    margin-right: 1em; 
+    margin-right: 1em;
     /* Adjust spacing as needed */
     display: none;
 }
 
 .nav-logo.visible {
-    display: block; /* Show the nav logo when it becomes visible */
+    display: block;
+    /* Show the nav logo when it becomes visible */
 }
 
 .hero .logo {
@@ -143,52 +147,76 @@ html {
     scroll-behavior: smooth;
 }
 
-.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
     background: var(--pico-card-background-color) !important;
     color: var(--pico-card-text-color) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* Add a subtle shadow */
 }
 
 .leaflet-popup-content {
     color: var(--pico-card-text-color);
     margin: 0;
     background: var(--pico-card-background-color);
-    padding: 1em; /* Add padding for better spacing */
-    border: 1px solid var(--pico-card-border-color, #ddd); /* Add a border with a fallback color */
-    border-radius: 4px; /* Add rounded corners */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
-    font-family: var(--pico-font-family, Arial, sans-serif); /* Use a CSS variable for font family, fallback to Arial */
-    font-size: var(--pico-font-size, 1rem); /* Use a CSS variable for font size, fallback to 1rem */
-    line-height: var(--pico-line-height, 1.5); /* Use a CSS variable for line height, fallback to 1.5 */
+    padding: 1em;
+
+    border-radius: 4px;
+
+    font-family: var(--pico-font-family, Arial, sans-serif);
+    /* Use a CSS variable for font family, fallback to Arial */
+    font-size: var(--pico-font-size, 1rem);
+    /* Use a CSS variable for font size, fallback to 1rem */
+    line-height: var(--pico-line-height, 1.5);
+    /* Use a CSS variable for line height, fallback to 1.5 */
 }
 
-.leaflet-marker-icon  {
-    all: unset; /* Reset all inherited styles */
-    display: inline-block; /* Ensure it displays as an inline-block element */
-    width: auto; /* Set width to auto */
-    height: auto; /* Set height to auto */
-    border: none; /* Remove any border */
-    background: none; /* Remove any background */
-    padding: 0; /* Remove any padding */
-    margin: 0; /* Remove any margin */
-    cursor: pointer; /* Ensure it has a pointer cursor */
+.leaflet-marker-icon {
+    all: unset;
+    /* Reset all inherited styles */
+    display: inline-block;
+    /* Ensure it displays as an inline-block element */
+    width: auto;
+    /* Set width to auto */
+    height: auto;
+    /* Set height to auto */
+    border: none;
+    /* Remove any border */
+    background: none;
+    /* Remove any background */
+    padding: 0;
+    /* Remove any padding */
+    margin: 0;
+    /* Remove any margin */
+    cursor: pointer;
+    /* Ensure it has a pointer cursor */
 }
 
 .leaflet-control {
-    all: unset; /* Reset all inherited styles */
-    display: inline-block; /* Ensure it displays as an inline-block element */
-    width: auto; /* Set width to auto */
-    height: auto; /* Set height to auto */
-    border: none; /* Remove any border */
-    background: none; /* Remove any background */
-    padding: 0; /* Remove any padding */
-    margin: 0; /* Remove any margin */
-    cursor: pointer; /* Ensure it has a pointer cursor */
+    all: unset;
+    /* Reset all inherited styles */
+    display: inline-block;
+    /* Ensure it displays as an inline-block element */
+    width: auto;
+    /* Set width to auto */
+    height: auto;
+    /* Set height to auto */
+    border: none;
+    /* Remove any border */
+    background: none;
+    /* Remove any background */
+    padding: 0;
+    /* Remove any padding */
+    margin: 0;
+    /* Remove any margin */
+    cursor: pointer;
+    /* Ensure it has a pointer cursor */
 }
 
 #pageNav {
     margin: 0;
     padding: 0;
-   
+
 }
 
 #pageNav nav {
@@ -197,7 +225,8 @@ html {
     top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000; /* Ensure it stays on top */
+    z-index: 1000;
+    /* Ensure it stays on top */
     display: flex;
     justify-content: center;
 }
@@ -214,10 +243,15 @@ main {
 }
 
 .heading-background {
-    width: 100%; /* Extend to full width */
-    background: var(--pico-card-background-color); /* 70% transparent background */
+    width: 100%;
+    /* Extend to full width */
+    background: var(--pico-card-background-color);
+    /* 70% transparent background */
     opacity: 0.7;
-    padding: 1em; /* Add some padding */
-    box-sizing: border-box; /* Include padding in the element's total width and height */
-    position: relative; /* Ensure it overlays the image */
+    padding: 1em;
+    /* Add some padding */
+    box-sizing: border-box;
+    /* Include padding in the element's total width and height */
+    position: relative;
+    /* Ensure it overlays the image */
 }
