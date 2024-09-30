@@ -122,6 +122,30 @@ function initMap() {
                         console.log("No markers to fit bounds to.");
                     }
 
+                    // Add an additional marker for Bungendore RFS Station
+                    var stationIcon = L.icon({
+                        iconUrl: '/Images/station.png',
+                        iconSize: [32, 32], // size of the icon
+                        iconAnchor: [16, 16], // point of the icon which will correspond to marker's location
+                        popupAnchor: [0, -16], // point from which the popup should open relative to the iconAnchor
+                        className: 'station-icon' // custom class for additional styling
+                    });
+
+                    var stationMarker = L.marker([-35.26165168903826, 149.43974909148088], { icon: stationIcon }).addTo(map);
+                    stationMarker.bindPopup('<h4>Bungendore RFS Station</h4>');
+
+                    // Add custom CSS for circular background
+                    var style = document.createElement('style');
+                    style.innerHTML = `
+    .station-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box; /* Include padding in the element's total width and height */
+    }
+`;
+                    document.head.appendChild(style);
+
                 })
                 .catch(error => console.error('Error fetching GeoJSON data:', error));
 
