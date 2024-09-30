@@ -2,7 +2,7 @@
     --margin: 0;
     --padding: 0;
     --hero-height: 60vh;
-    --hero-bg-light: url('https://bungendorerfs.org/images/hero.jpg');
+    --hero-bg: url('/Images/hero2.jpg');
     --prepare-bg-light: url('https://bungendorerfs.org/images/prepare.jpg');
     --info-bg-light: url('https://bungendorerfs.org/images/info.jpg');
     --membership-bg-light: url('https://bungendorerfs.org/images/membership.jpg');
@@ -12,25 +12,39 @@
     --rfs-amber: #fbb034;
     --rfs-blue: #215e9e;
     --rfs-green: #008550;
+    --rfs-logo: url('/Images/logo-dark.png');
 
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --hero-bg: url('https://bungendorerfs.org/images/hero-dark.jpg');
+        --hero-bg: url('/Images/hero1.jpg');;
         --prepare-bg: url('https://bungendorerfs.org/images/prepare-dark.jpg');
         --info-bg: url('https://bungendorerfs.org/images/info-dark.jpg');
         --membership-bg: url('https://bungendorerfs.org/images/membership-dark.jpg');
         --events-bg: url('https://bungendorerfs.org/images/events-dark.jpg');
+        --rfs-logo: url('/Images/logo.png');
         --rfs-lime: #929e1b;
         --rfs-core-red: #b71c1c;
         --rfs-amber:#da992c;
         --rfs-blue: #17406c;
         --rfs-green: #01633c;
     }
+    .hero .logo {
+        background: var(--logo-dark) no-repeat center center/contain;
+    }
+}
+
+.colorheading {
+    color: whitesmoke;
+}
+
+h3 {
+    color: whitesmoke;
 }
 
 .red {
+
     background-color: var(--rfs-core-red);
 }
 
@@ -85,16 +99,19 @@ body {
 }
 
 .hero .logo {
-    height: 100%;
-    max-height: 5em; 
-    /* Adjust this value to match the height of the heading */
-    margin-right: 1em; 
+    display: flex;
+    margin-right: 1em;
+    height: 6em;
     /* Adjust spacing as needed */
+    background: var(--rfs-logo) no-repeat left/contain;
+
 }
 
 .hero h1 {
     display: inline-block;
     vertical-align: middle;
+    padding-left: 1em;
+    padding-right: 1em;
 }
 
 .prepare {
@@ -173,10 +190,25 @@ html {
     width: 100%;
     z-index: 1000; /* Ensure it stays on top */
     display: flex;
-    justify-content: center
-
+    justify-content: center;
 }
 
 main {
-    margin-top: 3em;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.content-container {
+    padding-top: 1em;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.heading-background {
+    width: 100%; /* Extend to full width */
+    background: var(--pico-card-background-color); /* 70% transparent background */
+    opacity: 0.7;
+    padding: 1em; /* Add some padding */
+    box-sizing: border-box; /* Include padding in the element's total width and height */
+    position: relative; /* Ensure it overlays the image */
 }

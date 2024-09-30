@@ -112,10 +112,15 @@ function initMap() {
                         }
                     }).addTo(map);
 
-                    // Fit the map view to the bounds of the markers with 10% padding
-                    map.fitBounds(markers.getBounds(), {
-                        padding: [map.getSize().x * 0.1, map.getSize().y * 0.1] // 10% padding on each side
-                    });
+                    // Check if there are any markers before fitting bounds
+                    if (markers.getLayers().length > 0) {
+                        // Fit the map view to the bounds of the markers with 10% padding
+                        map.fitBounds(markers.getBounds(), {
+                            padding: [map.getSize().x * 0.1, map.getSize().y * 0.1] // 10% padding on each side
+                        });
+                    } else {
+                        console.log("No markers to fit bounds to.");
+                    }
 
                 })
                 .catch(error => console.error('Error fetching GeoJSON data:', error));
