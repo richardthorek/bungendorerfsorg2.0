@@ -83,6 +83,15 @@ body {
     .nav-logo {
         display: none !important;
     }
+    .summary-card {
+        display: none !important;
+    }
+}
+
+@media (max-width: 770px) {
+    .summaryCard {
+        display: none !important;
+    }
 }
 
 .nav-logo {
