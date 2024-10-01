@@ -112,26 +112,10 @@
                     <h3>Membership</h3>
                 </header>
                 <div class="grid">
-
                     <div id="membershipContent"></div>
                 </div>
                 <div class="grid">
                     <img src="https://bungendorerfs.org/images/membership.jpg" alt="Membership">
-                    <form>
-                        <label>If you'd like more information we can reach out to you</label>
-                        <fieldset>
-                            <label>
-                                Name
-                                <input name="name" placeholder="Name" autocomplete="Name" />
-                            </label>
-                            <label>
-                                Email
-                                <input type="email" name="email" placeholder="Email" autocomplete="email" />
-                            </label>
-                        </fieldset>
-
-                        <input type="submit" value="Submit" />
-                    </form>
                 </div>
 
             </article>
@@ -158,6 +142,9 @@
                                 class="nav-logo"></li>
                         <li><strong>Bungendore RFS</strong><a href="https://facebook.com/BungendoreRFS"
                                 target="_blank"><i class="fab fa-facebook"></i></a></li>
+                        <li><!-- Contact Us Button -->
+                            <button id="contactUsBtn">Contact Us</button>
+                        </li>
                     </ul>
                 </aside>
                 <nav class="links grid">
@@ -174,7 +161,6 @@
                             <ul>
                                 <li><strong>Postal</strong></li>
                                 <li>PO Box 23<br>Bungendore NSW 2621</li>
-
                             </ul>
                         </aside>
                     </div>
@@ -191,6 +177,35 @@
             </div>
         </article>
     </footer>
+
+    <!-- Modal -->
+    <dialog id="contactModal">
+        <article>
+            <header>
+                <button class="close" aria-label="Close" rel="prev"></button>
+                <h2>Contact Us</h2>
+            </header>
+            <form id="contactForm">
+                <label>If you'd like more information we can reach out to you</label>
+                <fieldset>
+                    <label>
+                        Name
+                        <input name="name" placeholder="Name" autocomplete="name" required />
+                    </label>
+                    <label>
+                        Email
+                        <input id="emailInput" type="email" name="email" placeholder="Email" autocomplete="email" required />
+                    </label>
+                    <textarea name="enquiry" placeholder="what would you like to know?"
+                        aria-label="What would you like to know?"></textarea>
+                </fieldset>
+                <footer>
+                    <input type="submit" value="Submit" />
+                </footer>
+            </form>
+        </article>
+    </dialog>
+
 
 </body>
 
