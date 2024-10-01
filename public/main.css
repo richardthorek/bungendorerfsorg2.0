@@ -255,3 +255,20 @@ main {
     position: relative;
     /* Ensure it overlays the image */
 }
+
+#pageFoot {
+    margin: 0;
+    padding: 0;
+}
+
+#pageFoot nav {
+    background-color: var(--pico-card-background-color);
+    /* position: fixed; */
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 1000;
+    /* Ensure it stays on top */
+    display: flex;
+    justify-content: center;
+}
