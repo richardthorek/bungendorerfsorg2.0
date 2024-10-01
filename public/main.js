@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </tr>
             <tr>
                 <td>Notify the RFS of your burn</td>
-                <td><input type="checkbox" checked'} disabled></td>
+                <td><input type="checkbox" checked disabled></td>
             </tr>
             <tr>
                 <td>Have been issued a fire permit</td>
