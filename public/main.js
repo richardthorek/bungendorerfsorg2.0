@@ -277,3 +277,109 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const fireDangerTableContainer = document.getElementById('fireDangerTableContainer');
+    const fireDangerRatingCell = document.getElementById('fireDangerRatingCell');
+    const incidentCountCell = document.getElementById('incidentCountCell');
+    const fireMessagesDiv = document.getElementById('fireMessages'); // Select the <div> element
+
+    // Fetch the fire danger rating messages from the JSON file
+    fetch('/Content/AFDRSMessages.json')
+        .then(response => response.json())
+        .then(fireDangerRatings => {
+            // Fetch the XML data for the fire danger rating
+            fetch('https://prod-23.australiaeast.logic.azure.com:443/workflows/5db5283afc564a449079c0d2c1fe3622/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=WFE08wwCYaxwAvCQrRnLrUrVPbhC8VzyiPx9IZuHHkg')
+                .then(response => response.text())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(data, 'application/xml');
+                    const districts = xmlDoc.getElementsByTagName('District');
+
+                    let southernRangesDistrict = null;
+                    for (let i = 0; i < districts.length; i++) {
+                        const districtName = districts[i].getElementsByTagName('Name')[0].textContent;
+                        if (districtName === 'Southern Ranges') {
+                            southernRangesDistrict = districts[i];
+                            break;
+                        }
+                    }
+
+                    if (southernRangesDistrict) {
+                        let dangerLevelToday = southernRangesDistrict.getElementsByTagName('DangerLevelToday')[0].textContent;
+                        dangerLevelToday = dangerLevelToday.trim().toUpperCase(); // Trim and convert to uppercase
+
+                        const ratingInfo = fireDangerRatings.FireDangerRatings.find(rating => rating.Rating === dangerLevelToday);
+
+                        if (!ratingInfo) {
+                            console.error(`No rating information found for danger level: ${dangerLevelToday}`);
+                            return;
+                        }
+
+                        // Construct style string conditionally
+                        let styleString = 'font-weight: bold;'; // Add font-weight: bold
+                        if (ratingInfo.color) {
+                            styleString += `color: ${ratingInfo.color}; `;
+                        }
+                        if (ratingInfo['background-color']) {
+                            styleString += `background-color: ${ratingInfo['background-color']}; `;
+                        }
+
+                        // Set the fire danger rating cell content and style
+                        fireDangerRatingCell.textContent = dangerLevelToday;
+                        fireDangerRatingCell.setAttribute('style', styleString);
+
+                        // Fetch the current incident markers (excluding the station marker)
+                        const incidentMarkers = document.querySelectorAll('.incident-marker:not(.station-marker)');
+                        const incidentCount = incidentMarkers.length;
+
+                        // Set the incident count cell content
+                        incidentCountCell.textContent = incidentCount;
+
+                        // Create the old table structure
+                        const oldTable = document.createElement('table');
+                        oldTable.innerHTML = `
+                            <tr>
+                                <th colspan="2" style="${styleString}">
+                                    Today's Fire Danger Rating
+                                </th>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <table>
+                                        <tr>
+                                        </tr>
+                                        <tr>
+                                            <td>${dangerLevelToday}</td>
+                                        </tr>
+                                        <tr>
+                                        </tr>
+                                        <tr>
+                                            <td>${ratingInfo.FireBehaviour}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                                <td>
+                                    <ul>
+                                        ${ratingInfo.SupportingMessages.map(message => `<li>${message}</li>`).join('')}
+                                    </ul>
+                                </td>
+                            </tr>
+                        `;
+
+                        fireDangerTableContainer.appendChild(oldTable);
+
+                           // Inject the matching keyMessage into the fireMessages div
+                           const keyMessage = ratingInfo.KeyMessage;
+                           if (keyMessage) {
+                               fireMessagesDiv.textContent = keyMessage;
+                           }
+                           
+                    } else {
+                        console.error('Southern Ranges district not found in the XML data.');
+                    }
+                })
+                .catch(error => console.error('Error fetching the XML data:', error));
+        })
+        .catch(error => console.error('Error fetching the JSON data:', error));
+});
