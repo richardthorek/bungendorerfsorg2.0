@@ -38,15 +38,22 @@
         <!-- Header section with navigation -->
 
         <!-- Hero section with main heading -->
-        <div class="hero ">
+        <div class="hero">
             <hgroup class="heading-background">
-                <div id="heroLogo" class="logo"></div>
+                 <div id="heroLogo" class="logo"></div>
                 <div>
                     <h1>Bungendore Volunteer Rural Fire Brigade</h1>
+                    <div class="button-container">
+                        <a href="https://nswrfsprod.service-now.com/guardian_csp?id=guardian_cat_item&sys_id=578b27b4c360b1104a9cdc311501313e" class="custom-button">Permit Application</a>
+                        <a href="https://rfs.nsw.gov.au" class="custom-button">RFS Website</a>
+                        <a href="https://facebook.com/BungendoreRFS" class="custom-button">Our Facebook</a>
+                        <a href="mailto:administrator@bungendorerfs.org" class="custom-button">Email Us</a>
+                        <a href="https://www.rfs.nsw.gov.au/fire-information/major-fire-updates" class="custom-button">Major Fire Updates</a>
+                    </div>
                 </div>
             </hgroup>
         </div>
-
+        
         <!-- Grid section with article cards -->
         <div class="container content-container">
             <div class="grid">
@@ -82,45 +89,61 @@
                 </article>
             </div>
 
-            <!-- Detailed sections for each topic with responsive grid -->
-            <article id="info">
-                <header class="red">
-                    <h3>Fire Information in Our Area</h3>
-                </header>
-                <div class="">
-                    <div id="fireInfoContent"></div>
-                    <!-- Map section -->
-                    <div id="map" style="height: 500px; width: 100%;"></div>
+        <!-- Detailed sections for each topic with responsive grid -->
+        <article id="info">
+            <header class="red">
+                <h3>Fire Information in Our Area</h3>
+            </header>
+            <div class="">
+                <div id="fireInfoContent"></div>
+                <!-- Map section -->
+                <div id="map" style="height: 500px; width: 100%;"></div>
+            </div>
+        </article>
+        <article id="prepare">
+            <header class="amber">
+                <h3>Prepare for Bushfires</h3>
+            </header>
+            <div class="grid">
+                <img src="https://bungendorerfs.org/images/prepare.jpg" alt="Prepare for Bushfires">
+                <div>
+                    <div id="BFDPContent"></div>
+                    <div id="prepareContent"></div>
                 </div>
-            </article>
-            <article id="prepare">
-                <header class="amber">
-                    <h3>Prepare for Bushfires</h3>
-                </header>
-                <div class="grid">
-                    <img src="https://bungendorerfs.org/images/prepare.jpg" alt="Prepare for Bushfires">
-                    <div>
-                        <div id="BFDPContent"></div>
-                        <div id="prepareContent"></div>
-                    </div>
-                </div>
-            </article>
+            </div>
+        </article>
 
 
-            <article id="membership">
-                <header class="blue">
-                    <h3>Membership</h3>
-                </header>
-                <div class="grid">
-                    <div id="membershipContent"></div>
-                </div>
-                <div class="grid">
-                    <img src="https://bungendorerfs.org/images/membership.jpg" alt="Membership">
-                </div>
+        <article id="membership">
+            <header class="blue">
+                <h3>Membership</h3>
+            </header>
+            <div class="grid">
 
-            </article>
-            <article id="events">
-                <header class="green">
+                <div id="membershipContent"></div>
+            </div>
+            <div class="grid">
+                <img src="https://bungendorerfs.org/images/membership.jpg" alt="Membership">
+                <form>
+                    <label>If you'd like more information we can reach out to you</label>
+                    <fieldset>
+                        <label>
+                            Name
+                            <input name="name" placeholder="Name" autocomplete="Name" />
+                        </label>
+                        <label>
+                            Email
+                            <input type="email" name="email" placeholder="Email" autocomplete="email" />
+                        </label>
+                    </fieldset>
+
+                    <input type="submit" value="Submit" />
+                </form>
+            </div>
+
+        </article>
+        <article id="events">
+            <header class="green">
 
                     <h3>Community Events</h3>
                 </header>
