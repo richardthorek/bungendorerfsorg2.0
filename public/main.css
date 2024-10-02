@@ -273,6 +273,50 @@ main {
     justify-content: center;
 }
 
+/* Container for the heading and buttons */
+.header-container {
+    display: flex;
+    align-items: center;
+    gap: 20px; 
+    flex-wrap: wrap; 
+}
+
+
+.button-container {
+    display: flex;
+    gap: 10px; 
+}
+
+
+.custom-button {
+    padding: 10px 20px;
+    background-color: red;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: 0; 
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.custom-button:hover {
+    background-color: darkred;
+}
+
+@media (max-width: 600px) {
+    .header-container {
+        flex-direction: column; 
+        align-items: flex-start; 
+    }
+    
+    .button-container {
+        flex-wrap: wrap; 
+    }
+}
+
+
 .invisible-cell td {
     border: none;
     background-color: transparent;
