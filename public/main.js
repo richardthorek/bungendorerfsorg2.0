@@ -213,3 +213,67 @@ document.addEventListener('DOMContentLoaded', function () {
 
     BFDPContent.innerHTML = tableHTML;
 });
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('contactModal');
+    const btn = document.getElementById('contactUsBtn');
+    const span = document.getElementsByClassName('close')[0];
+    const form = document.getElementById('contactForm');
+
+    // When the user clicks the button, open the modal
+    btn.onclick = function () {
+        modal.setAttribute('open', '');
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function () {
+        modal.removeAttribute('open');
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.removeAttribute('open');
+        }
+    }
+
+    // Handle form submission
+    form.addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        fetch('https://prod-03.australiaeast.logic.azure.com:443/workflows/aa6b3f9f93d940dabfaa6d12a84080bc/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=SVh_1oD-jjy4E5BuxJZrY-Ng87jvC2Pg0IEP3s71fsY', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                modal.close(); // Close the modal
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const emailInput = document.getElementById('emailInput');
+
+    emailInput.addEventListener('input', () => {
+        const emailValue = emailInput.value;
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (emailPattern.test(emailValue)) {
+            emailInput.setAttribute('aria-invalid', 'false');
+        } else {
+            emailInput.setAttribute('aria-invalid', 'true');
+        }
+    });
+});
