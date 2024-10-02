@@ -54,7 +54,20 @@
                     <header class="red">
                         <h3>Fire Information in Our Area</h3>
                     </header>
-                    <p>Stay updated with the latest fire information in our area.</p>
+                    <div id="fireMessages">Stay updated with the latest fire information in our area.<br></div>
+                    <!-- Fire Danger Rating and Incident Count Table -->
+                    <div class="grid">
+                        <table id="fireDangerTable" class="summaryCard">
+                            <tr>
+                                <td id="fireDangerRatingCell"></td>
+                                <td id="incidentCountCell" style="text-align: center;"></td>
+                            </tr>
+                            <tr class="invisible-cell">
+                                <td>Fire Danger Rating</td>
+                                <td>Local Incidents</td>
+                            </tr>
+                        </table>
+                    </div>
                     <p><a href="#info">Learn More</a></p>
                 </article>
                 <article class="summaryCard">
@@ -88,9 +101,10 @@
                     <h3>Fire Information in Our Area</h3>
                 </header>
                 <div class="">
-                    <div id="fireInfoContent"></div>
+                    <div id="fireDangerTableContainer"></div>
                     <!-- Map section -->
                     <div id="map" style="height: 500px; width: 100%;"></div>
+                    <div id="fireInfoContent"></div>
                 </div>
             </article>
             <article id="prepare">
@@ -194,7 +208,8 @@
                     </label>
                     <label>
                         Email
-                        <input id="emailInput" type="email" name="email" placeholder="Email" autocomplete="email" required />
+                        <input id="emailInput" type="email" name="email" placeholder="Email" autocomplete="email"
+                            required />
                     </label>
                     <textarea name="enquiry" placeholder="what would you like to know?"
                         aria-label="What would you like to know?"></textarea>

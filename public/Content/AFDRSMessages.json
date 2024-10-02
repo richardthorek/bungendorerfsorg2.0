@@ -1,0 +1,63 @@
+{
+    "FireDangerRatings": [
+        {
+            "Rating": "NONE",
+            "KeyMessage": "Plan and prepare.",
+            "FireBehaviour": "There is no fire danger rating today.",
+            "SupportingMessages": [
+                "Today is a great day to prepare your property and family for the bushfire season."
+            ]
+        },
+        {
+            "color": "#13171F",
+            "background-color": "#17a462",
+            "Rating": "MODERATE",
+            "KeyMessage": "Plan and prepare.",
+            "FireBehaviour": "Most fires can be controlled.",
+            "SupportingMessages": [
+                "Stay up to date and be ready to act if there is a fire."
+            ]
+        },
+        {
+            "color": "#13171F",
+            "background-color": "#ffd600",
+            "Rating": "HIGH",
+            "KeyMessage": "Be ready to act.",
+            "FireBehaviour": "Fires can be dangerous.",
+            "SupportingMessages": [
+                "Fire Permits are Suspended. Do Not Burn",
+                "There’s a heightened risk. Be alert for fires in your area.",
+                "Decide what you will do if a fire starts.",
+                "If a fire starts, your life and property may be at risk. The safest option is to avoid bushfire risk areas."
+            ]
+        },
+        {
+            "color": "#13171F",
+            "background-color": "#fd9e1d",
+            "Rating": "EXTREME",
+            "KeyMessage": "Take action now to protect your life and property.",
+            "FireBehaviour": "Fires will spread quickly and be extremely dangerous.",
+            "SupportingMessages": [
+                "These are dangerous fire conditions.",
+                "Fire Permits are Suspended. Do Not Burn",
+                "Check your bushfire plan and ensure that your property is fire ready.",
+                "If a fire starts, take immediate action. If you and your property are not prepared to the highest level, go to a safer location well before the fire impacts.",
+                "Reconsider travel through bushfire risk areas."
+            ]
+        },
+        {
+            "color": "#fff",
+            "background-color": "#e5281b",
+            "Rating": "CATASTROPHIC",
+            "KeyMessage": "For your survival, leave bushfire risk areas.",
+            "FireBehaviour": "If a fire starts and takes hold, lives are likely to be lost.",
+            "SupportingMessages": [
+                "These are the most dangerous conditions for a fire.",
+                "Fire Permits are Suspended. Do Not Burn",
+                "Your life may depend on the decisions you make, even before there is a fire.",
+                "Stay safe by going to a safer location early in the morning or the night before.",
+                "Homes cannot withstand fires in these conditions. You may not be able to leave, and help may not be available."
+            ]
+        }
+    ]
+}

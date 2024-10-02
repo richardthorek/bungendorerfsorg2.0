@@ -272,3 +272,13 @@ main {
     display: flex;
     justify-content: center;
 }
+
+.invisible-cell td {
+    border: none;
+    background-color: transparent;
+}
+
+#fireMessages {
+    font-weight: bold;
+    margin-bottom: 20px; /* Adjust the value as needed */
+}
