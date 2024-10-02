@@ -32,3 +32,12 @@ The map displays markers for different fire warnings and locations. An additiona
 ### Dark Mode Support
 
 The website supports dark mode based on the user's `prefers-color-scheme` setting. The logo and background images change accordingly.
+
+#Contributing and Development Process
+- Main: Protected Branch. Merged into from liveDev branch by Owner. 
+- liveDev: Combined feature testing branch, has a permanent URL for verification. 
+- Individual issues and features should be developed on their own Branch with a PR to merge into liveDev when ready. 
+
+
+
+
