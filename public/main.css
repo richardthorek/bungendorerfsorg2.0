@@ -326,3 +326,48 @@ main {
     font-weight: bold;
     margin-bottom: 20px; /* Adjust the value as needed */
 }
+
+#incidentCountCell img {
+    max-width: 32px;
+    max-height: 32px;
+    width: auto;
+    height: auto;
+}
+
+#fireInfoTableContainer img {
+    max-width: 32px;
+    max-height: 32px;
+    width: auto;
+    height: auto;
+}
+
+
+.icon-category-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.icon-category-cell img {
+    display: block;
+    margin: 0 auto;
+}
+
+.icon-category-cell span {
+    display: block;
+    margin-top: 5px;
+}
+
+#icon-category-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+#icon-category-cell img {
+    display: block;
+    margin: 0 auto;
+}
+
+#icon-category-cell span {
+    display: block;
+    margin-top: 5px;
+}
