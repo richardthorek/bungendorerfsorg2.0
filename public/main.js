@@ -345,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('contactUsBtn');
     const span = document.getElementsByClassName('close')[0];
     const form = document.getElementById('contactForm');
+    const submitButton = document.getElementById('submitButton');; // Select the submit button
 
     // When the user clicks the button, open the modal
     btn.onclick = function () {
@@ -366,6 +367,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle form submission
     form.addEventListener('submit', function (event) {
         event.preventDefault(); // Prevent the default form submission
+  
+
+        // Replace the submit button text with a span indicating busy state
+        const originalButtonText = submitButton.innerHTML;
+        submitButton.innerHTML = '<span aria-busy="true"></span>';
 
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
@@ -380,10 +386,30 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-                modal.close(); // Close the modal
+            
+
+                // Create a visual indication of success
+                const successMessage = document.createElement('div');
+                successMessage.textContent = 'Form submitted successfully!';
+                successMessage.style.color = 'green';
+                successMessage.style.textAlign = 'center';
+                successMessage.style.marginTop = '10px';
+                form.appendChild(successMessage);
+
+                 // Restore the original submit button text
+                 submitButton.innerHTML = originalButtonText;
+
+                // Wait for 2 second, then reset the form and remove the success message
+                setTimeout(() => {
+                    form.reset();
+                    form.removeChild(successMessage);
+                    modal.removeAttribute('open');
+                }, 2000);
             })
             .catch((error) => {
                 console.error('Error:', error);
+                // Remove aria-busy attribute in case of error
+                submitButton.removeAttribute('aria-busy');
             });
     });
 });
