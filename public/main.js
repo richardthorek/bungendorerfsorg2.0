@@ -1,4 +1,70 @@
-// Initialize the Leaflet map
+function extractFields(description) {
+    const statusMatch = description.match(/STATUS: ([^<]*)/);
+    const typeMatch = description.match(/TYPE: ([^<]*)/);
+    const updatedMatch = description.match(/UPDATED: ([^<]*)/);
+
+    const status = statusMatch ? statusMatch[1] : 'N/A';
+    const type = typeMatch ? typeMatch[1] : 'N/A';
+    const updated = updatedMatch ? updatedMatch[1] : 'N/A';
+
+    return { status, type, updated };
+}
+
+function populateFireInfoTable(data) {
+    const fireInfoTableContainer = document.getElementById('fireInfoTableContainer');
+    let tableHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Alert Level</th>
+                    <th>Incident</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    data.features.forEach(feature => {
+        const { title, category, description } = feature.properties;
+        const { status, type, updated } = extractFields(description);
+        let iconUrl;
+
+        if (category.includes("Advice")) {
+            iconUrl = '/Images/advice.png';
+        } else if (category.includes("Watch and Act")) {
+            iconUrl = '/Images/watch-and-act.png';
+        } else if (category.includes("Emergency Warning")) {
+            iconUrl = '/Images/emergency-warning.png';
+        } else {
+            iconUrl = '/Images/other.png';
+        }
+
+        tableHTML += `
+            <tr>
+                <td class="icon-category-cell">
+                    <img src="${iconUrl}" alt="${category}" /><br/>
+                    <span>${category}</span>
+                </td>
+                <td><a href="https://www.rfs.nsw.gov.au/fire-information/fires-near-me" target="_blank">${title}</a></td>
+                <td>
+                    <ul>
+                        <li>Status: ${status}</li>
+                        <li>Type: ${type}</li>
+                        <li>Updated: ${updated}</li>
+                    </ul>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+    fireInfoTableContainer.innerHTML = tableHTML;
+}
+
+
 function initMap() {
     var map = L.map('map', {
         center: [-35.25870948687002, 149.4431761913284], // Centered on New South Wales, Australia
@@ -53,11 +119,11 @@ function initMap() {
                     });
                 } catch (error) {
                     console.error('Error creating icon:', error);
-                    // return L.divIcon({
-                    //     html: '<i class="fa fa-fire" style="font-size: 32px; color: grey;"></i>',
-                    //     iconSize: [32, 32],
-                    //     className: 'custom-div-icon'
-                    // });
+                    return L.divIcon({
+                        html: '<i class="fa fa-fire" style="font-size: 32px; color: grey;"></i>',
+                        iconSize: [32, 32],
+                        className: 'custom-div-icon'
+                    });
                 }
             }
 
@@ -68,14 +134,14 @@ function initMap() {
                 className: 'custom-div-icon'
             });
 
+
             var adviceIcon = createIcon('/Images/advice.png') || defaultIcon;
             var watchAndActIcon = createIcon('/Images/watch-and-act.png') || defaultIcon;
             var emergencyWarningIcon = createIcon('/Images/emergency-warning.png') || defaultIcon;
             var otherIcon = createIcon('/Images/other.png') || defaultIcon;
 
-
             // Create a feature group to hold the markers
-            var markers = L.featureGroup();
+            var markers = L.featureGroup().addTo(map);
 
             // Fetch GeoJSON data and add markers to the map
             const targetUrl = 'https://prod-16.australiaeast.logic.azure.com:443/workflows/0e1db2551604467787d10a1079e2ca00/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=PPxJa5-zzi3BE7-vp98G6nDRymYIoRgvKw4lZU44Cv4';
@@ -83,22 +149,40 @@ function initMap() {
             fetch(targetUrl)
                 .then(response => response.json())
                 .then(data => {
-                    L.geoJSON(data, {
-                        filter: function (feature) {
-                            // Filter features that contain "COUNCIL AREA: Queanbeyan-Palerang" in the description
-                            return feature.properties && feature.properties.description && feature.properties.description.includes("COUNCIL AREA: Queanbeyan-Palerang");
-                        },
+                    const categoryCounts = {
+                        "Other": 0,
+                        "Advice": 0,
+                        "Watch and Act": 0,
+                        "Emergency Warning": 0
+                    };
+
+                    // Filter features that contain "COUNCIL AREA: Queanbeyan-Palerang" or "COUNCIL AREA: ACT" in the description
+                    const filteredFeatures = data.features.filter(feature =>
+                        feature.properties && feature.properties.description && (
+                            feature.properties.description.includes("COUNCIL AREA: Queanbeyan-Palerang") ||
+                            feature.properties.description.includes("COUNCIL AREA: ACT")
+                        )
+                    );
+
+                    // Populate the table with filtered features
+                    populateFireInfoTable({ features: filteredFeatures });
+
+                    L.geoJSON({ features: filteredFeatures }, {
                         pointToLayer: function (feature, latlng) {
                             // Determine the icon based on the warning type
                             var icon;
                             if (feature.properties.category.includes("Advice")) {
                                 icon = adviceIcon;
+                                categoryCounts["Advice"]++;
                             } else if (feature.properties.category.includes("Watch and Act")) {
                                 icon = watchAndActIcon;
+                                categoryCounts["Watch and Act"]++;
                             } else if (feature.properties.category.includes("Emergency Warning")) {
                                 icon = emergencyWarningIcon;
+                                categoryCounts["Emergency Warning"]++;
                             } else {
                                 icon = otherIcon;
+                                categoryCounts["Other"]++;
                             }
                             var marker = L.marker(latlng, { icon: icon });
                             markers.addLayer(marker); // Add marker to the feature group
@@ -112,6 +196,75 @@ function initMap() {
                         }
                     }).addTo(map);
 
+                    // Create a mini table in the incidentCountCell
+                    const incidentCountCell = document.getElementById('incidentCountCell');
+                    let tableHTML = '<table>';
+
+                    if (categoryCounts["Other"] > 0) {
+                        tableHTML += `
+                            <tr>
+                                <td><img src="${otherIcon.options.iconUrl}" alt="Other" /></td>
+                                <td>${categoryCounts["Other"]}</td>
+                            </tr>
+                        `;
+                    }
+
+                    if (categoryCounts["Advice"] > 0) {
+                        tableHTML += `
+                            <tr>
+                                <td><img src="${adviceIcon.options.iconUrl}" alt="Advice" /></td>
+                                <td>${categoryCounts["Advice"]}</td>
+                            </tr>
+                        `;
+                    }
+
+                    if (categoryCounts["Watch and Act"] > 0) {
+                        tableHTML += `
+                            <tr>
+                                <td><img src="${watchAndActIcon.options.iconUrl}" alt="Watch and Act" /></td>
+                       
+                                <td>${categoryCounts["Watch and Act"]}</td>
+                            </tr>
+                        `;
+                    }
+
+                    if (categoryCounts["Emergency Warning"] > 0) {
+                        tableHTML += `
+                            <tr>
+                                <td><img src="${emergencyWarningIcon.options.iconUrl}" alt="Emergency Warning" /></td>
+                                <td>${categoryCounts["Emergency Warning"]}</td>
+                            </tr>
+                        `;
+                    }
+
+                    tableHTML += '</table>';
+                    incidentCountCell.innerHTML = tableHTML;
+
+                    // Ensure the station marker is included in the bounds calculation
+                    var stationIcon = L.icon({
+                        iconUrl: '/Images/station.png',
+                        iconSize: [32, 32], // size of the icon
+                        iconAnchor: [16, 16], // point of the icon which will correspond to marker's location
+                        popupAnchor: [0, -16], // point from which the popup should open relative to the iconAnchor
+                        className: 'station-icon' // custom class for additional styling
+                    });
+
+                    var stationMarker = L.marker([-35.26165168903826, 149.43974909148088], { icon: stationIcon });
+                    stationMarker.bindPopup('<h4>Bungendore RFS Station</h4>');
+                    markers.addLayer(stationMarker); // Add the station marker to the markers layer group
+
+                    // Add custom CSS for circular background
+                    var style = document.createElement('style');
+                    style.innerHTML = `
+                        .station-icon {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-sizing: border-box; /* Include padding in the element's total width and height */
+                        }
+                    `;
+                    document.head.appendChild(style);
+
                     // Check if there are any markers before fitting bounds
                     if (markers.getLayers().length > 0) {
                         // Fit the map view to the bounds of the markers with 10% padding
@@ -121,36 +274,8 @@ function initMap() {
                     } else {
                         console.log("No markers to fit bounds to.");
                     }
-
-                    // Add an additional marker for Bungendore RFS Station
-                    var stationIcon = L.icon({
-                        iconUrl: '/Images/station.png',
-                        iconSize: [32, 32], // size of the icon
-                        iconAnchor: [16, 16], // point of the icon which will correspond to marker's location
-                        popupAnchor: [0, -16], // point from which the popup should open relative to the iconAnchor
-                        className: 'station-icon' // custom class for additional styling
-                    });
-
-                    var stationMarker = L.marker([-35.26165168903826, 149.43974909148088], { icon: stationIcon }).addTo(map);
-                    stationMarker.bindPopup('<h4>Bungendore RFS Station</h4>');
-
-                    // Add custom CSS for circular background
-                    var style = document.createElement('style');
-                    style.innerHTML = `
-    .station-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-sizing: border-box; /* Include padding in the element's total width and height */
-    }
-`;
-                    document.head.appendChild(style);
-
                 })
-                .catch(error => console.error('Error fetching GeoJSON data:', error));
-
-            // Add the feature group to the map
-            markers.addTo(map);
+                .catch(error => console.error('Error fetching the GeoJSON data:', error));
         })
         .catch(error => console.error('Error fetching Mapbox token:', error));
 }
@@ -329,12 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         fireDangerRatingCell.textContent = dangerLevelToday;
                         fireDangerRatingCell.setAttribute('style', styleString);
 
-                        // Fetch the current incident markers (excluding the station marker)
-                        const incidentMarkers = document.querySelectorAll('.incident-marker:not(.station-marker)');
-                        const incidentCount = incidentMarkers.length;
 
-                        // Set the incident count cell content
-                        incidentCountCell.textContent = incidentCount;
 
                         // Create the old table structure
                         const oldTable = document.createElement('table');
@@ -369,12 +489,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         fireDangerTableContainer.appendChild(oldTable);
 
-                           // Inject the matching keyMessage into the fireMessages div
-                           const keyMessage = ratingInfo.KeyMessage;
-                           if (keyMessage) {
-                               fireMessagesDiv.textContent = keyMessage;
-                           }
-                           
+                        // Inject the matching keyMessage into the fireMessages div
+                        const keyMessage = ratingInfo.KeyMessage;
+                        if (keyMessage) {
+                            fireMessagesDiv.textContent = keyMessage;
+                        }
+
                     } else {
                         console.error('Southern Ranges district not found in the XML data.');
                     }
