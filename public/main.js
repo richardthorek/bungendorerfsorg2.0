@@ -247,24 +247,14 @@ function initMap() {
             document.getElementById("incidentCountCell");
           let tableHTML = "<table>";
 
-          if (categoryCounts["Other"] > 0) {
+          if (categoryCounts["Emergency Warning"] > 0) {
             tableHTML += `
                             <tr>
-                                <td><img src="${otherIcon.options.iconUrl}" alt="Other" /></td>
-                                <td>${categoryCounts["Other"]}</td>
+                                <td><img src="${emergencyWarningIcon.options.iconUrl}" alt="Emergency Warning" /></td>
+                                <td>${categoryCounts["Emergency Warning"]}</td>
                             </tr>
                         `;
           }
-
-          if (categoryCounts["Advice"] > 0) {
-            tableHTML += `
-                            <tr>
-                                <td><img src="${adviceIcon.options.iconUrl}" alt="Advice" /></td>
-                                <td>${categoryCounts["Advice"]}</td>
-                            </tr>
-                        `;
-          }
-
           if (categoryCounts["Watch and Act"] > 0) {
             tableHTML += `
                             <tr>
@@ -274,15 +264,28 @@ function initMap() {
                             </tr>
                         `;
           }
-
-          if (categoryCounts["Emergency Warning"] > 0) {
+          if (categoryCounts["Advice"] > 0) {
             tableHTML += `
                             <tr>
-                                <td><img src="${emergencyWarningIcon.options.iconUrl}" alt="Emergency Warning" /></td>
-                                <td>${categoryCounts["Emergency Warning"]}</td>
+                                <td><img src="${adviceIcon.options.iconUrl}" alt="Advice" /></td>
+                                <td>${categoryCounts["Advice"]}</td>
                             </tr>
                         `;
           }
+          if (categoryCounts["Other"] > 0) {
+            tableHTML += `
+                            <tr>
+                                <td><img src="${otherIcon.options.iconUrl}" alt="Other" /></td>
+                                <td>${categoryCounts["Other"]}</td>
+                            </tr>
+                        `;
+          }
+
+
+
+
+
+  
 
           tableHTML += "</table>";
           incidentCountCell.innerHTML = tableHTML;
