@@ -45,19 +45,19 @@ function populateFireInfoTable(data) {
 
     tableHTML += `
                 <article class="card">
-                    <div class="card-header">
+                    <header class="card-header">
                         <img src="${iconUrl}" alt="${category}" class="icon-category" />
                         <a href="https://www.rfs.nsw.gov.au/fire-information/fires-near-me" target="_blank">${title}</a>
                     
-                    </div>
-                    <div class="card-body">
-                        
+                    </header>
+                   
                         <ul>
-                            <li>Status: ${status}</li>
-                            <li>Type: ${type}</li>
-                            <li>Updated: ${updated}</li>
+                            <li>${status}</li>
+                            <li>${type}</li>
+                        
                         </ul>
-                    </div>
+                
+                    <footer>${updated}</footer>
                 </article>
             `;
   });
@@ -178,12 +178,12 @@ function initMap() {
           };
 
           // Check if the current URL is localhost:3000
-          const isLocalhost =
-            window.location.hostname === "localhost" &&
-            window.location.port === "3000";
+          const isTest =
+          (window.location.hostname === "localhost" && window.location.port === "3000") ||
+          window.location.href === "https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net/";
 
           // Filter features that contain "COUNCIL AREA: Queanbeyan-Palerang" or "COUNCIL AREA: ACT" in the description
-          const filteredFeatures = isLocalhost
+          const filteredFeatures = isTest
             ? data.features
             : data.features.filter(
                 (feature) =>
