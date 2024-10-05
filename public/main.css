@@ -1,3 +1,4 @@
+
 :root {
     --margin: 0;
     --padding: 0;
@@ -19,7 +20,6 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --hero-bg: url('/Images/hero1.jpg');
-        ;
         --prepare-bg: url('https://bungendorerfs.org/images/prepare-dark.jpg');
         --info-bg: url('https://bungendorerfs.org/images/info-dark.jpg');
         --membership-bg: url('https://bungendorerfs.org/images/membership-dark.jpg');
@@ -38,16 +38,63 @@
     }
 }
 
-.colorheading {
+/* General Styles */
+body {
+    font-family: var(--font-family);
+    margin: var(--margin);
+    padding: var(--padding);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+h3, .colorheading {
     color: whitesmoke;
 }
 
-h3 {
-    color: whitesmoke;
+/* Hero Section */
+.hero {
+    position: relative;
+    height: var(--hero-height);
+    background: var(--hero-bg) no-repeat center center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+.hero .logo {
+    display: flex;
+    margin-right: 1em;
+    height: 6em;
+    background: var(--rfs-logo) no-repeat left/contain;
+}
+
+.hero h1 {
+    display: inline-block;
+    vertical-align: middle;
+    padding: 0 1em;
+}
+
+/* Background Images for Sections */
+.prepare {
+    background-image: var(--prepare-bg);
+}
+
+.info {
+    background-image: var(--info-bg);
+}
+
+.membership {
+    background-image: var(--membership-bg);
+}
+
+.events {
+    background-image: var(--events-bg);
+}
+
+/* Color Classes */
 .red {
-
     background-color: var(--rfs-core-red);
 }
 
@@ -67,35 +114,50 @@ h3 {
     background-color: var(--rfs-green);
 }
 
-body {
-    font-family: var(--font-family);
-    margin: var(--margin);
-    padding: var(--padding);
+/* Leaflet Popup Styles */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: var(--pico-card-background-color) !important;
+    color: var(--pico-card-text-color) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.hero {
-    position: relative;
-    height: var(--hero-height);
-    background: var(--hero-bg) no-repeat center center/cover;
+.leaflet-popup-content {
+    color: var(--pico-card-text-color);
+    margin: 0;
+    background: var(--pico-card-background-color);
+    padding: 1em;
+    border-radius: 4px;
+    font-family: var(--pico-font-family, Arial, sans-serif);
+    font-size: var(--pico-font-size, 1rem);
+    line-height: var(--pico-line-height, 1.5);
+}
+
+/* Leaflet Marker and Control Styles */
+.leaflet-marker-icon,
+.leaflet-control {
+    all: unset;
+    display: inline-block;
+    width: auto;
+    height: auto;
+    cursor: pointer;
+}
+
+/* Navigation Styles */
+#pageNav {
+    margin: 0;
+    padding: 0;
+}
+
+#pageNav nav {
+    background-color: var(--rfs-core-red);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
     display: flex;
-    align-items: center;
     justify-content: center;
-}
-
-@media (max-width: 500px) {
-    .nav-logo {
-        display: none !important;
-    }
-
-    .summary-card {
-        display: none !important;
-    }
-}
-
-@media (max-width: 770px) {
-    .summaryCard {
-        display: none !important;
-    }
 }
 
 .nav-logo {
@@ -112,135 +174,13 @@ body {
     /* Show the nav logo when it becomes visible */
 }
 
-.hero .logo {
-    display: flex;
-    margin-right: 1em;
-    height: 6em;
-    /* Adjust spacing as needed */
-    background: var(--rfs-logo) no-repeat left/contain;
-
-}
-
-.hero h1 {
-    display: inline-block;
-    vertical-align: middle;
-    padding-left: 1em;
-    padding-right: 1em;
-}
-
-.prepare {
-    background-image: var(--prepare-bg);
-}
-
-.info {
-    background-image: var(--info-bg);
-}
-
-.membership {
-    background-image: var(--membership-bg);
-}
-
-.events {
-    background-image: var(--events-bg);
-}
-
-html {
-    scroll-behavior: smooth;
-}
-
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-    background: var(--pico-card-background-color) !important;
-    color: var(--pico-card-text-color) !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    /* Add a subtle shadow */
-}
-
-.leaflet-popup-content {
-    color: var(--pico-card-text-color);
-    margin: 0;
-    background: var(--pico-card-background-color);
-    padding: 1em;
-
-    border-radius: 4px;
-
-    font-family: var(--pico-font-family, Arial, sans-serif);
-    /* Use a CSS variable for font family, fallback to Arial */
-    font-size: var(--pico-font-size, 1rem);
-    /* Use a CSS variable for font size, fallback to 1rem */
-    line-height: var(--pico-line-height, 1.5);
-    /* Use a CSS variable for line height, fallback to 1.5 */
-}
-
-.leaflet-marker-icon {
-    all: unset;
-    /* Reset all inherited styles */
-    display: inline-block;
-    /* Ensure it displays as an inline-block element */
-    width: auto;
-    /* Set width to auto */
-    height: auto;
-    /* Set height to auto */
-    border: none;
-    /* Remove any border */
-    background: none;
-    /* Remove any background */
-    padding: 0;
-    /* Remove any padding */
-    margin: 0;
-    /* Remove any margin */
-    cursor: pointer;
-    /* Ensure it has a pointer cursor */
-}
-
-.leaflet-control {
-    all: unset;
-    /* Reset all inherited styles */
-    display: inline-block;
-    /* Ensure it displays as an inline-block element */
-    width: auto;
-    /* Set width to auto */
-    height: auto;
-    /* Set height to auto */
-    border: none;
-    /* Remove any border */
-    background: none;
-    /* Remove any background */
-    padding: 0;
-    /* Remove any padding */
-    margin: 0;
-    /* Remove any margin */
-    cursor: pointer;
-    /* Ensure it has a pointer cursor */
-}
-
-#pageNav {
-    margin: 0;
-    padding: 0;
-
-}
-
-#pageNav nav {
-    background-color: var(--rfs-core-red);
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    /* Ensure it stays on top */
-    display: flex;
-    justify-content: center;
-}
-
+/* Main Content Styles */
 main {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+    padding: 0 !important;
 }
 
 .content-container {
-    padding-top: 1em;
-    padding-left: 1em;
-    padding-right: 1em;
+    padding: 1em;
 }
 
 .heading-background {
@@ -249,13 +189,11 @@ main {
     background-color: var(--header-background);
     /* 70% transparent background */
     padding: 1em;
-    /* Add some padding */
     box-sizing: border-box;
-    /* Include padding in the element's total width and height */
     position: relative;
-    /* Ensure it overlays the image */
 }
 
+/* Footer Styles */
 #pageFoot {
     margin: 0;
     padding: 0;
@@ -263,17 +201,40 @@ main {
 
 #pageFoot nav {
     background-color: var(--pico-card-background-color);
-    /* position: fixed; */
     left: 0;
     bottom: 0;
     width: 100%;
     z-index: 1000;
-    /* Ensure it stays on top */
     display: flex;
     justify-content: center;
 }
 
-/* Container for the heading and buttons */
+#pageFoot .container.grid {
+    gap: 5px;
+}
+
+#pageFoot article {
+    padding: 5px;
+    margin: 0;
+}
+
+#pageFoot aside ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+#pageFoot aside ul li {
+    padding: 2px 0;
+    margin: 0;
+}
+
+#pageFoot aside ul li button {
+    padding: 5px 10px;
+    margin: 0;
+}
+
+/* Header and Button Container Styles */
 .header-container {
    
     display: flex;
@@ -282,12 +243,10 @@ main {
     flex-wrap: wrap;
 }
 
-
 .button-container {
     display: flex;
     gap: 10px;
 }
-
 
 .custom-button {
     padding: 10px 20px;
@@ -296,10 +255,8 @@ main {
     text-align: center;
     text-decoration: none;
     border: none;
-    border-radius: 0;
     font-size: 16px;
     font-weight: bold;
-    opacity: 1;
     cursor: pointer;
 }
 
@@ -318,7 +275,61 @@ main {
     }
 }
 
+/* Event Styles */
+.event {
+    margin-bottom: 10px;
+}
 
+.event-title {
+    font-weight: bold;
+}
+
+.event-date-time, .event-location {
+    font-size: 0.9em;
+    color: #555;
+}
+
+/* Element to Proof Styles */
+.elementToProof {
+    all: unset !important;
+    display: block;
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+    color: var(--color);
+}
+
+/* Grid Container Styles */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+/* Social Icon Styles */
+.social-icon {
+    color: var(--rfs-core-red);
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    /* margin: 0 8px; */
+}
+
+/* .social-icon::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 32px;
+    height: 32px;
+    background-color: var(--rfs-core-red);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: -1;
+} */
+
+/* Miscellaneous Styles */
 .invisible-cell td {
     border: none;
     background-color: transparent;
@@ -327,16 +338,9 @@ main {
 #fireMessages {
     font-weight: bold;
     margin-bottom: 20px;
-    /* Adjust the value as needed */
 }
 
-#incidentCountCell img {
-    max-width: 32px;
-    max-height: 32px;
-    width: auto;
-    height: auto;
-}
-
+#incidentCountCell img,
 #fireInfoTableContainer img {
     max-width: 32px;
     max-height: 32px;
@@ -344,72 +348,22 @@ main {
     height: auto;
 }
 
-
-.icon-category-cell {
-    text-align: center;
-    vertical-align: middle;
-}
-
-.icon-category-cell img {
-    display: block;
-    margin: 0 auto;
-}
-
-.icon-category-cell span {
-    display: block;
-    margin-top: 5px;
-}
-
+.icon-category-cell,
 #icon-category-cell {
     text-align: center;
     vertical-align: middle;
 }
 
+.icon-category-cell img,
 #icon-category-cell img {
     display: block;
     margin: 0 auto;
 }
 
+.icon-category-cell span,
 #icon-category-cell span {
     display: block;
     margin-top: 5px;
-}
-
-#footer {
-    padding: 0;
-}
-
-#pageFoot .container.grid {
-    gap: 5px;
-    /* Adjust the gap between grid items */
-}
-
-#pageFoot article {
-    padding: 5px;
-    /* Adjust the padding inside each article */
-    margin: 0;
-    /* Remove margin around each article */
-}
-
-#pageFoot aside ul {
-    padding: 0;
-    margin: 0;
-    list-style: none;
-    /* Remove default list styling */
-}
-
-#pageFoot aside ul li {
-    padding: 2px 0;
-    /* Adjust the padding inside each list item */
-    margin: 0;
-    /* Remove margin around each list item */
-}
-
-#pageFoot aside ul li button {
-    padding: 5px 10px;
-    /* Adjust the padding inside the button */
-    margin: 0;
-    /* Remove margin around the button */
 }
 
 .calendar-widget {
@@ -417,27 +371,17 @@ main {
     padding: 10px;
     margin: 10px 0;
 }
-.event {
-    margin-bottom: 10px;
-}
-.event-title {
-    font-weight: bold;
-}
-.event-date-time, .event-location {
-    font-size: 0.9em;
-    color: #555;
+
+/* Responsive Styles */
+@media (max-width: 500px) {
+    .nav-logo,
+    .summary-card {
+        display: none !important;
+    }
 }
 
-.elementToProof {
-    all: unset !important; 
-    display: block;
-    font-family: var(--font-family);
-    font-size: var(--font-size);
-    color: var(--color);
-}
-
-.grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1rem;
+@media (max-width: 770px) {
+    .summaryCard {
+        display: none !important;
+    }
 }
