@@ -13,7 +13,7 @@
     --rfs-blue: #215e9e;
     --rfs-green: #008550;
     --rfs-logo: url('/Images/logo-dark.png');
-    --header-background: rgb(24, 28, 37);
+    --header-background:rgb(255, 255, 255, 0.7);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,7 +30,7 @@
         --rfs-amber: #da992c;
         --rfs-blue: #17406c;
         --rfs-green: #01633c;
-        --header-background: rgb(255, 255, 255);
+        --header-background:  rgb(24, 28, 37, 0.7);
     }
 
     .hero .logo {
@@ -246,7 +246,7 @@ main {
 .heading-background {
     width: 100%;
     /* Extend to full width */
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: var(--header-background);
     /* 70% transparent background */
     padding: 1em;
     /* Add some padding */
