@@ -1,1 +1,1 @@
-Test Info
+© State of New South Wales (NSW Rural Fire Service). For current information go to <www.rfs.nsw.gov.au>.
