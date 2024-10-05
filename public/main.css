@@ -14,6 +14,10 @@
     --rfs-blue: #215e9e;
     --rfs-green: #008550;
     --rfs-logo: url('/Images/logo-dark.png');
+<<<<<<< HEAD
+=======
+    --header-background: rgb(24, 28, 37);
+>>>>>>> b8f37eb (Red buttons in header are transparent.)
 }
 
 @media (prefers-color-scheme: dark) {
@@ -29,6 +33,7 @@
         --rfs-amber: #da992c;
         --rfs-blue: #17406c;
         --rfs-green: #01633c;
+        --header-background: rgb(255, 255, 255);
     }
 
     .hero .logo {
@@ -183,8 +188,14 @@ main {
 
 .heading-background {
     width: 100%;
+<<<<<<< HEAD
     background: var(--pico-card-background-color);
     opacity: 0.7;
+=======
+    /* Extend to full width */
+    background-color: rgba(255, 255, 255, 0.3);
+    /* 70% transparent background */
+>>>>>>> b8f37eb (Red buttons in header are transparent.)
     padding: 1em;
     box-sizing: border-box;
     position: relative;
@@ -233,6 +244,7 @@ main {
 
 /* Header and Button Container Styles */
 .header-container {
+   
     display: flex;
     align-items: center;
     gap: 20px;
@@ -246,7 +258,7 @@ main {
 
 .custom-button {
     padding: 10px 20px;
-    background-color: red;
+    background-color: var(--rfs-core-red);
     color: white;
     text-align: center;
     text-decoration: none;
