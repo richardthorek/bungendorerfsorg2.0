@@ -38,6 +38,21 @@
     }
 }
 
+/* Default grid layout for summary cards */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 columns by default */
+    gap: 1rem; /* Add some space between the cards */
+}
+
+/* Responsive grid layout for screens below 1500px */
+@media (max-width: 1500px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for screens below 1500px */
+    }
+}
+
+
 /* General Styles */
 body {
     font-family: var(--font-family);
