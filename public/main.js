@@ -82,6 +82,7 @@ function initMap() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        'X-Request-ID': 'Get-Mapbox-Token', // Custom header to identify the request
       },
       body: JSON.stringify({ request: "mapbox-token" }),
     }
@@ -167,7 +168,13 @@ function initMap() {
       const targetUrl =
         "https://prod-16.australiaeast.logic.azure.com:443/workflows/0e1db2551604467787d10a1079e2ca00/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=PPxJa5-zzi3BE7-vp98G6nDRymYIoRgvKw4lZU44Cv4";
 
-      fetch(targetUrl)
+      fetch(targetUrl, {
+        method: "GET",
+        headers: {
+          'X-Request-ID': "Get-Fire-Incidents", // Custom header to identify the request
+          'Content-Type': 'application/json'
+        }
+      })
         .then((response) => response.json())
         .then((data) => {
           const categoryCounts = {
