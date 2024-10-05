@@ -291,7 +291,6 @@ main {
 
 .event-date-time, .event-location {
     font-size: 0.9em;
-    color: #555;
 }
 
 /* Element to Proof Styles */
@@ -321,18 +320,6 @@ main {
     /* margin: 0 8px; */
 }
 
-/* .social-icon::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 32px;
-    height: 32px;
-    background-color: var(--rfs-core-red);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    z-index: -1;
-} */
 
 /* Miscellaneous Styles */
 .invisible-cell td {
