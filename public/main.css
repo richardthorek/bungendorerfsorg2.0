@@ -277,14 +277,14 @@ main {
 .header-container {
     display: flex;
     align-items: center;
-    gap: 20px; 
-    flex-wrap: wrap; 
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
 
 .button-container {
     display: flex;
-    gap: 10px; 
+    gap: 10px;
 }
 
 
@@ -295,9 +295,10 @@ main {
     text-align: center;
     text-decoration: none;
     border: none;
-    border-radius: 0; 
+    border-radius: 0;
     font-size: 16px;
     font-weight: bold;
+    opacity: 1;
     cursor: pointer;
 }
 
@@ -307,12 +308,12 @@ main {
 
 @media (max-width: 600px) {
     .header-container {
-        flex-direction: column; 
-        align-items: flex-start; 
+        flex-direction: column;
+        align-items: flex-start;
     }
-    
+
     .button-container {
-        flex-wrap: wrap; 
+        flex-wrap: wrap;
     }
 }
 
@@ -324,7 +325,8 @@ main {
 
 #fireMessages {
     font-weight: bold;
-    margin-bottom: 20px; /* Adjust the value as needed */
+    margin-bottom: 20px;
+    /* Adjust the value as needed */
 }
 
 #incidentCountCell img {
@@ -370,4 +372,71 @@ main {
 #icon-category-cell span {
     display: block;
     margin-top: 5px;
+}
+
+#footer {
+    padding: 0;
+}
+
+#pageFoot .container.grid {
+    gap: 5px;
+    /* Adjust the gap between grid items */
+}
+
+#pageFoot article {
+    padding: 5px;
+    /* Adjust the padding inside each article */
+    margin: 0;
+    /* Remove margin around each article */
+}
+
+#pageFoot aside ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    /* Remove default list styling */
+}
+
+#pageFoot aside ul li {
+    padding: 2px 0;
+    /* Adjust the padding inside each list item */
+    margin: 0;
+    /* Remove margin around each list item */
+}
+
+#pageFoot aside ul li button {
+    padding: 5px 10px;
+    /* Adjust the padding inside the button */
+    margin: 0;
+    /* Remove margin around the button */
+}
+
+.calendar-widget {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+}
+.event {
+    margin-bottom: 10px;
+}
+.event-title {
+    font-weight: bold;
+}
+.event-date-time, .event-location {
+    font-size: 0.9em;
+    color: #555;
+}
+
+.elementToProof {
+    all: unset !important; 
+    display: block;
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+    color: var(--color);
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
 }
