@@ -38,6 +38,10 @@
     }
 }
 
+article {
+    scroll-margin-top: 80px; /* Adjust this value to match the height of your navbar */
+}
+
 /* Default grid layout for summary cards */
 .summary-grid {
     display: grid;
@@ -50,8 +54,10 @@
     .summary-grid {
         grid-template-columns: repeat(2, 1fr); /* 2 columns for screens below 1500px */
     }
+    .pageFoot {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for screens below 1500px */
+    }
 }
-
 
 /* General Styles */
 body {
@@ -228,10 +234,10 @@ main {
     gap: 5px;
 }
 
-#pageFoot article {
+/* #pageFoot article {
     padding: 5px;
     margin: 0;
-}
+} */
 
 #pageFoot aside ul {
     padding: 0;
@@ -247,6 +253,10 @@ main {
 #pageFoot aside ul li button {
     padding: 5px 10px;
     margin: 0;
+}
+
+#pageFoot img {
+    max-height: 40px;
 }
 
 /* Header and Button Container Styles */
