@@ -1,36 +1,61 @@
 function extractFields(description) {
+  const alertLevelMatch = description.match(/ALERT LEVEL: ([^<]*)/);
+  const locationMatch = description.match(/LOCATION: ([^<]*)/);
+  const councilAreaMatch = description.match(/COUNCIL AREA: ([^<]*)/);
   const statusMatch = description.match(/STATUS: ([^<]*)/);
   const typeMatch = description.match(/TYPE: ([^<]*)/);
+  const fireMatch = description.match(/FIRE: ([^<]*)/);
+  const sizeMatch = description.match(/SIZE: ([^<]*)/);
+  const responsibleAgencyMatch = description.match(
+    /RESPONSIBLE AGENCY: ([^<]*)/
+  );
   const updatedMatch = description.match(/UPDATED: ([^<]*)/);
 
-  const status = statusMatch ? statusMatch[1] : "N/A";
-  const type = typeMatch ? typeMatch[1] : "N/A";
-  const updated = updatedMatch ? updatedMatch[1] : "N/A";
+  const alertLevel = alertLevelMatch ? alertLevelMatch[1].trim() : "N/A";
+  const location = locationMatch ? locationMatch[1].trim() : "N/A";
+  const councilArea = councilAreaMatch ? councilAreaMatch[1].trim() : "N/A";
+  const status = statusMatch ? statusMatch[1].trim() : "N/A";
+  const type = typeMatch ? typeMatch[1].trim() : "N/A";
+  const fire = fireMatch ? fireMatch[1].trim() : "N/A";
+  const size = sizeMatch ? sizeMatch[1].trim() : "N/A";
+  const responsibleAgency = responsibleAgencyMatch
+    ? responsibleAgencyMatch[1].trim()
+    : "N/A";
+  const updated = updatedMatch ? updatedMatch[1].trim() : "N/A";
 
-  return { status, type, updated };
+  return {
+    alertLevel,
+    location,
+    councilArea,
+    status,
+    type,
+    fire,
+    size,
+    responsibleAgency,
+    updated,
+  };
 }
 
 function populateFireInfoTable(data) {
   const fireInfoTableContainer = document.getElementById(
     "fireInfoTableContainer"
   );
-  //   let tableHTML = `
-  //         <table>
-  //             <thead>
-  //                 <tr>
-  //                     <th>Alert Level</th>
-  //                     <th>Incident</th>
-  //                     <th>Details</th>
-  //                 </tr>
-  //             </thead>
-  //             <tbody>
-  //     `;
 
   let tableHTML = "";
 
   data.features.forEach((feature) => {
     const { title, category, description } = feature.properties;
-    const { status, type, updated } = extractFields(description);
+    const {
+      alertLevel,
+      location,
+      councilArea,
+      status,
+      type,
+      fire,
+      size,
+      responsibleAgency,
+      updated,
+    } = extractFields(description);
     let iconUrl;
 
     if (category.includes("Advice")) {
@@ -44,21 +69,26 @@ function populateFireInfoTable(data) {
     }
 
     tableHTML += `
-                <article class="card">
-                    <header class="card-header">
-                        <img src="${iconUrl}" alt="${category}" class="icon-category" />
-                        <a href="https://www.rfs.nsw.gov.au/fire-information/fires-near-me" target="_blank">${title}</a>
-                    
-                    </header>
-                   
-                        <ul>
-                            <li>${status}</li>
-                            <li>${type}</li>
-                        
-                        </ul>
-                
-                    <footer>${updated}</footer>
-                </article>
+<article class="feature-card compact">
+<div class="compact-header">
+<span id="feature-card-header-span">
+<img src="${iconUrl}" alt="${alertLevel}" class="cardIcon">
+${status}
+</span>
+<p class="compact-card-heading">${feature.properties.title}</p>
+</div>
+ <div class="card-content">
+<p>${location}</p>
+      <div class="three-column-grid">
+      <p>${councilArea}</p>
+      <p>${type}</p>
+      <p>${size}</p>
+    </div>
+    </div>
+    <div>
+   <p class="align-bottom">${responsibleAgency} Updated ${updated}</p>
+   </div>
+</article>
             `;
   });
 
@@ -82,7 +112,7 @@ function initMap() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        'X-Request-ID': 'Get-Mapbox-Token', // Custom header to identify the request
+        "X-Request-ID": "Get-Mapbox-Token", // Custom header to identify the request
       },
       body: JSON.stringify({ request: "mapbox-token" }),
     }
@@ -171,9 +201,9 @@ function initMap() {
       fetch(targetUrl, {
         method: "GET",
         headers: {
-          'X-Request-ID': "Get-Fire-Incidents", // Custom header to identify the request
-          'Content-Type': 'application/json'
-        }
+          "X-Request-ID": "Get-Fire-Incidents", // Custom header to identify the request
+          "Content-Type": "application/json",
+        },
       })
         .then((response) => response.json())
         .then((data) => {
@@ -186,8 +216,10 @@ function initMap() {
 
           // Check if the current URL is localhost:3000
           const isTest =
-          (window.location.hostname === "localhost" && window.location.port === "3000") ||
-          window.location.href === "https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net/";
+            (window.location.hostname === "localhost" &&
+              window.location.port === "3000") ||
+            window.location.href ===
+              "https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net/";
 
           // Filter features that contain "COUNCIL AREA: Queanbeyan-Palerang" or "COUNCIL AREA: ACT" in the description
           const filteredFeatures = isTest
@@ -234,16 +266,71 @@ function initMap() {
                 markers.addLayer(marker); // Add marker to the feature group
                 return marker;
               },
+
+              //Create a nice card for each clicked feature.
+
               onEachFeature: function (feature, layer) {
                 if (feature.properties && feature.properties.title) {
-                  layer.bindPopup(
-                    "<h3>" +
-                      feature.properties.title +
-                      "</h3>" +
-                      "<p>" +
-                      feature.properties.description +
-                      "</p>"
-                  );
+                  // Deconstruct the description into key-value pairs
+
+                  const description = feature.properties.description;
+                  const {
+                    alertLevel,
+                    location,
+                    councilArea,
+                    status,
+                    type,
+                    fire,
+                    size,
+                    responsibleAgency,
+                    updated,
+                  } = extractFields(description);
+
+                  // Define a mapping of alert levels to icon URLs
+                  const alertLevelIcons = {
+                    "Not Applicable": "/Images/other.png",
+                    Advice: "/Images/advice.png",
+                    "Watch and Act": "/Images/watch-and-act.png",
+                    "Emergency Warning": "/Images/emergency-warning.png",
+                  };
+
+                  // Get the icon URL for the alert level
+                  const alertIconUrl =
+                    alertLevelIcons[alertLevel] ||
+                    alertLevelIcons["Not Applicable"];
+
+                  // Check if the image exists
+                  const img = new Image();
+                  img.src = alertIconUrl;
+                  img.onerror = function () {
+                    console.error(`Image not found: ${alertIconUrl}`);
+                    img.src = alertLevelIcons["Not Applicable"]; // Fallback to default icon
+                  };
+
+                  // Create a nicely formatted card
+
+                  const cardHTML = `
+                  <article class="feature-card compact">
+                  <div class="compact-header">
+                  <span id="feature-card-header-span">
+                  <img src="${alertIconUrl}" alt="${alertLevel}" class="cardIcon"> ${status}</span>
+                  <p>${feature.properties.title}</p>
+                  </div>
+                  <div class="card-content">
+                  <p>${location}</p>
+                  <div class="three-column-grid">
+                  <p>${councilArea}</p>
+                  <p>${type}</p>
+                  <p>${size}</p>
+                  </div>
+                  </div>
+                  <div>
+                  <p class="align-bottom">${responsibleAgency} Updated ${updated}</p>
+                  </div>
+                  </article>
+                  `;
+                  // Bind the formatted card to the popup
+                  layer.bindPopup(cardHTML);
                 }
               },
             }
@@ -288,12 +375,6 @@ function initMap() {
                         `;
           }
 
-
-
-
-
-  
-
           tableHTML += "</table>";
           incidentCountCell.innerHTML = tableHTML;
 
@@ -310,20 +391,14 @@ function initMap() {
             [-35.26165168903826, 149.43974909148088],
             { icon: stationIcon }
           );
-          stationMarker.bindPopup("<h4>Bungendore RFS Station</h4>");
-          markers.addLayer(stationMarker); // Add the station marker to the markers layer group
 
-          // Add custom CSS for circular background
-          var style = document.createElement("style");
-          style.innerHTML = `
-                        .station-icon {
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            box-sizing: border-box; /* Include padding in the element's total width and height */
-                        }
-                    `;
-          document.head.appendChild(style);
+          // Get the station card content
+          var stationCardContent =
+            document.getElementById("stationCard").innerHTML;
+
+          stationMarker.bindPopup(stationCardContent);
+
+          markers.addLayer(stationMarker); // Add the station marker to the markers layer group
 
           // Check if there are any markers before fitting bounds
           if (markers.getLayers().length > 0) {

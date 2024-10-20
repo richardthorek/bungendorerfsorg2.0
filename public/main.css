@@ -1,4 +1,3 @@
-
 :root {
     --margin: 0;
     --padding: 0;
@@ -14,7 +13,8 @@
     --rfs-blue: #215e9e;
     --rfs-green: #008550;
     --rfs-logo: url('/Images/logo-dark.png');
-    --header-background:rgb(255, 255, 255, 0.7);
+    --header-background: rgb(255, 255, 255, 0.7);
+    --header-background-shade: rgb(231, 234, 240, 0.7);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,32 +30,12 @@
         --rfs-amber: #da992c;
         --rfs-blue: #17406c;
         --rfs-green: #01633c;
-        --header-background:  rgb(24, 28, 37, 0.7);
+        --header-background: rgb(24, 28, 37, 0.7);
+        --header-background-shade: rgba(15, 17, 23, 0.7);
     }
 
     .hero .logo {
         background: var(--logo-dark) no-repeat center center/contain;
-    }
-}
-
-article {
-    scroll-margin-top: 80px; /* Adjust this value to match the height of your navbar */
-}
-
-/* Default grid layout for summary cards */
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 columns by default */
-    gap: 1rem; /* Add some space between the cards */
-}
-
-/* Responsive grid layout for screens below 1500px */
-@media (max-width: 1500px) {
-    .summary-grid {
-        grid-template-columns: repeat(2, 1fr); /* 2 columns for screens below 1500px */
-    }
-    .pageFoot {
-        grid-template-columns: repeat(2, 1fr); /* 2 columns for screens below 1500px */
     }
 }
 
@@ -70,8 +50,12 @@ html {
     scroll-behavior: smooth;
 }
 
-h3, .colorheading {
+.whiteText {
     color: whitesmoke;
+}
+
+article {
+    scroll-margin-top: 80px; /* Adjust this value to match the height of your navbar */
 }
 
 /* Hero Section */
@@ -135,25 +119,6 @@ h3, .colorheading {
     background-color: var(--rfs-green);
 }
 
-/* Leaflet Popup Styles */
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-    background: var(--pico-card-background-color) !important;
-    color: var(--pico-card-text-color) !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.leaflet-popup-content {
-    color: var(--pico-card-text-color);
-    margin: 0;
-    background: var(--pico-card-background-color);
-    padding: 1em;
-    border-radius: 4px;
-    font-family: var(--pico-font-family, Arial, sans-serif);
-    font-size: var(--pico-font-size, 1rem);
-    line-height: var(--pico-line-height, 1.5);
-}
-
 /* Leaflet Marker and Control Styles */
 .leaflet-marker-icon,
 .leaflet-control {
@@ -183,16 +148,13 @@ h3, .colorheading {
 
 .nav-logo {
     height: 100%;
-    max-height: 2em;
-    /* Adjust this value to match the height of the heading */
-    margin-right: 1em;
-    /* Adjust spacing as needed */
+    max-height: 2em; /* Adjust this value to match the height of the heading */
+    margin-right: 1em; /* Adjust spacing as needed */
     display: none;
 }
 
 .nav-logo.visible {
-    display: block;
-    /* Show the nav logo when it becomes visible */
+    display: block; /* Show the nav logo when it becomes visible */
 }
 
 /* Main Content Styles */
@@ -205,10 +167,8 @@ main {
 }
 
 .heading-background {
-    width: 100%;
-    /* Extend to full width */
-    background-color: var(--header-background);
-    /* 70% transparent background */
+    width: 100%; /* Extend to full width */
+    background-color: var(--header-background); /* 70% transparent background */
     padding: 1em;
     box-sizing: border-box;
     position: relative;
@@ -234,11 +194,6 @@ main {
     gap: 5px;
 }
 
-/* #pageFoot article {
-    padding: 5px;
-    margin: 0;
-} */
-
 #pageFoot aside ul {
     padding: 0;
     margin: 0;
@@ -261,7 +216,6 @@ main {
 
 /* Header and Button Container Styles */
 .header-container {
-   
     display: flex;
     align-items: center;
     gap: 20px;
@@ -289,17 +243,6 @@ main {
     background-color: darkred;
 }
 
-@media (max-width: 600px) {
-    .header-container {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .button-container {
-        flex-wrap: wrap;
-    }
-}
-
 /* Event Styles */
 .event {
     margin-bottom: 10px;
@@ -309,7 +252,8 @@ main {
     font-weight: bold;
 }
 
-.event-date-time, .event-location {
+.event-date-time,
+.event-location {
     font-size: 0.9em;
 }
 
@@ -337,9 +281,7 @@ main {
     align-items: center;
     width: 32px;
     height: 32px;
-    /* margin: 0 8px; */
 }
-
 
 /* Miscellaneous Styles */
 .invisible-cell td {
@@ -385,6 +327,24 @@ main {
 }
 
 /* Responsive Styles */
+@media (max-width: 1500px) {
+    .summary-grid,
+    .pageFoot {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for screens below 1500px */
+    }
+}
+
+@media (max-width: 600px) {
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .button-container {
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 500px) {
     .nav-logo,
     .summary-card {
@@ -396,4 +356,118 @@ main {
     .summaryCard {
         display: none !important;
     }
+}
+
+/* Leaflet Popup Styles */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: var(--pico-card-background-color) !important;
+    color: var(--pico-card-text-color) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    margin: 0;
+}
+
+.leaflet-popup-content p,
+.leaflet-popup-content small {
+    color: var(--pico-card-text-color);
+    margin: 0 !important;
+    background: var(--pico-card-background-color);
+    font-family: var(--pico-font-family, Arial, sans-serif);
+    border-radius: 10px;
+    font-size: var(--pico-font-size, 1rem);
+    line-height: var(--pico-line-height, 1.5);
+}
+
+/* Compact Feature Card Styles */
+.feature-card.compact {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 0.5rem; /* Reduced padding */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Reduced shadow */
+    margin-bottom: 0.5rem; /* Reduced margin */
+}
+
+.feature-card.compact header {
+    align-items: center;
+    margin-bottom: 0.5rem; /* Reduced margin */
+    background-color: none !important;
+}
+
+
+
+.feature-card.compact h6 {
+    margin-top: 5px;
+    font-size: 0.9rem; /* Smaller font size */
+    align-items: right;
+}
+
+.feature-card.compact .card-content {
+    margin-bottom: 0.7rem; /* Reduced margin */
+}
+
+.feature-card.compact p {
+    margin: 0.25rem 0; /* Reduced margin */
+    font-size: 0.7rem; /* Smaller font size */
+}
+
+.feature-card.compact footer {
+    margin-top: 0.5rem; /* Reduced margin */
+    font-size: 0.7rem; /* Smaller font size */
+    background-color: none !important;
+}
+
+.feature-card.compact .align-bottom {
+    align-content: bottom;
+}
+
+/* Add faint dividing lines between each div */
+.feature-card.compact > div {
+    border-bottom: 1px solid #eee; /* Faint dividing line */
+    padding-bottom: 0.5rem; /* Add padding to avoid text touching the border */
+    margin-bottom: 0.5rem; /* Add margin to create space between divs */
+}
+
+.feature-card.compact > div:last-child {
+    border-bottom: none; /* Remove the border from the last div */
+    margin-bottom: 0; /* Remove the margin from the last div */
+}
+
+/* Three-column grid for councilArea, type, and size */
+.three-column-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    gap: 0.5rem; /* Space between columns */
+}
+
+.three-column-grid p {
+    margin: 0; /* Remove margin for grid items */
+    font-size: 0.875rem; /* Smaller font size */
+}
+
+.compact-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Distribute space between items */
+}
+
+.compact-header p {
+    margin: 0;
+    font-size: 1rem; /* Smaller font size */
+    text-align: right; /* Align text to the right */
+    margin-left: auto; /* Push the element to the right */
+    font-variant-caps: all-small-caps; /* Small caps text */
+    font-weight: bold; /* Bold text */
+}
+
+#feature-card-header-span {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem; /* Smaller font size */
+    font-variant-caps: all-petite-caps;
+    font-weight: bold;
+    background: var(--header-background-shade); /* Add background color */
+    padding: 0.2rem 0.4rem; /* Add some padding for better appearance */
+    border-radius: 4px; /* Optional: Add border-radius for rounded corners */
+    margin-right: auto; /* Push the span to the left */
 }
