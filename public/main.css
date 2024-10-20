@@ -2,7 +2,7 @@
     --margin: 0;
     --padding: 0;
     --hero-height: 60vh;
-    --hero-bg: url('/Images/hero2.jpg');
+    --hero-bg: url('/Images/hero4.jpeg');
     --prepare-bg-light: url('https://bungendorerfs.org/images/prepare.jpg');
     --info-bg-light: url('https://bungendorerfs.org/images/info.jpg');
     --membership-bg-light: url('https://bungendorerfs.org/images/membership.jpg');
@@ -470,4 +470,23 @@ main {
     padding: 0.2rem 0.4rem; /* Add some padding for better appearance */
     border-radius: 4px; /* Optional: Add border-radius for rounded corners */
     margin-right: auto; /* Push the span to the left */
+}
+
+.parallax-container {
+    position: relative;
+    overflow: hidden;
+    height: 33vh; /* 1/3 of the viewport height */
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.parallax-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; /* Ensure the image covers the container */
+    object-fit: cover; /* Maintain aspect ratio and cover the container */
+    transform: translateY(0);
+    will-change: transform;
 }
