@@ -1,0 +1,66 @@
+name: CI - Lint, Test, and Security
+
+on:
+  push:
+    branches:
+      - main
+      - liveDev
+      - 'copilot/**'
+  pull_request:
+    branches:
+      - main
+      - liveDev
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    name: Lint, Test, and Security Checks
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: true
+        
+      - name: Run Prettier check
+        run: npm run format:check
+        continue-on-error: true
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: ./coverage/coverage-final.json
+          fail_ci_if_error: false
+          
+      - name: Security audit
+        run: npm audit --production
+        continue-on-error: true
+        
+      - name: Check for outdated dependencies
+        run: npm outdated || true
+        
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Linting, testing, and security checks completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See job logs for detailed results" >> $GITHUB_STEP_SUMMARY

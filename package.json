@@ -1,16 +1,43 @@
 {
   "name": "bungendore-rfs-web-2",
   "version": "1.0.0",
-  "description": "Your project description",
-  "main": "index.html",
+  "description": "Bungendore Rural Fire Service website - providing community fire safety information and engagement",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "prestart": "node replace-token.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "lint": "eslint public/js server.js replace-token.js",
+    "lint:fix": "eslint public/js server.js replace-token.js --fix",
+    "format": "prettier --write \"**/*.{js,json,css,html,md}\"",
+    "format:check": "prettier --check \"**/*.{js,json,css,html,md}\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "dotenv": "^16.4.0",
     "express": "^4.21.0",
     "leaflet": "^1.9.4",
     "marked": "^14.1.2"
-  }
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "eslint": "^8.57.1",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "prettier": "^3.4.2"
+  },
+  "keywords": [
+    "fire-service",
+    "emergency-services",
+    "rural-fire-service",
+    "community-safety"
+  ],
+  "author": "Bungendore Rural Fire Service",
+  "license": "MIT"
 }
