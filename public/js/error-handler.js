@@ -27,7 +27,7 @@ function showErrorMessage(containerId, message, showRetry = true) {
     ">
       <i class="fas fa-exclamation-triangle" style="color: var(--rfs-error-color, #c33); margin-right: 0.5rem;"></i>
       <p style="margin: 0.5rem 0; color: var(--rfs-error-color, #c33); font-weight: bold;">${message}</p>
-      ${showRetry ? '<button onclick="location.reload()" style="margin-top: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; border: 1px solid var(--rfs-error-border, #c33); background-color: white; color: var(--rfs-error-color, #c33); border-radius: 4px;">Retry</button>' : ''}
+      ${showRetry ? "<button onclick=\"location.reload()\" style=\"margin-top: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; border: 1px solid var(--rfs-error-border, #c33); background-color: white; color: var(--rfs-error-color, #c33); border-radius: 4px;\">Retry</button>" : ""}
     </div>
   `;
 
@@ -76,10 +76,10 @@ async function fetchWithErrorHandling(url, options = {}, containerId = null) {
     }
 
     // Determine content type and parse accordingly
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
       return await response.json();
-    } else if (contentType && contentType.includes('application/xml')) {
+    } else if (contentType && contentType.includes("application/xml")) {
       return await response.text();
     } else {
       return await response.text();
@@ -91,7 +91,7 @@ async function fetchWithErrorHandling(url, options = {}, containerId = null) {
     if (containerId) {
       showErrorMessage(
         containerId,
-        'Unable to load data. Please check your connection and try again.',
+        "Unable to load data. Please check your connection and try again.",
         true
       );
     }
@@ -106,15 +106,15 @@ async function fetchWithErrorHandling(url, options = {}, containerId = null) {
  * @returns {string} - User-friendly error message
  */
 function getUserFriendlyErrorMessage(error) {
-  if (error.message.includes('Failed to fetch')) {
-    return 'Unable to connect to the server. Please check your internet connection.';
-  } else if (error.message.includes('HTTP error! status: 404')) {
-    return 'The requested information could not be found.';
-  } else if (error.message.includes('HTTP error! status: 500')) {
-    return 'Server error. Please try again later.';
-  } else if (error.message.includes('HTTP error! status: 403')) {
-    return 'Access denied. Please contact support if this persists.';
+  if (error.message.includes("Failed to fetch")) {
+    return "Unable to connect to the server. Please check your internet connection.";
+  } else if (error.message.includes("HTTP error! status: 404")) {
+    return "The requested information could not be found.";
+  } else if (error.message.includes("HTTP error! status: 500")) {
+    return "Server error. Please try again later.";
+  } else if (error.message.includes("HTTP error! status: 403")) {
+    return "Access denied. Please contact support if this persists.";
   } else {
-    return 'An unexpected error occurred. Please try again.';
+    return "An unexpected error occurred. Please try again.";
   }
 }

@@ -16,7 +16,7 @@ function initMap() {
         `https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-day-v4/tiles/{z}/{x}/{y}?access_token=${accessToken}`,
         {
           attribution:
-            '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> contributors',
+            "&copy; <a href=\"https://www.mapbox.com/about/maps/\">Mapbox</a> contributors",
         }
       );
 
@@ -24,7 +24,7 @@ function initMap() {
         `https://api.mapbox.com/styles/v1/mapbox/navigation-guidance-night-v4/tiles/{z}/{x}/{y}?access_token=${accessToken}`,
         {
           attribution:
-            '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> contributors',
+            "&copy; <a href=\"https://www.mapbox.com/about/maps/\">Mapbox</a> contributors",
         }
       );
 
@@ -55,7 +55,7 @@ function initMap() {
         } catch (error) {
           console.error("Error creating icon:", error);
           return L.divIcon({
-            html: '<i class="fa fa-fire" style="font-size: 32px; color: grey;"></i>',
+            html: "<i class=\"fa fa-fire\" style=\"font-size: 32px; color: grey;\"></i>",
             iconSize: [32, 32],
             className: "custom-div-icon",
           });
@@ -64,7 +64,7 @@ function initMap() {
 
       // Fallback icon in case custom icons fail
       const defaultIcon = L.divIcon({
-        html: '<i class="fa fa-fire" style="font-size: 32px; color: grey;"></i>',
+        html: "<i class=\"fa fa-fire\" style=\"font-size: 32px; color: grey;\"></i>",
         iconSize: [32, 32],
         className: "custom-div-icon",
       });
@@ -113,12 +113,12 @@ function initMap() {
           const filteredFeatures = isTest
             ? data.features
             : data.features.filter(
-                (feature) =>
-                  feature.properties &&
+              (feature) =>
+                feature.properties &&
                   feature.properties.description &&
                   (feature.properties.description.includes("COUNCIL AREA: Queanbeyan-Palerang") ||
                     feature.properties.description.includes("COUNCIL AREA: ACT"))
-              );
+            );
 
           // Populate the table with filtered features
           populateFireInfoTable({ features: filteredFeatures });

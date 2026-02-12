@@ -50,15 +50,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Replace the submit button text with a span indicating busy state
     const originalButtonText = submitButton.innerHTML;
-    submitButton.innerHTML = '<span aria-busy="true"></span>';
+    submitButton.innerHTML = "<span aria-busy=\"true\"></span>";
 
     fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      }
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
     )
       .then((response) => {
         if (!response.ok) {
@@ -129,7 +129,7 @@ function validateContactForm(data) {
     // Australian phone number format: allows various formats
     // Examples: 0412345678, +61412345678, (02) 1234 5678, 02-1234-5678
     const phonePattern = /^(\+?61|0)[2-478](?:[ -]?[0-9]){8}$/;
-    const cleanPhone = data.phone.replace(/[\s()-]/g, ''); // Remove spaces, hyphens, parentheses
+    const cleanPhone = data.phone.replace(/[\s()-]/g, ""); // Remove spaces, hyphens, parentheses
     
     if (!phonePattern.test(cleanPhone)) {
       errors.push("Please enter a valid Australian phone number.");
@@ -158,13 +158,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Add phone validation on input
-  const phoneInput = document.querySelector('input[name="phone"]');
+  const phoneInput = document.querySelector("input[name=\"phone\"]");
   if (phoneInput) {
     phoneInput.addEventListener("input", () => {
       const phoneValue = phoneInput.value;
       if (phoneValue.trim()) {
         const phonePattern = /^(\+?61|0)[2-478](?:[ -]?[0-9]){8}$/;
-        const cleanPhone = phoneValue.replace(/[\s()-]/g, '');
+        const cleanPhone = phoneValue.replace(/[\s()-]/g, "");
         phoneInput.setAttribute("aria-invalid", !phonePattern.test(cleanPhone));
       } else {
         phoneInput.removeAttribute("aria-invalid");

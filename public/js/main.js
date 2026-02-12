@@ -94,15 +94,16 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleNavLogo(); // Initial check
   }
 
+  // Helper function for bushfire danger period check
+  function isBushfireDangerPeriod() {
+    const now = new Date();
+    const month = now.getMonth() + 1; // getMonth() is zero-based
+    return month >= 10 || month <= 3;
+  }
+
   // Bushfire Danger Period Content
   const BFDPContent = document.getElementById("BFDPContent");
   if (BFDPContent) { // Check if element exists
-    function isBushfireDangerPeriod() {
-      const now = new Date();
-      const month = now.getMonth() + 1; // getMonth() is zero-based
-      return month >= 10 || month <= 3;
-    }
-
     const inDangerPeriod = isBushfireDangerPeriod();
     const statusText = inDangerPeriod
       ? "We are currently in the bushfire danger period. If you would like to light a fire any larger than a cooking fire you must;"
@@ -183,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
               fireDangerMessage.textContent = ratingInfo.FireBehaviour; // Populate the new message element
 
               if (fireDangerTableContainer) {
-                fireDangerTableContainer.innerHTML = ''; // Clear out old table if it exists
+                fireDangerTableContainer.innerHTML = ""; // Clear out old table if it exists
               }
 
               const keyMessage = ratingInfo.KeyMessage;

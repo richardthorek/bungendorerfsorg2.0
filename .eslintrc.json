@@ -19,7 +19,9 @@
     "showLoadingMessage": "readonly",
     "getUserFriendlyErrorMessage": "readonly",
     "fetchWithErrorHandling": "readonly",
-    "populateFireInfoTable": "readonly"
+    "populateFireInfoTable": "readonly",
+    "extractFields": "readonly",
+    "getIconUrl": "readonly"
   },
   "rules": {
     "indent": ["error", 2],
