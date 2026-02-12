@@ -1,7 +1,9 @@
 :root {
     --margin: 0;
     --padding: 0;
-    --hero-height: calc(100vh - 55px); /* Adjusted for smaller header height */
+    --hero-height: 60vh; /* Reduced from calc(100vh - 55px) for better content visibility */
+    --hero-min-height: 500px; /* Minimum height to ensure content is always readable */
+    --hero-max-height: 700px; /* Maximum height to prevent excessive hero on large screens */
     --hero-bg: url('/Images/hero4.jpeg');
     --prepare-bg-light: url('https://bungendorerfs.org/images/prepare.jpg');
     --info-bg-light: url('https://bungendorerfs.org/images/info.jpg');
@@ -37,16 +39,26 @@
     /* Typography & Spacing */
     /* Style Guide specifies "Public Sans". Ensure this font is available via @import or local files. */
     --pico-font-family: 'Public Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    --pico-font-size: 1rem;
+    --pico-font-size: 1rem; /* 16px base */
     --pico-line-height: 1.6;
-    --pico-border-radius: 8px; 
+    --pico-border-radius: 8px;
 
-    --space-xs: 0.25rem;
-    --space-sm: 0.5rem;
-    --space-md: 1rem;
-    --space-lg: 1.5rem;
-    --space-xl: 2rem;
-    --space-xxl: 3rem;
+    /* Enhanced Spacing System (Phase 3) */
+    --space-xs: 0.25rem;  /* 4px */
+    --space-sm: 0.5rem;   /* 8px */
+    --space-md: 1rem;     /* 16px - Standard */
+    --space-lg: 1.5rem;   /* 24px */
+    --space-xl: 2rem;     /* 32px */
+    --space-xxl: 3rem;    /* 48px */
+    --space-xxxl: 4rem;   /* 64px - Section spacing */
+
+    /* Typography Scale (Phase 3) */
+    --font-size-h1: 3rem;      /* 48px - Page titles */
+    --font-size-h2: 2.25rem;   /* 36px - Section titles */
+    --font-size-h3: 1.5rem;    /* 24px - Card titles */
+    --font-size-h4: 1.25rem;   /* 20px - Subsection titles */
+    --font-size-body: 1rem;    /* 16px - Body text */
+    --font-size-small: 0.875rem; /* 14px - Small text */
 
     /* Card Specifics (Review against guide's visual language if applicable) */
     --pico-card-background-color: var(--rfs-white); /* Default to white, light grey was too dark with new greys */
@@ -55,7 +67,7 @@
     --pico-card-border-radius: var(--pico-border-radius);
 }
 
-/* Card Animations */
+/* Card Animations and Micro-interactions (Phase 3) */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -71,14 +83,73 @@ article,
 .content-section,
 .summaryCard {
     animation: fadeIn 0.5s ease-out forwards;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 article:hover,
 .content-section:hover,
 .summaryCard:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+}
+
+/* Enhanced focus indicators for accessibility (Phase 3) */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 3px solid var(--rfs-core-red);
+    outline-offset: 2px;
+}
+
+/* Button hover effects with subtle scale (Phase 3) */
+button,
+.custom-button,
+.tab-btn {
+    transition: all 0.2s ease;
+}
+
+button:hover,
+.custom-button:hover {
+    transform: translateY(-2px) scale(1.02);
+}
+
+button:active,
+.custom-button:active {
+    transform: translateY(0) scale(1);
+}
+
+/* Link underline animation (Phase 3) */
+a {
+    position: relative;
+    text-decoration: none;
+}
+
+a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: var(--rfs-core-red);
+    transition: width 0.3s ease;
+}
+
+a:hover::after {
+    width: 100%;
+}
+
+/* Remove underline animation for specific elements */
+.tab-btn::after,
+.accordion-header::after,
+button::after,
+.custom-button::after,
+.dashboard-action-btn::after,
+.mobile-action-btn::after,
+.quick-action-btn::after {
+    display: none;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -179,6 +250,7 @@ article:last-child,
 
 /* Typography */
 h1,
+h2,
 h3,
 h4,
 h5,
@@ -188,16 +260,17 @@ h6 {
     margin-bottom: var(--space-md);
     font-weight: 700;
     color: var(--text-color-dark);
+    line-height: 1.2;
 }
 
 h1 {
-    font-size: 2.8rem; /* Slightly larger H1 */
+    font-size: var(--font-size-h1); /* 3rem / 48px */
     color: var(--text-color-dark); /* Default H1 color to text-color-dark */
 }
 
 /* General h2, for those not acting as section banners */
 h2 {
-    font-size: 2.2rem;
+    font-size: var(--font-size-h2); /* 2.25rem / 36px */
     margin-top: var(--space-lg); /* Retain top margin for standalone h2s */
     margin-bottom: var(--space-lg);
     color: var(--text-color-dark);
@@ -245,7 +318,7 @@ h2 {
 }
 
 h3 {
-    font-size: 1.75rem;
+    font-size: var(--font-size-h3); /* 1.5rem / 24px */
     color: var(--text-color-dark); /* Changed from --rfs-dark-grey */
 }
 
@@ -264,7 +337,7 @@ article.summaryCard > header.green {
     margin-bottom: var(--space-lg); /* Space after the header, before content below it */
     border-bottom: none; /* Remove Pico's default border for article > header */
     border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0; /* Top corners rounded */
-    
+
     /* Negative margins to make the header flush with the parent article's padding edges */
     /* The parent 'article' or 'summaryCard' should have 'overflow: hidden' and 'padding: var(--pico-card-padding)' */
     margin-left: calc(-1 * var(--pico-card-padding));
@@ -275,7 +348,7 @@ article.summaryCard > header.green {
 /* Additional styles for green headers */
 article > header.green,
 article.summaryCard > header.green {
-    display: flex; 
+    display: flex;
     justify-content: space-between;
     align-items: center;
 }
@@ -322,7 +395,7 @@ article > header.lime h3,
 article.summaryCard > header.lime h3 {
     color: inherit; /* Inherits black from parent header.lime */
     margin-bottom: 0;
-    font-size: 1.25rem;
+    font-size: var(--font-size-h4); /* 1.25rem */
 }
 
 /* Shared styles for h3 within explicitly colored headers (red, amber, blue, green) */
@@ -332,11 +405,11 @@ article > header.blue h3, article.summaryCard > header.blue h3,
 article > header.green h3, article.summaryCard > header.green h3 {
     color: inherit; /* Inherit color from parent header */
     margin-bottom: 0; /* Adjust as needed */
-    font-size: 1.25rem; /* Consistent h3 size */
+    font-size: var(--font-size-h4); /* 1.25rem - Consistent h3 size in headers */
 }
 
 h4 {
-    font-size: 1.5rem;
+    font-size: var(--font-size-h4); /* 1.25rem / 20px */
     color: var(--text-color-dark); /* Changed from --rfs-dark-grey */
 }
 
@@ -511,12 +584,43 @@ a:focus {
 .hero {
     position: relative;
     height: var(--hero-height);
+    min-height: var(--hero-min-height);
+    max-height: var(--hero-max-height);
     background: var(--hero-bg) no-repeat center center/cover;
     display: flex;
     align-items: center; /* Vertically center the hgroup */
     justify-content: flex-start; /* Horizontally align hgroup to the left */
     text-align: left; /* Left align text within hgroup */
     padding: var(--space-lg) var(--space-xxl); /* Add more horizontal padding */
+}
+
+.hero::after {
+    content: '';
+    position: absolute;
+    bottom: var(--space-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: bounce 2s infinite;
+    pointer-events: none;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    40% {
+        transform: translateX(-50%) translateY(-10px);
+    }
+    60% {
+        transform: translateX(-50%) translateY(-5px);
+    }
 }
 
 .hero hgroup.heading-background {
