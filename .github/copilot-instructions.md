@@ -216,7 +216,7 @@ Follows component-based organization with:
 Before adding new features, address these critical issues:
 
 1. **Remove Token Logging** (Issue #3)
-   - Delete `console.log(accessToken)` statement from `replace-token.js`
+   - Remove all console logging of tokens in `replace-token.js`
    - Rotate Mapbox token after fix
 
 2. **Secure Azure Logic Apps URLs** (Issue #1)
