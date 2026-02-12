@@ -143,9 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch("/Content/AFDRSMessages.json")
       .then((response) => response.json())
       .then((fireDangerRatings) => {
-        fetch(
-          "https://prod-23.australiaeast.logic.azure.com:443/workflows/5db5283afc564a449079c0d2c1fe3622/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=WFE08wwCYaxwAvCQrRnLrUrVPbhC8VzyiPx9IZuHHkg"
-        )
+        fetch("/api/fire-danger")
           .then((response) => response.text())
           .then((data) => {
             const parser = new DOMParser();

@@ -32,9 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
 
-    fetch(
-      "https://prod-03.australiaeast.logic.azure.com:443/workflows/aa6b3f9f93d940dabfaa6d12a84080bc/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=SVh_1oD-jjy4E5BuxJZrY-Ng87jvC2Pg0IEP3s71fsY",
-      {
+    fetch("/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

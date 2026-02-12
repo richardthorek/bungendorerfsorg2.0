@@ -6,9 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeButton = document.getElementById("eventModalClose");
 
   // Fetch events data from the URL
-  fetch(
-    "https://prod-12.australiaeast.logic.azure.com:443/workflows/a975849d90b74eed9c08c780967fc18d/triggers/When_a_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=zRG6Cx6kxtdPpmuM4m5cSyhItIAAZhs-NqAa6WIF6Ts"
-  )
+  fetch("/api/calendar-events")
     .then((response) => response.json())
     .then((data) => {
       const events = data.value;
