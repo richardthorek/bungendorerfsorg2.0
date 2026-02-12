@@ -235,6 +235,38 @@
             </div>
 
 
+            <!-- Tabbed Content Navigation -->
+            <div class="content-tabs-container">
+                <!-- Tab Navigation (Desktop/Tablet) -->
+                <div class="tab-navigation" role="tablist">
+                    <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="fire-info-tab" data-tab="fire-info">
+                        <i class="fas fa-fire"></i>
+                        <span>Fire Information</span>
+                    </button>
+                    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="prepare-tab" data-tab="prepare">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Prepare</span>
+                    </button>
+                    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="membership-tab" data-tab="membership">
+                        <i class="fas fa-users"></i>
+                        <span>Membership</span>
+                    </button>
+                    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="events-tab" data-tab="events">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Events</span>
+                    </button>
+                </div>
+
+                <!-- Tab Content Panels -->
+                <div class="tab-content-container">
+                    <!-- Fire Information Tab -->
+                    <div class="tab-panel active" role="tabpanel" id="fire-info-tab" aria-labelledby="fire-info">
+                        <div class="accordion-header mobile-only" data-accordion="fire-info">
+                            <i class="fas fa-fire"></i>
+                            <span>Fire Information</span>
+                            <i class="fas fa-chevron-down accordion-icon"></i>
+                        </div>
+                        <div class="accordion-content" data-content="fire-info">
             <!-- Detailed sections for each topic with responsive grid -->
             <article id="info">
                 <header class="red">
@@ -247,7 +279,19 @@
                     <div id="map"></div>
                     <div id="fireInfoContent"></div>
                     <div id="fireInfoTableContainer" class="grid-container"></div>
+                </div>
+            </article>
+                        </div>
+                    </div>
 
+                    <!-- Prepare Tab -->
+                    <div class="tab-panel" role="tabpanel" id="prepare-tab" aria-labelledby="prepare">
+                        <div class="accordion-header mobile-only" data-accordion="prepare">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Prepare</span>
+                            <i class="fas fa-chevron-down accordion-icon"></i>
+                        </div>
+                        <div class="accordion-content" data-content="prepare">
                     <article id="prepare">
                         <header class="amber">
                             <h3>Prepare for Bushfires</h3>
@@ -273,7 +317,17 @@
                             </div>
                         </div>
                     </article>
+                        </div>
+                    </div>
 
+                    <!-- Membership Tab -->
+                    <div class="tab-panel" role="tabpanel" id="membership-tab" aria-labelledby="membership">
+                        <div class="accordion-header mobile-only" data-accordion="membership">
+                            <i class="fas fa-users"></i>
+                            <span>Membership</span>
+                            <i class="fas fa-chevron-down accordion-icon"></i>
+                        </div>
+                        <div class="accordion-content" data-content="membership">
                     <article id="membership">
                         <header class="blue">
                             <h3>Membership</h3>
@@ -287,6 +341,17 @@
                         </div>
 
                     </article>
+                        </div>
+                    </div>
+
+                    <!-- Events Tab -->
+                    <div class="tab-panel" role="tabpanel" id="events-tab" aria-labelledby="events">
+                        <div class="accordion-header mobile-only" data-accordion="events">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Events</span>
+                            <i class="fas fa-chevron-down accordion-icon"></i>
+                        </div>
+                        <div class="accordion-content" data-content="events">
                     <article id="events">
                         <header class="lime">
                             <h3>Upcoming Events</h3>
@@ -308,6 +373,10 @@
 
                         </div>
                     </article>
+                        </div>
+                    </div>
+                </div>
+            </div>
                 </div>
     </main>
 
@@ -397,6 +466,7 @@
 
 <!-- Load my own scripts -->
 <script src="js/emergency-dashboard.js" defer></script>
+<script src="js/tabs-accordion.js" defer></script>
 <script src="js/main.js" defer></script>
 <script src="js/scroll.js" defer></script>
 <script src="js/map.js" defer></script>

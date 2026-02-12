@@ -1000,6 +1000,247 @@ a:focus {
     }
 }
 
+/* Tabbed Content Navigation Styles */
+.content-tabs-container {
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+/* Tab Navigation (Desktop/Tablet) */
+.tab-navigation {
+    display: flex;
+    gap: 0;
+    border-bottom: 3px solid var(--rfs-light-grey);
+    margin-bottom: var(--space-lg);
+    background-color: var(--rfs-neutral-light);
+    border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.tab-btn {
+    flex: 1;
+    min-width: 150px;
+    padding: var(--space-md) var(--space-lg);
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-color-dark);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    position: relative;
+    margin-bottom: -3px;
+}
+
+.tab-btn i {
+    font-size: 1.2rem;
+}
+
+.tab-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--rfs-core-red);
+}
+
+.tab-btn.active {
+    color: var(--rfs-core-red);
+    border-bottom-color: var(--rfs-core-red);
+    background-color: var(--pico-card-background-color);
+}
+
+.tab-btn:focus {
+    outline: 2px solid var(--rfs-core-red);
+    outline-offset: -2px;
+}
+
+/* Tab Content Panels */
+.tab-content-container {
+    position: relative;
+    min-height: 400px;
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeInTab 0.3s ease-in;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeInTab {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Accordion Headers (Mobile Only) */
+.accordion-header {
+    display: none;
+}
+
+.mobile-only {
+    display: none;
+}
+
+/* Desktop: Show tabs, hide accordion headers */
+@media (min-width: 769px) {
+    .tab-navigation {
+        display: flex;
+    }
+
+    .accordion-header.mobile-only {
+        display: none !important;
+    }
+
+    .accordion-content {
+        display: block !important;
+    }
+}
+
+/* Mobile: Hide tabs, show accordion */
+@media (max-width: 768px) {
+    .tab-navigation {
+        display: none;
+    }
+
+    .tab-panel {
+        display: block !important;
+        border: 1px solid var(--rfs-light-grey);
+        border-radius: var(--pico-border-radius);
+        margin-bottom: var(--space-md);
+        background-color: var(--pico-card-background-color);
+    }
+
+    .accordion-header.mobile-only {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-md);
+        background-color: var(--rfs-neutral-light);
+        cursor: pointer;
+        border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+        gap: var(--space-sm);
+        transition: background-color 0.2s ease;
+    }
+
+    .accordion-header.mobile-only:hover {
+        background-color: var(--rfs-neutral-medium);
+    }
+
+    .accordion-header.mobile-only.active {
+        background-color: var(--rfs-core-red);
+        color: var(--text-color-light);
+        border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
+    }
+
+    .accordion-header.mobile-only i:first-child {
+        font-size: 1.3rem;
+    }
+
+    .accordion-header span {
+        flex: 1;
+    }
+
+    .accordion-icon {
+        transition: transform 0.3s ease;
+        font-size: 0.9rem;
+    }
+
+    .accordion-header.active .accordion-icon {
+        transform: rotate(180deg);
+    }
+
+    .accordion-content {
+        display: none;
+        padding: var(--space-md);
+        animation: slideDownAccordion 0.3s ease-out;
+    }
+
+    .accordion-content.active {
+        display: block;
+    }
+
+    @keyframes slideDownAccordion {
+        from {
+            opacity: 0;
+            max-height: 0;
+        }
+        to {
+            opacity: 1;
+            max-height: 2000px;
+        }
+    }
+
+    /* Make sure first accordion is open by default on mobile */
+    .tab-panel:first-of-type .accordion-header.mobile-only {
+        background-color: var(--rfs-core-red);
+        color: var(--text-color-light);
+    }
+
+    .tab-panel:first-of-type .accordion-content {
+        display: block;
+    }
+
+    .tab-panel:first-of-type .accordion-icon {
+        transform: rotate(180deg);
+    }
+}
+
+/* Dark Mode for Tabs and Accordion */
+@media (prefers-color-scheme: dark) {
+    .tab-navigation {
+        background-color: var(--rfs-neutral-dark);
+        border-bottom-color: #4a4a4a;
+    }
+
+    .tab-btn {
+        color: var(--text-color-dark);
+    }
+
+    .tab-btn:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+        background-color: var(--pico-card-background-color);
+        color: var(--rfs-core-red);
+    }
+
+    @media (max-width: 768px) {
+        .accordion-header.mobile-only {
+            background-color: var(--rfs-neutral-dark);
+            color: var(--text-color-dark);
+        }
+
+        .accordion-header.mobile-only:hover {
+            background-color: var(--rfs-neutral-light);
+        }
+
+        .accordion-header.mobile-only.active {
+            background-color: var(--rfs-core-red);
+            color: var(--text-color-light);
+        }
+
+        .tab-panel {
+            background-color: var(--pico-card-background-color);
+            border-color: #4a4a4a;
+        }
+    }
+}
+
 /* Navigation Styles - Updated */
 /* Site Header - The main fixed container */
 #siteHeader {
