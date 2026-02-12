@@ -10,14 +10,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const accordionHeaders = document.querySelectorAll(".accordion-header.mobile-only");
 
   /**
+   * Resolve a tab from the current hash, if present
+   */
+  function getTabFromHash() {
+    const rawHash = window.location.hash;
+    if (!rawHash) {
+      return null;
+    }
+
+    const cleanHash = rawHash.replace('#', '');
+    if (cleanHash.startsWith('tab=')) {
+      return cleanHash.replace('tab=', '');
+    }
+
+    const sectionToTabMap = {
+      '#info': 'fire-info',
+      '#prepare': 'prepare',
+      '#membership': 'membership',
+      '#events': 'events'
+    };
+
+    return sectionToTabMap[rawHash] || null;
+  }
+
+  /**
    * Get the active tab from URL hash or localStorage
    */
   function getInitialTab() {
-    // Check URL hash first
-    const urlHash = window.location.hash.replace('#', '');
-    if (urlHash && urlHash.startsWith('tab=')) {
-      const tabId = urlHash.replace('tab=', '');
-      return tabId;
+    const hashTab = getTabFromHash();
+    if (hashTab) {
+      return hashTab;
     }
 
     // Check localStorage
@@ -38,7 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
   /**
    * Switch to a specific tab (desktop)
    */
-  function switchTab(tabId) {
+  function switchTab(tabId, options = {}) {
+    const { updateUrl = true, scroll = true } = options;
     // Deactivate all tabs and panels
     tabButtons.forEach(btn => {
       btn.classList.remove('active');
@@ -63,20 +86,49 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Update URL hash without scrolling
-    history.replaceState(null, null, `#tab=${tabId}`);
+    if (updateUrl) {
+      history.replaceState(null, null, `#tab=${tabId}`);
+    }
 
     // Save to localStorage
     localStorage.setItem('activeTab', tabId);
 
-    // Scroll to tabs container smoothly
-    const tabsContainer = document.querySelector('.content-tabs-container');
-    if (tabsContainer) {
-      const headerHeight = document.getElementById('siteHeader')?.offsetHeight || 60;
-      const targetPosition = tabsContainer.offsetTop - headerHeight - 20;
-      window.scrollTo({
-        top: targetPosition,
-        behavior: 'smooth'
-      });
+    // Scroll to tabs container or active accordion content
+    if (scroll) {
+      const tabsContainer = document.querySelector('.content-tabs-container');
+      let scrollTarget = tabsContainer;
+
+      if (window.innerWidth <= 768) {
+        const targetPanel = document.getElementById(`${tabId}-tab`);
+        const targetHeader = targetPanel?.querySelector('.accordion-header');
+        const targetContent = targetPanel?.querySelector('.accordion-content');
+
+        if (targetHeader && targetContent) {
+          accordionHeaders.forEach(h => {
+            h.classList.remove('active');
+            if (h.nextElementSibling) {
+              h.nextElementSibling.classList.remove('active');
+            }
+          });
+
+          targetHeader.classList.add('active');
+          targetContent.classList.add('active');
+          scrollTarget = targetContent;
+        }
+      }
+
+      if (scrollTarget) {
+        const headerHeight = document.getElementById('siteHeader')?.offsetHeight || 60;
+        const scrollOffset = headerHeight + 40;
+        const elementTop = scrollTarget.getBoundingClientRect().top + window.scrollY;
+        const targetPosition = elementTop - scrollOffset;
+        setTimeout(() => {
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          });
+        }, 50);
+      }
     }
 
     // Trigger lazy loading if needed
@@ -140,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const tabId = button.getAttribute('data-tab');
       if (tabId) {
-        switchTab(tabId);
+        switchTab(tabId, { updateUrl: true, scroll: true });
       }
     });
 
@@ -195,7 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const urlHash = window.location.hash.replace('#', '');
     if (urlHash && urlHash.startsWith('tab=')) {
       const tabId = urlHash.replace('tab=', '');
-      switchTab(tabId);
+      switchTab(tabId, { updateUrl: true, scroll: true });
     }
   });
 
@@ -216,14 +268,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (sectionToTabMap[href]) {
         e.preventDefault();
-        switchTab(sectionToTabMap[href]);
+        switchTab(sectionToTabMap[href], { updateUrl: true, scroll: true });
       }
     });
   });
 
   // Initialize with the correct tab
   const initialTab = getInitialTab();
-  switchTab(initialTab);
+  const hasExplicitHash = Boolean(getTabFromHash());
+  switchTab(initialTab, { updateUrl: hasExplicitHash, scroll: hasExplicitHash });
 
   // Ensure first accordion is open on mobile by default
   if (window.innerWidth <= 768) {

@@ -105,10 +105,15 @@ function initMap() {
           };
 
           // Check if the current URL is localhost:3000
-          const isTest =
-            (window.location.hostname === "localhost" && window.location.port === "3000") ||
-            window.location.href ===
-              "https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net/";
+          const hostname = window.location.hostname;
+          const isDevHost =
+            hostname === "localhost" ||
+            hostname === "127.0.0.1" ||
+            hostname === "0.0.0.0" ||
+            hostname.endsWith(".githubpreview.dev") ||
+            hostname.endsWith(".app.github.dev");
+          const isLiveDevHost = hostname.includes("lively-flower-0577f4700-livedev");
+          const isTest = isDevHost || isLiveDevHost;
 
           // Filter features that contain "COUNCIL AREA: Queanbeyan-Palerang" or "COUNCIL AREA: ACT" in the description
           const filteredFeatures = isTest
@@ -204,6 +209,7 @@ function initMap() {
           // Create a mini table in the incidentCountCell
           const incidentCountCell = document.getElementById("incidentCountCell");
           const incidentCountLabel = document.getElementById("incidentCountLabel");
+          const incidentTotalCount = document.getElementById("incidentTotalCount");
           let tableHTML = "<table>";
 
           if (categoryCounts["Emergency Warning"] > 0) {
@@ -244,9 +250,13 @@ function initMap() {
           const totalIncidents = categoryCounts["Emergency Warning"] + categoryCounts["Watch and Act"] +
                                 categoryCounts["Advice"] + categoryCounts["Other"];
 
+          if (incidentTotalCount) {
+            incidentTotalCount.textContent = `${totalIncidents}`;
+          }
+
           if (incidentCountCell) {
             if (totalIncidents === 0) {
-              incidentCountCell.textContent = "0";
+              incidentCountCell.innerHTML = "";
             } else {
               incidentCountCell.innerHTML = DOMPurify.sanitize(tableHTML);
             }
@@ -321,8 +331,12 @@ function initMap() {
           const incidentCountCell = document.getElementById("incidentCountCell");
           const incidentCountLabel = document.getElementById("incidentCountLabel");
 
+          if (incidentTotalCount) {
+            incidentTotalCount.textContent = "0";
+          }
+
           if (incidentCountCell) {
-            incidentCountCell.textContent = "0";
+            incidentCountCell.innerHTML = "";
           }
 
           if (incidentCountLabel) {

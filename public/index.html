@@ -183,14 +183,22 @@
                                 </div>
                             </div>
                             
-                            <div class="fire-info-panel local-incidents-panel">
+                            <div class="fire-info-panel incident-map-panel">
                                 <div class="panel-header">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <h4>Local Incidents</h4>
+                                    <i class="fas fa-map-marked-alt"></i>
+                                    <h4>Local Incidents Map</h4>
                                 </div>
                                 <div class="panel-content">
-                                    <div id="incidentCountCell" class="data-value secondary-metric">0</div>
-                                    <p id="incidentCountLabel" class="data-label">No active incidents in our area</p>
+                                    <div class="fire-info-map">
+                                        <div id="map"></div>
+                                        <div class="incident-summary" aria-live="polite">
+                                            <div class="incident-count">
+                                                <span id="incidentTotalCount">0</span> Incidents
+                                            </div>
+                                            <div id="incidentCountCell" class="incident-breakdown"></div>
+                                            <p id="incidentCountLabel" class="incident-label">No active incidents in our area</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -275,8 +283,6 @@
                 <div class="">
 
                     <div id="fireDangerTableContainer"></div>
-                    <!-- Map section -->
-                    <div id="map"></div>
                     <div id="fireInfoContent"></div>
                     <div id="fireInfoTableContainer" class="grid-container"></div>
                 </div>

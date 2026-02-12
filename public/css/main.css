@@ -1849,7 +1849,7 @@ main {
 
 .fire-info-grid-enhanced {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(240px, 1fr) minmax(360px, 2fr);
     gap: var(--space-md);
     margin-bottom: var(--space-md);
 }
@@ -1888,6 +1888,77 @@ main {
 
 .fire-info-panel .panel-content {
     text-align: center;
+}
+
+.fire-danger-panel .panel-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 180px;
+}
+
+.incident-map-panel .panel-content {
+    text-align: left;
+}
+
+.fire-info-map {
+    position: relative;
+    border-radius: var(--pico-border-radius);
+    overflow: hidden;
+    border: 1px solid var(--rfs-light-grey);
+    background-color: var(--rfs-neutral-light);
+}
+
+#fireInfoSummaryCard #map {
+    height: 260px;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.incident-summary {
+    position: absolute;
+    right: var(--space-sm);
+    bottom: var(--space-sm);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-color-dark);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--pico-border-radius);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    min-width: 160px;
+    text-align: left;
+    z-index: 500;
+}
+
+.incident-summary .incident-count {
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.incident-summary .incident-breakdown {
+    margin-top: var(--space-xs);
+}
+
+.incident-summary table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.incident-summary td {
+    padding: 0.15rem 0.2rem;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.incident-summary img {
+    width: 20px;
+    height: 20px;
+}
+
+.incident-summary .incident-label {
+    margin: var(--space-xs) 0 0;
+    font-size: 0.8rem;
+    color: var(--rfs-dark-grey);
 }
 
 .fire-info-panel .data-value {
@@ -1962,6 +2033,17 @@ main {
     .fire-info-panel .data-value {
         font-size: 1.8rem;
         min-width: 80px;
+    }
+
+    #fireInfoSummaryCard #map {
+        height: 220px;
+    }
+
+    .incident-summary {
+        position: static;
+        margin-top: var(--space-sm);
+        box-shadow: none;
+        background: var(--rfs-neutral-light);
     }
     
     .fire-info-actions {
