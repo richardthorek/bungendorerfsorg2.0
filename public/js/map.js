@@ -6,15 +6,7 @@ function initMap() {
   });
 
   // Fetch the Mapbox token from the backend API
-  fetch("/api/mapbox-token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Request-ID": "Get-Mapbox-Token", // Custom header to identify the request
-      },
-      body: JSON.stringify({ request: "mapbox-token" }),
-    }
-  )
+  fetch("/mapbox-token")
     .then((response) => response.json())
     .then((data) => {
       const accessToken = data.token;

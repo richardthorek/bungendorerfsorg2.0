@@ -19,7 +19,7 @@ app.get('/mapbox-token', (req, res) => {
   const origin = req.headers.origin || req.headers.referer;
   
   // Allow requests without origin (same-origin requests)
-  if (origin && !allowedOrigins.some(allowed => origin.includes(allowed))) {
+  if (origin && !allowedOrigins.includes(origin)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
   
@@ -42,8 +42,19 @@ app.post('/api/contact', async (req, res) => {
       body: JSON.stringify(req.body)
     });
     
-    const data = await response.json();
-    res.json(data);
+    if (!response.ok) {
+      console.error(`Azure webhook returned status ${response.status}`);
+      return res.status(response.status).json({ error: 'Failed to submit form' });
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      res.json(data);
+    } else {
+      const text = await response.text();
+      res.send(text);
+    }
   } catch (error) {
     console.error('Error submitting contact form:', error);
     res.status(500).json({ error: 'Failed to submit form' });
@@ -111,33 +122,6 @@ app.get('/api/fire-danger', async (req, res) => {
   } catch (error) {
     console.error('Error fetching fire danger:', error);
     res.status(500).json({ error: 'Failed to fetch fire danger' });
-  }
-});
-
-// Proxy endpoint for Mapbox token (used by map.js)
-app.post('/api/mapbox-token', async (req, res) => {
-  try {
-    const webhookUrl = process.env.AZURE_MAPBOX_TOKEN_WEBHOOK_URL;
-    
-    // If not configured, fall back to local token
-    if (!webhookUrl) {
-      return res.json({ token: process.env.MAPBOX_ACCESS_TOKEN });
-    }
-
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Request-ID': 'Get-Mapbox-Token',
-      },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching Mapbox token:', error);
-    // Fall back to local token on error
-    res.json({ token: process.env.MAPBOX_ACCESS_TOKEN });
   }
 });
 
