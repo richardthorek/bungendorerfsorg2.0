@@ -5,8 +5,6 @@ require('dotenv').config(); // Load environment variables from .env file
 const filePath = path.join(__dirname, 'main.js');
 const accessToken = process.env.MAPBOX_ACCESS_TOKEN;
 
-console.log(accessToken);
-
 fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
         return console.log(err);

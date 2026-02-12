@@ -62,7 +62,7 @@ function populateFireInfoTable(data) {
     `;
   });
 
-  fireInfoTableContainer.innerHTML = tableHTML;
+  fireInfoTableContainer.innerHTML = DOMPurify.sanitize(tableHTML);
 }
 
 function getIconUrl(category) {
@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </tr>
     </table>
   `;
-    BFDPContent.innerHTML = tableHTML;
+    BFDPContent.innerHTML = DOMPurify.sanitize(tableHTML);
   }
 
   // Fire Danger Rating and Incidents

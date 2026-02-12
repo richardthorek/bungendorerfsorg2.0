@@ -244,7 +244,7 @@ function initMap() {
           }
 
           tableHTML += "</table>";
-          incidentCountCell.innerHTML = tableHTML;
+          incidentCountCell.innerHTML = DOMPurify.sanitize(tableHTML);
 
           // Ensure the station marker is included in the bounds calculation
           const stationIcon = L.icon({

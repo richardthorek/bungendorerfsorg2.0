@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return response.text();
             })
             .then(markdown => {
-                document.getElementById(contentId).innerHTML = marked.parse(markdown);
+                document.getElementById(contentId).innerHTML = DOMPurify.sanitize(marked.parse(markdown));
             })
             .catch(error => console.error(`Error fetching ${filePath} from local:`, error));
     }
