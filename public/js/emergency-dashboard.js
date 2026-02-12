@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const dashboardDangerLevel = document.getElementById("dashboardDangerLevel");
   const dashboardDangerMessage = document.getElementById("dashboardDangerMessage");
   const dashboardIncidentCount = document.getElementById("dashboardIncidentCount");
+  const fireDangerPanel = document.querySelector(".dashboard-panel.fire-danger-panel");
 
   // Mobile Elements
   const mobileEmergencyBadge = document.getElementById("mobileEmergencyBadge");
@@ -37,14 +38,20 @@ document.addEventListener("DOMContentLoaded", () => {
    * Update all emergency displays with latest data
    */
   function updateEmergencyDisplays(level, message, count, incidentList = []) {
-    dangerLevel = level;
+    const normalizedLevel = (level || "NO RATING").toString().trim().toUpperCase();
+
+    dangerLevel = normalizedLevel;
     dangerMessage = message;
     incidentCount = count;
     incidents = incidentList;
 
     // Update status bar (desktop/tablet)
     if (statusBarDangerLevel) {
-      statusBarDangerLevel.textContent = level;
+      statusBarDangerLevel.textContent = normalizedLevel;
+      statusBarDangerLevel.setAttribute("data-level", normalizedLevel);
+    }
+    if (emergencyStatusBar) {
+      emergencyStatusBar.setAttribute("data-level", normalizedLevel);
     }
     if (statusBarIncidentCount) {
       const incidentText = count === 1 ? "1 Incident" : `${count} Incidents`;
@@ -53,8 +60,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Update dashboard
     if (dashboardDangerLevel) {
-      dashboardDangerLevel.textContent = level;
-      dashboardDangerLevel.setAttribute("data-level", level);
+      dashboardDangerLevel.textContent = normalizedLevel;
+      dashboardDangerLevel.setAttribute("data-level", normalizedLevel);
+    }
+    if (fireDangerPanel) {
+      fireDangerPanel.setAttribute("data-level", normalizedLevel);
     }
     if (dashboardDangerMessage) {
       dashboardDangerMessage.textContent = message;
@@ -70,15 +80,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Update mobile panel
     if (mobileDangerLevel) {
-      mobileDangerLevel.textContent = level;
-      mobileDangerLevel.setAttribute("data-level", level);
+      mobileDangerLevel.textContent = normalizedLevel;
+      mobileDangerLevel.setAttribute("data-level", normalizedLevel);
     }
     if (mobileIncidentsList) {
       updateMobileIncidentsList(incidentList);
     }
 
     // Apply color coding to status bar based on danger level
-    updateStatusBarStyling(level);
+    updateStatusBarStyling(normalizedLevel);
   }
 
   /**
@@ -88,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!emergencyStatusBar) return;
 
     // Remove existing level classes
-    emergencyStatusBar.classList.remove('level-moderate', 'level-high', 'level-extreme', 'level-catastrophic');
+    emergencyStatusBar.classList.remove('level-moderate', 'level-high', 'level-extreme', 'level-catastrophic', 'level-none');
 
     // Add appropriate class
     switch(level.toUpperCase()) {
@@ -100,6 +110,11 @@ document.addEventListener("DOMContentLoaded", () => {
         break;
       case 'CATASTROPHIC':
         emergencyStatusBar.classList.add('level-catastrophic');
+        break;
+      case 'NO RATING':
+      case 'N/A':
+      case 'ERROR':
+        emergencyStatusBar.classList.add('level-none');
         break;
       default:
         emergencyStatusBar.classList.add('level-moderate');

@@ -89,8 +89,14 @@ function initMap() {
           "Content-Type": "application/json",
         },
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to fetch fire incidents");
+          }
+          return response.json();
+        })
         .then((data) => {
+          const features = Array.isArray(data?.features) ? data.features : [];
           const categoryCounts = {
             Other: 0,
             Advice: 0,
@@ -106,8 +112,8 @@ function initMap() {
 
           // Filter features that contain "COUNCIL AREA: Queanbeyan-Palerang" or "COUNCIL AREA: ACT" in the description
           const filteredFeatures = isTest
-            ? data.features
-            : data.features.filter(
+            ? features
+            : features.filter(
                 (feature) =>
                   feature.properties &&
                   feature.properties.description &&
@@ -197,6 +203,7 @@ function initMap() {
 
           // Create a mini table in the incidentCountCell
           const incidentCountCell = document.getElementById("incidentCountCell");
+          const incidentCountLabel = document.getElementById("incidentCountLabel");
           let tableHTML = "<table>";
 
           if (categoryCounts["Emergency Warning"] > 0) {
@@ -233,12 +240,26 @@ function initMap() {
           }
 
           tableHTML += "</table>";
-          incidentCountCell.innerHTML = DOMPurify.sanitize(tableHTML);
+
+          const totalIncidents = categoryCounts["Emergency Warning"] + categoryCounts["Watch and Act"] +
+                                categoryCounts["Advice"] + categoryCounts["Other"];
+
+          if (incidentCountCell) {
+            if (totalIncidents === 0) {
+              incidentCountCell.textContent = "0";
+            } else {
+              incidentCountCell.innerHTML = DOMPurify.sanitize(tableHTML);
+            }
+          }
+
+          if (incidentCountLabel) {
+            incidentCountLabel.textContent = totalIncidents === 0
+              ? "No active incidents in our area"
+              : "Current incidents in our area";
+          }
 
           // Update emergency dashboard with incident data
           if (typeof window.updateEmergencyDashboard === 'function') {
-            const totalIncidents = categoryCounts["Emergency Warning"] + categoryCounts["Watch and Act"] +
-                                  categoryCounts["Advice"] + categoryCounts["Other"];
 
             // Build incidents list for mobile view
             const incidentsList = filteredFeatures.slice(0, 5).map(feature => {
@@ -295,7 +316,32 @@ function initMap() {
             console.log("No markers to fit bounds to.");
           }
         })
-        .catch((error) => console.error("Error fetching the GeoJSON data:", error));
+        .catch((error) => {
+          console.error("Error fetching the GeoJSON data:", error);
+          const incidentCountCell = document.getElementById("incidentCountCell");
+          const incidentCountLabel = document.getElementById("incidentCountLabel");
+
+          if (incidentCountCell) {
+            incidentCountCell.textContent = "0";
+          }
+
+          if (incidentCountLabel) {
+            incidentCountLabel.textContent = "No active incidents in our area";
+          }
+
+          populateFireInfoTable({ features: [] });
+
+          if (typeof window.updateEmergencyDashboard === "function") {
+            const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
+            const fireDangerMessage = document.getElementById("fireDangerMessage");
+            window.updateEmergencyDashboard({
+              dangerLevel: fireDangerRatingCell?.textContent || "NO RATING",
+              message: fireDangerMessage?.textContent || "Rating information currently unavailable.",
+              incidentCount: 0,
+              incidents: []
+            });
+          }
+        });
     })
     .catch((error) => console.error("Error fetching Mapbox token:", error));
 }

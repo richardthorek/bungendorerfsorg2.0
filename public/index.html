@@ -46,7 +46,7 @@
         <!-- Emergency Status Bar (Desktop/Tablet) -->
         <div id="emergencyStatusBar" class="emergency-status-bar">
             <div class="emergency-status-compact">
-                <span class="status-icon">🔥</span>
+                <img class="status-icon" src="/Images/afdrs.png" alt="Fire danger rating sign">
                 <span class="status-text">
                     <span id="statusBarDangerLevel">MODERATE</span>
                     <span class="separator">|</span>
@@ -178,8 +178,8 @@
                                     <h4>Fire Danger Rating</h4>
                                 </div>
                                 <div class="panel-content">
-                                    <div id="fireDangerRatingCell" class="data-value primary-metric"></div>
-                                    <p id="fireDangerMessage" class="data-label"></p>
+                                    <div id="fireDangerRatingCell" class="data-value primary-metric">Loading...</div>
+                                    <p id="fireDangerMessage" class="data-label">Fetching latest fire danger rating...</p>
                                 </div>
                             </div>
                             
@@ -189,8 +189,8 @@
                                     <h4>Local Incidents</h4>
                                 </div>
                                 <div class="panel-content">
-                                    <div id="incidentCountCell" class="data-value secondary-metric"></div>
-                                    <p class="data-label">Current incidents in our area</p>
+                                    <div id="incidentCountCell" class="data-value secondary-metric">0</div>
+                                    <p id="incidentCountLabel" class="data-label">No active incidents in our area</p>
                                 </div>
                             </div>
                         </div>

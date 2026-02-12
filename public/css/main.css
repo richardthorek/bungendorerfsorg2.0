@@ -22,6 +22,7 @@
     --ui-amber: #fbb034;  /* Amber (Bush Fire Ready / Watch & Act) */
     --ui-blue: #215e9e;    /* Blue (Advice / Hyperlink Blue from guide) */
     --ui-green: #008550;   /* Green (DGR from guide, can be used for Membership/Events if suitable) */
+    --ui-yellow: #f5c13d;  /* Yellow (High fire danger) */
     /* Emergency Red is --rfs-core-red */
 
     /* General UI & Text Colors */
@@ -678,9 +679,9 @@ a:focus {
 }
 
 .hero + .container-fluid.content-container {
-    margin-top: -4rem; /* Pulls up the summary cards by approx. the height of their headers */
-    position: relative; /* Ensure margin is applied correctly and establish stacking context */
-    z-index: 10;        /* Ensure summary cards sit on top of the hero's bottom edge */
+    margin-top: var(--space-xxl); /* Ensure clear separation from the hero CTA */
+    position: relative; /* Keep stacking context predictable */
+    z-index: auto;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -756,7 +757,10 @@ a:focus {
 }
 
 .emergency-status-bar .status-icon {
-    font-size: 1.2rem;
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    display: inline-block;
 }
 
 .emergency-status-bar .status-text {
@@ -898,6 +902,24 @@ a:focus {
     padding: var(--space-md);
     border-radius: var(--pico-border-radius);
     text-align: center;
+}
+
+.fire-danger-panel {
+    border: 1px solid transparent;
+}
+
+.fire-danger-panel .danger-level-display {
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    display: block;
+    border-radius: 0;
+}
+
+.fire-danger-panel h4,
+.fire-danger-panel .danger-message {
+    color: inherit;
 }
 
 .dashboard-panel h4 {
@@ -1075,24 +1097,97 @@ a:focus {
 
 /* Fire danger level color coding */
 .danger-level-display[data-level="MODERATE"],
-.mobile-danger-level[data-level="MODERATE"] {
-    color: var(--ui-amber);
+.mobile-danger-level[data-level="MODERATE"],
+#statusBarDangerLevel[data-level="MODERATE"] {
+    color: #ffffff;
+    background-color: var(--ui-green);
+    border: 1px solid #0b5f3b;
+    padding: 0 var(--space-xs);
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.fire-danger-panel[data-level="MODERATE"] {
+    background-color: var(--ui-green);
+    color: #ffffff;
+    border-color: #0b5f3b;
 }
 
 .danger-level-display[data-level="HIGH"],
-.mobile-danger-level[data-level="HIGH"] {
-    color: #ff6b00;
+.mobile-danger-level[data-level="HIGH"],
+#statusBarDangerLevel[data-level="HIGH"] {
+    color: #000000;
+    background-color: var(--ui-yellow);
+    border: 1px solid #b5891e;
+    padding: 0 var(--space-xs);
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.fire-danger-panel[data-level="HIGH"] {
+    background-color: var(--ui-yellow);
+    color: #000000;
+    border-color: #b5891e;
 }
 
 .danger-level-display[data-level="EXTREME"],
-.mobile-danger-level[data-level="EXTREME"] {
-    color: var(--rfs-core-red);
+.mobile-danger-level[data-level="EXTREME"],
+#statusBarDangerLevel[data-level="EXTREME"] {
+    color: #000000;
+    background-color: #ff6b00;
+    border: 1px solid #c65300;
+    padding: 0 var(--space-xs);
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.fire-danger-panel[data-level="EXTREME"] {
+    background-color: #ff6b00;
+    color: #000000;
+    border-color: #c65300;
 }
 
 .danger-level-display[data-level="CATASTROPHIC"],
-.mobile-danger-level[data-level="CATASTROPHIC"] {
-    color: #8B0000;
+.mobile-danger-level[data-level="CATASTROPHIC"],
+#statusBarDangerLevel[data-level="CATASTROPHIC"] {
+    color: #ffffff;
+    background-color: var(--rfs-core-red);
+    border: 1px solid #a51c13;
+    padding: 0 var(--space-xs);
+    border-radius: 999px;
+    display: inline-block;
     animation: pulse 2s ease-in-out infinite;
+}
+
+.fire-danger-panel[data-level="CATASTROPHIC"] {
+    background-color: var(--rfs-core-red);
+    color: #ffffff;
+    border-color: #a51c13;
+}
+
+.danger-level-display[data-level="NO RATING"],
+.danger-level-display[data-level="N/A"],
+.danger-level-display[data-level="ERROR"],
+.mobile-danger-level[data-level="NO RATING"],
+.mobile-danger-level[data-level="N/A"],
+.mobile-danger-level[data-level="ERROR"],
+#statusBarDangerLevel[data-level="NO RATING"],
+#statusBarDangerLevel[data-level="N/A"],
+#statusBarDangerLevel[data-level="ERROR"] {
+    color: #000000;
+    background-color: #ffffff;
+    border: 1px solid #000000;
+    padding: 0 var(--space-xs);
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.fire-danger-panel[data-level="NO RATING"],
+.fire-danger-panel[data-level="N/A"],
+.fire-danger-panel[data-level="ERROR"] {
+    background-color: #ffffff;
+    color: #000000;
+    border-color: #000000;
 }
 
 @keyframes pulse {

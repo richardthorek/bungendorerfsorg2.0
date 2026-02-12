@@ -4,7 +4,7 @@
   "description": "Your project description",
   "main": "index.html",
   "scripts": {
-    "prestart": "node replace-token.js",
+    "prestart": "node replace-token.js public/js/main.js",
     "start": "node server.js"
   },
   "dependencies": {

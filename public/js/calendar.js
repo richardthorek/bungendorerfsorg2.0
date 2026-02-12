@@ -7,23 +7,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fetch events data from the URL
   fetch("/api/calendar-events")
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch calendar events");
+      }
+      return response.json();
+    })
     .then((data) => {
-      const events = data.value;
+      const events = Array.isArray(data?.value) ? data.value : [];
 
       // Filter and display Membership events
       const membershipEvents = events.filter((event) =>
-        event.categories.includes("Public - Training")
+        Array.isArray(event.categories) && event.categories.includes("Public - Training")
       );
       displayEvents(membershipEvents, membershipCalendar);
 
       // Filter and display Community Events
       const communityEvents = events.filter((event) =>
-        event.categories.includes("Public - Community Engagement")
+        Array.isArray(event.categories) && event.categories.includes("Public - Community Engagement")
       );
       displayEvents(communityEvents, communityEventsCalendar);
     })
-    .catch((error) => console.error("Error fetching events:", error));
+    .catch((error) => {
+      console.error("Error fetching events:", error);
+      if (membershipCalendar) {
+        membershipCalendar.innerHTML = "<p>Events are currently unavailable.</p>";
+      }
+      if (communityEventsCalendar) {
+        communityEventsCalendar.innerHTML = "<p>Events are currently unavailable.</p>";
+      }
+    });
 
   // When the user clicks on the close button, close the modal
   closeButton.onclick = () => modal.removeAttribute("open");

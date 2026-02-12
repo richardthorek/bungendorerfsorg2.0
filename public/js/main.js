@@ -20,9 +20,21 @@ function extractFields(description) {
 
 function populateFireInfoTable(data) {
   const fireInfoTableContainer = document.getElementById("fireInfoTableContainer");
+  const features = Array.isArray(data?.features) ? data.features : [];
   let tableHTML = "";
 
-  data.features.forEach((feature) => {
+  if (!fireInfoTableContainer) {
+    return;
+  }
+
+  if (features.length === 0) {
+    fireInfoTableContainer.innerHTML = DOMPurify.sanitize(
+      "<p class=\"data-label\">No active incidents in our area.</p>"
+    );
+    return;
+  }
+
+  features.forEach((feature) => {
     const { title, category, description } = feature.properties;
     const {
       alertlevel,
@@ -144,7 +156,12 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((response) => response.json())
       .then((fireDangerRatings) => {
         fetch("/api/fire-danger")
-          .then((response) => response.text())
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to fetch fire danger data");
+            }
+            return response.text();
+          })
           .then((data) => {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(data, "application/xml");
@@ -155,18 +172,19 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             if (southernRangesDistrict) {
-              let dangerLevelToday =
-                southernRangesDistrict.getElementsByTagName("DangerLevelToday")[0].textContent;
+              const dangerNode = southernRangesDistrict.getElementsByTagName("DangerLevelToday")[0];
+              let dangerLevelToday = dangerNode ? dangerNode.textContent : "";
               dangerLevelToday = dangerLevelToday.trim().toUpperCase();
 
               const ratingInfo = fireDangerRatings.FireDangerRatings.find(
                 (rating) => rating.Rating === dangerLevelToday
               );
 
-              if (!ratingInfo) {
+              if (!ratingInfo || !dangerLevelToday) {
                 console.error(`No rating information found for danger level: ${dangerLevelToday}`);
                 // Display a default message if ratingInfo is not found
-                fireDangerRatingCell.textContent = "N/A";
+                fireDangerRatingCell.textContent = "No Rating";
+                fireDangerRatingCell.setAttribute("data-level", "NO RATING");
                 fireDangerMessage.textContent = "Rating information currently unavailable.";
                 fireMessagesDiv.textContent = "Fire danger information is currently unavailable.";
                 return;
@@ -179,6 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
               fireDangerRatingCell.textContent = dangerLevelToday;
+              fireDangerRatingCell.setAttribute("data-level", dangerLevelToday);
               fireDangerRatingCell.setAttribute("style", styleString);
               fireDangerMessage.textContent = ratingInfo.FireBehaviour; // Populate the new message element
 
@@ -210,14 +229,30 @@ document.addEventListener("DOMContentLoaded", () => {
               }
             } else {
               console.error("Southern Ranges district not found in the XML data.");
+              fireDangerRatingCell.textContent = "No Rating";
+              fireDangerRatingCell.setAttribute("data-level", "NO RATING");
+              fireDangerMessage.textContent = "Rating information currently unavailable.";
+              fireMessagesDiv.textContent = "Fire danger information is currently unavailable.";
             }
           })
           .catch((error) => {
             console.error("Error fetching the XML data:", error);
             // Display error messages in the UI
-            if (fireDangerRatingCell) fireDangerRatingCell.textContent = "Error";
+            if (fireDangerRatingCell) {
+              fireDangerRatingCell.textContent = "No Rating";
+              fireDangerRatingCell.setAttribute("data-level", "NO RATING");
+            }
             if (fireDangerMessage) fireDangerMessage.textContent = "Could not load rating message.";
             if (fireMessagesDiv) fireMessagesDiv.textContent = "Could not load fire danger information.";
+
+            if (typeof window.updateEmergencyDashboard === "function") {
+              window.updateEmergencyDashboard({
+                dangerLevel: "NO RATING",
+                message: "Rating information currently unavailable.",
+                incidentCount: 0,
+                incidents: []
+              });
+            }
           });
       })
       .catch((error) => {
