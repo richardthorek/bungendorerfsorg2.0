@@ -16,7 +16,17 @@ app.get('/mapbox-token', (req, res) => {
     'http://localhost:3000',
     'https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net'
   ];
-  const origin = req.headers.origin || req.headers.referer;
+  
+  let origin = req.headers.origin;
+  
+  // If no origin header, try to extract from referer
+  if (!origin && req.headers.referer) {
+    try {
+      origin = new URL(req.headers.referer).origin;
+    } catch (e) {
+      // Invalid referer URL, ignore
+    }
+  }
   
   // Allow requests without origin (same-origin requests)
   if (origin && !allowedOrigins.includes(origin)) {
@@ -72,6 +82,12 @@ app.get('/api/calendar-events', async (req, res) => {
     }
 
     const response = await fetch(webhookUrl);
+    
+    if (!response.ok) {
+      console.error(`Azure webhook returned status ${response.status}`);
+      return res.status(response.status).json({ error: 'Failed to fetch events' });
+    }
+    
     const data = await response.json();
     res.json(data);
   } catch (error) {
@@ -97,6 +113,12 @@ app.get('/api/fire-incidents', async (req, res) => {
         'Content-Type': 'application/json',
       },
     });
+    
+    if (!response.ok) {
+      console.error(`Azure webhook returned status ${response.status}`);
+      return res.status(response.status).json({ error: 'Failed to fetch incidents' });
+    }
+    
     const data = await response.json();
     res.json(data);
   } catch (error) {
@@ -116,6 +138,12 @@ app.get('/api/fire-danger', async (req, res) => {
     }
 
     const response = await fetch(webhookUrl);
+    
+    if (!response.ok) {
+      console.error(`Azure webhook returned status ${response.status}`);
+      return res.status(response.status).json({ error: 'Failed to fetch fire danger' });
+    }
+    
     const data = await response.text();
     res.set('Content-Type', 'application/xml');
     res.send(data);
