@@ -43,7 +43,87 @@
             <li><a class="whiteText contrast" href="#membership">Membership</a></li>
             <li><a class="whiteText contrast" href="#events">Events</a></li>
         </ul>
+        <!-- Emergency Status Bar (Desktop/Tablet) -->
+        <div id="emergencyStatusBar" class="emergency-status-bar">
+            <div class="emergency-status-compact">
+                <span class="status-icon">🔥</span>
+                <span class="status-text">
+                    <span id="statusBarDangerLevel">MODERATE</span>
+                    <span class="separator">|</span>
+                    <span id="statusBarIncidentCount">0 Incidents</span>
+                </span>
+            </div>
+            <button id="expandEmergencyBtn" class="expand-emergency-btn" aria-label="View emergency details">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+        <!-- Mobile Emergency Badge -->
+        <button id="mobileEmergencyBadge" class="mobile-emergency-badge" aria-label="View emergency information">
+            <i class="fas fa-fire"></i>
+            <span id="mobileIncidentBadge" class="incident-badge">0</span>
+        </button>
     </nav>
+    <!-- Emergency Dashboard Overlay (Expanded State) -->
+    <div id="emergencyDashboard" class="emergency-dashboard" hidden>
+        <div class="emergency-dashboard-content">
+            <button id="closeEmergencyDashboard" class="close-dashboard-btn" aria-label="Close emergency dashboard">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="dashboard-header">
+                <span class="dashboard-icon">🔥</span>
+                <h3>Emergency Information</h3>
+            </div>
+            <div class="dashboard-body">
+                <div class="dashboard-panel fire-danger-panel">
+                    <h4>Fire Danger Rating</h4>
+                    <div id="dashboardDangerLevel" class="danger-level-display">MODERATE</div>
+                    <p id="dashboardDangerMessage" class="danger-message">Plan and prepare for fires in your area</p>
+                </div>
+                <div class="dashboard-panel incidents-panel">
+                    <h4>Active Incidents</h4>
+                    <div id="dashboardIncidentCount" class="incident-count-display">0</div>
+                    <p class="incident-label">Current incidents in our area</p>
+                </div>
+            </div>
+            <div class="dashboard-actions">
+                <a href="#info" class="dashboard-action-btn">
+                    <i class="fas fa-map-marked-alt"></i>
+                    View Map
+                </a>
+                <a href="#prepare" class="dashboard-action-btn">
+                    <i class="fas fa-shield-alt"></i>
+                    Prepare Now
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- Mobile Emergency Panel -->
+    <div id="mobileEmergencyPanel" class="mobile-emergency-panel" hidden>
+        <div class="mobile-panel-content">
+            <div class="mobile-panel-header">
+                <h4>Emergency Information</h4>
+                <button id="closeMobilePanel" class="close-panel-btn" aria-label="Close emergency panel">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mobile-panel-body">
+                <div class="mobile-danger-info">
+                    <span class="mobile-danger-label">Fire Danger:</span>
+                    <span id="mobileDangerLevel" class="mobile-danger-level">MODERATE</span>
+                </div>
+                <div class="mobile-incidents-info">
+                    <h5>Active Incidents:</h5>
+                    <div id="mobileIncidentsList" class="mobile-incidents-list">
+                        <p>Loading incident information...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mobile-panel-actions">
+                <a href="#info" class="mobile-action-btn">View Full Details</a>
+                <a href="#info" class="mobile-action-btn secondary">View Map</a>
+            </div>
+        </div>
+    </div>
 </header>
 
     <main class="container-fluid">
@@ -316,6 +396,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.4/purify.min.js"></script>
 
 <!-- Load my own scripts -->
+<script src="js/emergency-dashboard.js" defer></script>
 <script src="js/main.js" defer></script>
 <script src="js/scroll.js" defer></script>
 <script src="js/map.js" defer></script>

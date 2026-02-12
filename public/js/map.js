@@ -235,6 +235,35 @@ function initMap() {
           tableHTML += "</table>";
           incidentCountCell.innerHTML = DOMPurify.sanitize(tableHTML);
 
+          // Update emergency dashboard with incident data
+          if (typeof window.updateEmergencyDashboard === 'function') {
+            const totalIncidents = categoryCounts["Emergency Warning"] + categoryCounts["Watch and Act"] +
+                                  categoryCounts["Advice"] + categoryCounts["Other"];
+
+            // Build incidents list for mobile view
+            const incidentsList = filteredFeatures.slice(0, 5).map(feature => {
+              const fields = extractFields(feature.properties.description);
+              return {
+                title: feature.properties.title || 'Unknown',
+                status: fields.status || fields.alertlevel || 'Unknown',
+                location: fields.location || 'Unknown location'
+              };
+            });
+
+            // Get current danger level from the page
+            const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
+            const fireDangerMessage = document.getElementById("fireDangerMessage");
+
+            if (fireDangerRatingCell && fireDangerMessage) {
+              window.updateEmergencyDashboard({
+                dangerLevel: fireDangerRatingCell.textContent || 'MODERATE',
+                message: fireDangerMessage.textContent || 'Plan and prepare for fires in your area',
+                incidentCount: totalIncidents,
+                incidents: incidentsList
+              });
+            }
+          }
+
           // Ensure the station marker is included in the bounds calculation
           const stationIcon = L.icon({
             iconUrl: "/Images/station.png",

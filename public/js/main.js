@@ -190,6 +190,24 @@ document.addEventListener("DOMContentLoaded", () => {
               if (keyMessage) {
                 fireMessagesDiv.textContent = keyMessage;
               }
+
+              // Update emergency dashboard with fire danger data
+              if (typeof window.updateEmergencyDashboard === 'function') {
+                // Get incident count from the page if available
+                const incidentCountCell = document.getElementById("incidentCountCell");
+                let incidentCount = 0;
+                if (incidentCountCell && incidentCountCell.textContent) {
+                  const countMatch = incidentCountCell.textContent.match(/\d+/);
+                  incidentCount = countMatch ? parseInt(countMatch[0], 10) : 0;
+                }
+
+                window.updateEmergencyDashboard({
+                  dangerLevel: dangerLevelToday,
+                  message: ratingInfo.FireBehaviour || ratingInfo.KeyMessage,
+                  incidentCount: incidentCount,
+                  incidents: [] // Will be populated from map data
+                });
+              }
             } else {
               console.error("Southern Ranges district not found in the XML data.");
             }
