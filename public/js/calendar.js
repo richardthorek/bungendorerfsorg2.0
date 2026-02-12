@@ -5,9 +5,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalContent = document.getElementById("modalEventContent");
   const closeButton = document.getElementById("eventModalClose");
 
+  // Show loading state
+  if (membershipCalendar) {
+    showLoadingMessage("membershipCalendar", "Loading training events...");
+  }
+  if (communityEventsCalendar) {
+    showLoadingMessage("communityEventsCalendar", "Loading community events...");
+  }
+
   // Fetch events data from the URL
   fetch("/api/calendar-events")
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then((data) => {
       const events = data.value;
 
@@ -23,7 +36,18 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       displayEvents(communityEvents, communityEventsCalendar);
     })
-    .catch((error) => console.error("Error fetching events:", error));
+    .catch((error) => {
+      console.error("Error fetching events:", error);
+      const errorMessage = getUserFriendlyErrorMessage(error);
+      
+      // Show error in both calendars
+      if (membershipCalendar) {
+        showErrorMessage("membershipCalendar", errorMessage, true);
+      }
+      if (communityEventsCalendar) {
+        showErrorMessage("communityEventsCalendar", errorMessage, true);
+      }
+    });
 
   // When the user clicks on the close button, close the modal
   closeButton.onclick = () => modal.removeAttribute("open");

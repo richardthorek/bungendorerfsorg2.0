@@ -89,7 +89,12 @@ function initMap() {
           "Content-Type": "application/json",
         },
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
         .then((data) => {
           const categoryCounts = {
             Other: 0,
@@ -266,9 +271,55 @@ function initMap() {
             console.log("No markers to fit bounds to.");
           }
         })
-        .catch((error) => console.error("Error fetching the GeoJSON data:", error));
+        .catch((error) => {
+          console.error("Error fetching the GeoJSON data:", error);
+          const errorMessage = getUserFriendlyErrorMessage(error);
+          const incidentCountCell = document.getElementById("incidentCountCell");
+          if (incidentCountCell) {
+            incidentCountCell.innerHTML = DOMPurify.sanitize(`
+              <div role="alert" style="color: var(--rfs-error-color, #c33); padding: 1rem;">
+                <i class="fas fa-exclamation-triangle"></i> ${errorMessage}
+              </div>
+            `);
+          }
+        });
     })
-    .catch((error) => console.error("Error fetching Mapbox token:", error));
+    .catch((error) => {
+      console.error("Error fetching Mapbox token:", error);
+      // Display error on map container if available
+      const mapContainer = document.getElementById("map");
+      if (mapContainer) {
+        const errorMessage = getUserFriendlyErrorMessage(error);
+        mapContainer.innerHTML = DOMPurify.sanitize(`
+          <div role="alert" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background-color: var(--rfs-error-bg, #fee);
+            border: 2px solid var(--rfs-error-border, #c33);
+            color: var(--rfs-error-color, #c33);
+            padding: 2rem;
+            text-align: center;
+          ">
+            <div>
+              <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+              <p style="font-weight: bold; margin-bottom: 0.5rem;">Unable to Load Map</p>
+              <p>${errorMessage}</p>
+              <button onclick="location.reload()" style="
+                margin-top: 1rem;
+                padding: 0.5rem 1rem;
+                cursor: pointer;
+                border: 1px solid var(--rfs-error-border, #c33);
+                background-color: white;
+                color: var(--rfs-error-color, #c33);
+                border-radius: 4px;
+              ">Retry</button>
+            </div>
+          </div>
+        `);
+      }
+    });
 }
 
 // Ensure the map is initialized after the DOM content is loaded

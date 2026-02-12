@@ -284,8 +284,12 @@
                     <input id="emailInput" type="email" name="email" placeholder="Email" autocomplete="email"
                         required />
                     <input name="phone" placeholder="Phone" autocomplete="tel" />
-                    <textarea name="enquiry" placeholder="what would you like to know?"
-                        aria-label="What would you like to know?"></textarea>
+                    <textarea name="message" placeholder="what would you like to know?"
+                        aria-label="What would you like to know?" required></textarea>
+                    <!-- Honeypot field for spam prevention - hidden from users -->
+                    <input name="website" type="text" placeholder="Website" autocomplete="off" 
+                        style="position: absolute; left: -9999px; width: 1px; height: 1px;" 
+                        tabindex="-1" aria-hidden="true" />
                 </fieldset>
                 <footer>
                     <input id="submitButton" type="submit" value="Submit" />
@@ -316,6 +320,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.4/purify.min.js"></script>
 
 <!-- Load my own scripts -->
+<script src="js/error-handler.js" defer></script>
 <script src="js/main.js" defer></script>
 <script src="js/scroll.js" defer></script>
 <script src="js/map.js" defer></script>

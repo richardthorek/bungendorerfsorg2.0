@@ -36,6 +36,44 @@ app.get('/mapbox-token', (req, res) => {
   res.json({ token: process.env.MAPBOX_ACCESS_TOKEN });
 });
 
+// Validation helper function
+function validateContactFormData(data) {
+  const errors = [];
+
+  // Name validation
+  if (!data.name || typeof data.name !== 'string' || data.name.trim().length < 2) {
+    errors.push('Name must be at least 2 characters long');
+  }
+  if (data.name && data.name.trim().length > 100) {
+    errors.push('Name must be less than 100 characters');
+  }
+
+  // Email validation
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!data.email || !emailPattern.test(data.email)) {
+    errors.push('Please provide a valid email address');
+  }
+
+  // Phone validation (optional field)
+  if (data.phone && data.phone.trim()) {
+    const phonePattern = /^(\+?61|0)[2-478](?:[ -]?[0-9]){8}$/;
+    const cleanPhone = data.phone.replace(/[\s()-]/g, '');
+    if (!phonePattern.test(cleanPhone)) {
+      errors.push('Please provide a valid Australian phone number');
+    }
+  }
+
+  // Message validation
+  if (!data.message || typeof data.message !== 'string' || data.message.trim().length < 10) {
+    errors.push('Message must be at least 10 characters long');
+  }
+  if (data.message && data.message.trim().length > 2000) {
+    errors.push('Message must be less than 2000 characters');
+  }
+
+  return errors;
+}
+
 // Proxy endpoint for contact form submission
 app.post('/api/contact', async (req, res) => {
   try {
@@ -46,10 +84,34 @@ app.post('/api/contact', async (req, res) => {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
+    // Honeypot spam check - if website field is filled, reject silently
+    if (req.body.website) {
+      console.warn('Potential spam submission detected (honeypot filled)');
+      // Return success to not alert spammers
+      return res.json({ success: true, message: 'Thank you for your submission' });
+    }
+
+    // Validate form data
+    const validationErrors = validateContactFormData(req.body);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: validationErrors 
+      });
+    }
+
+    // Sanitize data before sending to webhook
+    const sanitizedData = {
+      name: req.body.name.trim(),
+      email: req.body.email.trim().toLowerCase(),
+      phone: req.body.phone ? req.body.phone.trim() : '',
+      message: req.body.message.trim()
+    };
+
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(sanitizedData)
     });
     
     if (!response.ok) {
