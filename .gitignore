@@ -1,6 +1,5 @@
 secrets.env
 node_modules
-package-lock.json
 .env
 RFS-Style-Guide.md
 

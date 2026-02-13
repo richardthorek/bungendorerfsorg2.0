@@ -20,9 +20,16 @@ describe("Server-side Validation", () => {
       }
 
       // Email validation
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!data.email || !emailPattern.test(data.email)) {
+      // Prevent ReDoS by checking length first and using a simpler pattern
+      if (!data.email || typeof data.email !== 'string') {
         errors.push('Please provide a valid email address');
+      } else if (data.email.length > 254) {
+        errors.push('Email address is too long');
+      } else {
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailPattern.test(data.email)) {
+          errors.push('Please provide a valid email address');
+        }
       }
 
       // Phone validation (optional field)

@@ -119,9 +119,15 @@ function validateContactForm(data) {
   }
 
   // Email validation
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!data.email || !emailPattern.test(data.email)) {
+  // Prevent ReDoS by checking length first and using a simpler pattern
+  if (!data.email || data.email.length > 254) {
     errors.push("Please enter a valid email address.");
+  } else {
+    // Simple email validation - allows basic email format without ReDoS risk
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailPattern.test(data.email)) {
+      errors.push("Please enter a valid email address.");
+    }
   }
 
   // Phone validation (Australian format - optional field)
@@ -152,7 +158,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   emailInput.addEventListener("input", () => {
     const emailValue = emailInput.value;
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Simple email validation - allows basic email format without ReDoS risk
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     emailInput.setAttribute("aria-invalid", !emailPattern.test(emailValue));
   });
