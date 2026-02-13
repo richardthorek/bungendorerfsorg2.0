@@ -15,31 +15,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fetch events data from the URL
   fetch("/api/calendar-events")
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
+    .then((response) => response.json())
     .then((data) => {
-      const events = data.value;
+      const events = Array.isArray(data?.value) ? data.value : [];
 
       // Filter and display Membership events
       const membershipEvents = events.filter((event) =>
-        event.categories.includes("Public - Training")
+        Array.isArray(event.categories) && event.categories.includes("Public - Training")
       );
       displayEvents(membershipEvents, membershipCalendar);
 
       // Filter and display Community Events
       const communityEvents = events.filter((event) =>
-        event.categories.includes("Public - Community Engagement")
+        Array.isArray(event.categories) && event.categories.includes("Public - Community Engagement")
       );
       displayEvents(communityEvents, communityEventsCalendar);
     })
     .catch((error) => {
       console.error("Error fetching events:", error);
       const errorMessage = getUserFriendlyErrorMessage(error);
-      
       // Show error in both calendars
       if (membershipCalendar) {
         showErrorMessage("membershipCalendar", errorMessage, true);

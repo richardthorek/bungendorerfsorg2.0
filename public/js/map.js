@@ -89,13 +89,9 @@ function initMap() {
           "Content-Type": "application/json",
         },
       })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
+        .then((response) => response.json())
         .then((data) => {
+          const features = Array.isArray(data?.features) ? data.features : [];
           const categoryCounts = {
             Other: 0,
             Advice: 0,
@@ -104,17 +100,22 @@ function initMap() {
           };
 
           // Check if the current URL is localhost:3000
-          const isTest =
-            (window.location.hostname === "localhost" && window.location.port === "3000") ||
-            window.location.href ===
-              "https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net/";
+          const hostname = window.location.hostname;
+          const isDevHost =
+            hostname === "localhost" ||
+            hostname === "127.0.0.1" ||
+            hostname === "0.0.0.0" ||
+            hostname.endsWith(".githubpreview.dev") ||
+            hostname.endsWith(".app.github.dev");
+          const isLiveDevHost = hostname.includes("lively-flower-0577f4700-livedev");
+          const isTest = isDevHost || isLiveDevHost;
 
           // Filter features that contain "COUNCIL AREA: Queanbeyan-Palerang" or "COUNCIL AREA: ACT" in the description
           const filteredFeatures = isTest
             ? data.features
             : data.features.filter(
-              (feature) =>
-                feature.properties &&
+                (feature) =>
+                  feature.properties &&
                   feature.properties.description &&
                   (feature.properties.description.includes("COUNCIL AREA: Queanbeyan-Palerang") ||
                     feature.properties.description.includes("COUNCIL AREA: ACT"))
@@ -202,6 +203,8 @@ function initMap() {
 
           // Create a mini table in the incidentCountCell
           const incidentCountCell = document.getElementById("incidentCountCell");
+          const incidentCountLabel = document.getElementById("incidentCountLabel");
+          const incidentTotalCount = document.getElementById("incidentTotalCount");
           let tableHTML = "<table>";
 
           if (categoryCounts["Emergency Warning"] > 0) {
@@ -238,7 +241,54 @@ function initMap() {
           }
 
           tableHTML += "</table>";
-          incidentCountCell.innerHTML = DOMPurify.sanitize(tableHTML);
+
+          const totalIncidents = categoryCounts["Emergency Warning"] + categoryCounts["Watch and Act"] +
+                                categoryCounts["Advice"] + categoryCounts["Other"];
+
+          if (incidentTotalCount) {
+            incidentTotalCount.textContent = `${totalIncidents}`;
+          }
+
+          if (incidentCountCell) {
+            if (totalIncidents === 0) {
+              incidentCountCell.innerHTML = "";
+            } else {
+              incidentCountCell.innerHTML = DOMPurify.sanitize(tableHTML);
+            }
+          }
+
+          if (incidentCountLabel) {
+            incidentCountLabel.textContent = totalIncidents === 0
+              ? "No active incidents in our area"
+              : "Current incidents in our area";
+          }
+
+          // Update emergency dashboard with incident data
+          if (typeof window.updateEmergencyDashboard === 'function') {
+
+            // Build incidents list for mobile view
+            const incidentsList = filteredFeatures.slice(0, 5).map(feature => {
+              const fields = extractFields(feature.properties.description);
+              return {
+                title: feature.properties.title || 'Unknown',
+                status: fields.status || fields.alertlevel || 'Unknown',
+                location: fields.location || 'Unknown location'
+              };
+            });
+
+            // Get current danger level from the page
+            const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
+            const fireDangerMessage = document.getElementById("fireDangerMessage");
+
+            if (fireDangerRatingCell && fireDangerMessage) {
+              window.updateEmergencyDashboard({
+                dangerLevel: fireDangerRatingCell.textContent || 'MODERATE',
+                message: fireDangerMessage.textContent || 'Plan and prepare for fires in your area',
+                incidentCount: totalIncidents,
+                incidents: incidentsList
+              });
+            }
+          }
 
           // Ensure the station marker is included in the bounds calculation
           const stationIcon = L.icon({
@@ -275,6 +325,13 @@ function initMap() {
           console.error("Error fetching the GeoJSON data:", error);
           const errorMessage = getUserFriendlyErrorMessage(error);
           const incidentCountCell = document.getElementById("incidentCountCell");
+          const incidentCountLabel = document.getElementById("incidentCountLabel");
+          const incidentTotalCount = document.getElementById("incidentTotalCount");
+
+          if (incidentTotalCount) {
+            incidentTotalCount.textContent = "0";
+          }
+
           if (incidentCountCell) {
             incidentCountCell.innerHTML = DOMPurify.sanitize(`
               <div role="alert" style="color: var(--rfs-error-color, #c33); padding: 1rem;">
@@ -282,44 +339,61 @@ function initMap() {
               </div>
             `);
           }
+
+          if (incidentCountLabel) {
+            incidentCountLabel.textContent = "No active incidents in our area";
+          }
+
+          populateFireInfoTable({ features: [] });
+
+          if (typeof window.updateEmergencyDashboard === "function") {
+            const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
+            const fireDangerMessage = document.getElementById("fireDangerMessage");
+            window.updateEmergencyDashboard({
+              dangerLevel: fireDangerRatingCell?.textContent || "NO RATING",
+              message: fireDangerMessage?.textContent || "Rating information currently unavailable.",
+              incidentCount: 0,
+              incidents: []
+            });
+          }
         });
     })
-    .catch((error) => {
-      console.error("Error fetching Mapbox token:", error);
-      // Display error on map container if available
-      const mapContainer = document.getElementById("map");
-      if (mapContainer) {
-        const errorMessage = getUserFriendlyErrorMessage(error);
-        mapContainer.innerHTML = DOMPurify.sanitize(`
-          <div role="alert" style="
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            background-color: var(--rfs-error-bg, #fee);
-            border: 2px solid var(--rfs-error-border, #c33);
-            color: var(--rfs-error-color, #c33);
-            padding: 2rem;
-            text-align: center;
-          ">
-            <div>
-              <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-              <p style="font-weight: bold; margin-bottom: 0.5rem;">Unable to Load Map</p>
-              <p>${errorMessage}</p>
-              <button onclick="location.reload()" style="
-                margin-top: 1rem;
-                padding: 0.5rem 1rem;
-                cursor: pointer;
-                border: 1px solid var(--rfs-error-border, #c33);
-                background-color: white;
-                color: var(--rfs-error-color, #c33);
-                border-radius: 4px;
-              ">Retry</button>
-            </div>
-          </div>
-        `);
-      }
-    });
+     .catch((error) => {
+       console.error("Error fetching Mapbox token:", error);
+       // Display error on map container if available
+       const mapContainer = document.getElementById("map");
+       if (mapContainer) {
+         const errorMessage = getUserFriendlyErrorMessage(error);
+         mapContainer.innerHTML = DOMPurify.sanitize(`
+           <div role="alert" style="
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             height: 100%;
+             background-color: var(--rfs-error-bg, #fee);
+             border: 2px solid var(--rfs-error-border, #c33);
+             color: var(--rfs-error-color, #c33);
+             padding: 2rem;
+             text-align: center;
+           ">
+             <div>
+               <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+               <p style="font-weight: bold; margin-bottom: 0.5rem;">Unable to Load Map</p>
+               <p>${errorMessage}</p>
+               <button onclick="location.reload()" style="
+                 margin-top: 1rem;
+                 padding: 0.5rem 1rem;
+                 cursor: pointer;
+                 border: 1px solid var(--rfs-error-border, #c33);
+                 background-color: white;
+                 color: var(--rfs-error-color, #c33);
+                 border-radius: 4px;
+               ">Retry</button>
+             </div>
+           </div>
+         `);
+       }
+     });
 }
 
 // Ensure the map is initialized after the DOM content is loaded
