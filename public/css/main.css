@@ -1214,7 +1214,11 @@ a:focus {
     background-color: var(--rfs-neutral-light);
     border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: thin;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .tab-btn {
@@ -1234,7 +1238,7 @@ a:focus {
     justify-content: center;
     gap: var(--space-sm);
     position: relative;
-    margin-bottom: -3px;
+    margin-bottom: 0;
 }
 
 .tab-btn i {
@@ -1319,6 +1323,7 @@ a:focus {
         border-radius: var(--pico-border-radius);
         margin-bottom: var(--space-md);
         background-color: var(--pico-card-background-color);
+        animation: none;
     }
 
     .accordion-header.mobile-only {
@@ -1366,10 +1371,19 @@ a:focus {
         display: none;
         padding: var(--space-md);
         animation: slideDownAccordion 0.3s ease-out;
+        overflow: hidden;
     }
 
     .accordion-content.active {
         display: block;
+    }
+
+    .accordion-content article,
+    .accordion-content .content-section,
+    .accordion-content .summaryCard {
+        animation: none;
+        transform: none;
+        box-shadow: none;
     }
 
     @keyframes slideDownAccordion {
