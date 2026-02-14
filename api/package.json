@@ -1,0 +1,11 @@
+{
+  "name": "bungendore-rfs-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for Bungendore RFS website",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

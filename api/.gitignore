@@ -1,0 +1,9 @@
+# Azure Functions
+local.settings.json
+bin/
+obj/
+.vscode/
+__pycache__/
+.python_packages/
+.funcignore
+node_modules/

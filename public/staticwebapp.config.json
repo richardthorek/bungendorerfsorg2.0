@@ -1,14 +1,7 @@
 {
-  "routes": [
-    {
-      "route": "/mapbox-token",
-      "redirect": "https://api.bungendorerfs.org/mapbox-token",
-      "statusCode": 302
-    },
-    {
-      "route": "/api/*",
-      "redirect": "https://api.bungendorerfs.org/api/*",
-      "statusCode": 302
-    }
-  ]
+  "routes": [],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/Images/*", "/css/*", "/js/*", "/Content/*", "/api/*"]
+  }
 }
