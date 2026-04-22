@@ -2181,13 +2181,25 @@ main {
   border-radius: 0;
   border: none;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Toolbar is position:absolute so it floats over the map – map-layout fills 100% */
 .fire-info-map:fullscreen .map-layout,
 .fire-info-map:-webkit-full-screen .map-layout,
 .fire-info-map:-moz-full-screen .map-layout,
 .fire-info-map:-ms-fullscreen .map-layout {
-  height: calc(100vh - 48px);
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+}
+
+.fire-info-map:fullscreen #map,
+.fire-info-map:-webkit-full-screen #map,
+.fire-info-map:-moz-full-screen #map,
+.fire-info-map:-ms-fullscreen #map {
+  height: 100% !important;
 }
 
 /* CSS-class fallback for browsers that block Fullscreen API */
@@ -2200,10 +2212,18 @@ main {
   z-index: 9999 !important;
   border-radius: 0;
   border: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .fire-info-map.map-expanded .map-layout {
-  height: calc(100vh - 48px);
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+}
+
+.fire-info-map.map-expanded #map {
+  height: 100% !important;
 }
 
 body.map-fullscreen-active {

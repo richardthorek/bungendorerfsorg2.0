@@ -584,7 +584,6 @@ function createStandardMap(accessToken) {
     const label = expandBtn.querySelector("span");
     if (icon) icon.className = isExpanded ? "fas fa-compress" : "fas fa-expand";
     if (label) label.textContent = isExpanded ? "Close" : "Expand";
-    setTimeout(function() { map.resize(); }, 100);
   }
 
   if (expandBtn && mapContainerEl) {
@@ -625,6 +624,15 @@ function createStandardMap(accessToken) {
         updateExpandBtnState(isExpanded);
       });
     });
+
+    // ResizeObserver fires when the map canvas container actually changes size,
+    // which is the correct moment to call map.resize() (after CSS transitions complete).
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(function() {
+        map.resize();
+      });
+      ro.observe(map.getContainer());
+    }
 
     expandBtn.addEventListener("click", function() {
       if (canFullscreen) {
