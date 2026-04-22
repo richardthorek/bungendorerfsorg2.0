@@ -6,7 +6,7 @@ function initMap() {
   });
 
   // Fetch the Mapbox token from the backend API
-  fetch(`${getApiBaseUrl()}/mapbox-token`)
+  fetch(`${getApiBaseUrl()}/api/mapbox-token`)
     .then((response) => response.json())
     .then((data) => {
       const accessToken = data.token;
