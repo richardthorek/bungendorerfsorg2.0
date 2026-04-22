@@ -3,7 +3,7 @@
  * Proxies requests to Azure Logic Apps for fire incidents data (map markers)
  */
 
-module.exports = async function (context, req) {
+module.exports = async function (context, _req) {
   try {
     const webhookUrl = process.env.AZURE_INCIDENTS_WEBHOOK_URL;
 

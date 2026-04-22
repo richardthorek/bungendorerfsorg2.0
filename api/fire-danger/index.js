@@ -3,7 +3,7 @@
  * Proxies requests to Azure Logic Apps for fire danger data
  */
 
-module.exports = async function (context, req) {
+module.exports = async function (context, _req) {
   try {
     const webhookUrl = process.env.AZURE_FIRE_DANGER_WEBHOOK_URL;
 
