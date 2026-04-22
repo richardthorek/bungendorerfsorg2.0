@@ -1987,17 +1987,207 @@ main {
   overflow: hidden;
   border: 1px solid var(--rfs-light-grey);
   background-color: var(--rfs-neutral-light);
+  min-height: 280px;
+}
+
+.map-toolbar {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  z-index: 700;
+}
+
+.map-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: var(--text-color-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+.map-expand-btn:hover {
+  transform: translateY(-1px);
+}
+
+.map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  height: 300px;
 }
 
 #fireInfoSummaryCard #map {
-  height: 260px;
+  height: 100%;
   width: 100%;
   margin-bottom: 0;
 }
 
+.map-detail-panel {
+  border-left: 1px solid var(--rfs-light-grey);
+  background: linear-gradient(180deg, #ffffff, #f6f6f6);
+  padding: var(--space-sm);
+  overflow-y: auto;
+  font-size: 0.84rem;
+}
+
+.map-detail-panel h5 {
+  margin: 0 0 var(--space-xs);
+  font-size: 0.9rem;
+}
+
+.map-detail-placeholder {
+  margin: 0;
+  color: var(--rfs-dark-grey);
+}
+
+.map-detail-badge {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  margin-bottom: var(--space-xs);
+}
+
+.map-detail-badge.advice {
+  background-color: #215e9e;
+}
+
+.map-detail-badge.watch-and-act {
+  background-color: #f59f00;
+  color: #3a2a00;
+}
+
+.map-detail-badge.emergency-warning {
+  background-color: #d00000;
+}
+
+.map-detail-badge.other {
+  background-color: #666;
+}
+
+.map-detail-badge.station {
+  background-color: #0b5f3b;
+}
+
+.map-detail-panel .detail-row {
+  margin: 0.15rem 0;
+}
+
+.map-detail-panel .detail-label {
+  font-weight: 700;
+}
+
+.map-detail-title {
+  margin: 0 0 var(--space-xs);
+  font-size: 0.95rem;
+}
+
+/* ── Australian Warning System map markers ─────────────────────────────────── */
+
+/*
+ * Reset ALL Mapbox default marker chrome. Mapboxgl wraps every custom element in
+ * a .mapboxgl-marker div which carries background, border-radius, and transform
+ * that would otherwise produce the unwanted blue rectangle.
+ */
+.mapboxgl-marker {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Wrapper for each AWS-triangle icon */
+.aws-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+}
+
+.aws-marker__img {
+  width: 36px;
+  height: 36px;
+  display: block;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+}
+
+/* Station icon is slightly larger so it stands out */
+.aws-marker--station .aws-marker__img,
+.aws-marker__img--station {
+  width: 40px;
+  height: 40px;
+}
+
+/* ── Map detail panel header ───────────────────────────────────────────────── */
+
+.map-detail-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--rfs-light-grey);
+}
+
+.map-detail-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.map-detail-dl {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.map-detail-dl dd {
+  margin: 0;
+}
+
+.map-detail-station-body {
+  font-size: 0.82rem;
+}
+
+.map-detail-station-body header {
+  display: none; /* Hide duplicate header from stationCard */
+}
+
+.fire-info-map.map-expanded {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 1300;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  min-height: 0;
+}
+
+.fire-info-map.map-expanded .map-layout {
+  height: calc(100% - 48px);
+}
+
+body.map-fullscreen-active {
+  overflow: hidden;
+}
+
 .incident-summary {
   position: absolute;
-  right: var(--space-sm);
+  left: var(--space-sm);
   bottom: var(--space-sm);
   background: rgba(255, 255, 255, 0.92);
   color: var(--text-color-dark);
@@ -2117,6 +2307,18 @@ main {
     min-width: 80px;
   }
 
+  .map-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 220px auto;
+    height: auto;
+  }
+
+  .map-detail-panel {
+    border-left: 0;
+    border-top: 1px solid var(--rfs-light-grey);
+    max-height: 180px;
+  }
+
   #fireInfoSummaryCard #map {
     height: 220px;
   }
@@ -2136,6 +2338,19 @@ main {
   .quick-action-btn {
     justify-content: center;
     padding: var(--space-sm);
+  }
+
+  .fire-info-map.map-expanded {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 0;
+  }
+
+  .fire-info-map.map-expanded .map-layout {
+    grid-template-rows: minmax(280px, 52vh) 1fr;
+    height: calc(100% - 48px);
   }
 }
 

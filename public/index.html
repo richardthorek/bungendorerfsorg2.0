@@ -266,8 +266,22 @@
                     <h4>Local Incidents Map</h4>
                   </div>
                   <div class="panel-content">
-                    <div class="fire-info-map">
-                      <div id="map"></div>
+                    <div class="fire-info-map" id="fireInfoMapContainer">
+                      <div class="map-toolbar">
+                        <button id="mapExpandBtn" class="map-expand-btn" type="button" aria-expanded="false">
+                          <i class="fas fa-expand"></i>
+                          <span>Expand</span>
+                        </button>
+                      </div>
+                      <div class="map-layout">
+                        <div id="map" aria-label="Local incident map"></div>
+                        <aside id="mapDetailPanel" class="map-detail-panel" aria-live="polite">
+                          <h5>Incident Details</h5>
+                          <p class="map-detail-placeholder">
+                            Select an incident marker or incident shape on the map.
+                          </p>
+                        </aside>
+                      </div>
                       <div class="incident-summary" aria-live="polite">
                         <div class="incident-count">
                           <span id="incidentTotalCount">0</span> Incidents

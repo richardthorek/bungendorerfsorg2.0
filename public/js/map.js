@@ -1,25 +1,505 @@
 /* global mapboxgl */
 
-function initMap() {
-  fetch(`${getApiBaseUrl()}/api/mapbox-token`)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+// ─── Icon URLs ────────────────────────────────────────────────────────────────
+const ICONS = {
+  advice: "/Images/advice.png",
+  watchAndAct: "/Images/watch-and-act.png",
+  emergencyWarning: "/Images/emergency-warning.png",
+  other: "/Images/other.png",
+  station: "/Images/station.png",
+};
+
+// ─── Category helpers ─────────────────────────────────────────────────────────
+function getCategoryKey(category) {
+  if (category.includes("Emergency Warning")) return "emergencyWarning";
+  if (category.includes("Watch and Act")) return "watchAndAct";
+  if (category.includes("Advice")) return "advice";
+  return "other";
+}
+
+function getCategoryClass(category) {
+  return getCategoryKey(category).replace(/([A-Z])/g, (m) => "-" + m.toLowerCase());
+}
+
+/** Area fill colour per alert level for polygon overlays */
+const AREA_FILL_COLOUR = {
+  emergencyWarning: "#d7261e",
+  watchAndAct: "#f5a623",
+  advice: "#215e9e",
+  other: "#5f6368",
+};
+
+// ─── Marker element builders ──────────────────────────────────────────────────
+/**
+ * Custom Mapbox marker using the existing Australian Warning System PNG triangle.
+ * The wrapper div resets all Mapbox default marker styles so only the image shows.
+ */
+function createMarkerElement(iconUrl, altText, category) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "aws-marker aws-marker--" + getCategoryClass(category);
+  wrapper.setAttribute("role", "button");
+  wrapper.setAttribute("tabindex", "0");
+  wrapper.setAttribute("aria-label", altText);
+
+  const img = document.createElement("img");
+  img.src = iconUrl;
+  img.alt = altText;
+  img.draggable = false;
+  img.className = "aws-marker__img";
+
+  wrapper.appendChild(img);
+  return wrapper;
+}
+
+function createStationMarkerElement() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "aws-marker aws-marker--station";
+  wrapper.setAttribute("role", "button");
+  wrapper.setAttribute("tabindex", "0");
+  wrapper.setAttribute("aria-label", "Bungendore RFS Station");
+
+  const img = document.createElement("img");
+  img.src = ICONS.station;
+  img.alt = "Bungendore RFS Station";
+  img.draggable = false;
+  img.className = "aws-marker__img aws-marker__img--station";
+
+  wrapper.appendChild(img);
+  return wrapper;
+}
+
+// ─── Detail panel ─────────────────────────────────────────────────────────────
+
+function showDetailPanel(html) {
+  const panel = document.getElementById("mapDetailPanel");
+  if (panel) panel.innerHTML = DOMPurify.sanitize(html);
+}
+
+function clearDetailPanel() {
+  const panel = document.getElementById("mapDetailPanel");
+  if (panel) {
+    panel.innerHTML =
+      "<p class=\"map-detail-title\">Incident Details</p>" +
+      "<p class=\"map-detail-placeholder\">Select an incident marker or area on the map.</p>";
+  }
+}
+
+function buildIncidentDetailHTML(title, category, fields) {
+  const alertLevel = fields.alertlevel || "Not Applicable";
+  const location = fields.location || "Unknown";
+  const councilArea = fields.councilarea || "Unknown";
+  const status = fields.status || "Unknown";
+  const type = fields.type || "Unknown";
+  const size = fields.size || "Unknown";
+  const agency = fields.responsibleagency || "Unknown";
+  const updated = fields.updated || "Unknown";
+  const iconUrl = ICONS[getCategoryKey(category)] || ICONS.other;
+  const badgeClass = getCategoryClass(category);
+
+  return (
+    "<div class=\"map-detail-header\">" +
+    "<img src=\"" + iconUrl + "\" alt=\"" + alertLevel + "\" class=\"map-detail-icon\" />" +
+    "<div><p class=\"map-detail-title\">" + title + "</p>" +
+    "<span class=\"map-detail-badge " + badgeClass + "\">" + alertLevel + "</span></div>" +
+    "</div>" +
+    "<dl class=\"map-detail-dl\">" +
+    "<div class=\"detail-row\"><dt class=\"detail-label\">Status</dt><dd>" + status + "</dd></div>" +
+    "<div class=\"detail-row\"><dt class=\"detail-label\">Location</dt><dd>" + location + "</dd></div>" +
+    "<div class=\"detail-row\"><dt class=\"detail-label\">Council</dt><dd>" + councilArea + "</dd></div>" +
+    "<div class=\"detail-row\"><dt class=\"detail-label\">Type</dt><dd>" + type + "</dd></div>" +
+    "<div class=\"detail-row\"><dt class=\"detail-label\">Size</dt><dd>" + size + "</dd></div>" +
+    "<div class=\"detail-row\"><dt class=\"detail-label\">Agency</dt><dd>" + agency + "</dd></div>" +
+    "<div class=\"detail-row\"><dt class=\"detail-label\">Updated</dt><dd>" + updated + "</dd></div>" +
+    "</dl>"
+  );
+}
+
+function buildStationDetailHTML() {
+  const stationCard = document.getElementById("stationCard");
+  const raw = stationCard ? stationCard.innerHTML : "<p>Bungendore RFS Station</p>";
+  return (
+    "<div class=\"map-detail-header\">" +
+    "<img src=\"" + ICONS.station + "\" alt=\"Station\" class=\"map-detail-icon\" />" +
+    "<p class=\"map-detail-title\">Bungendore RFS Station</p></div>" +
+    "<div class=\"map-detail-station-body\">" + raw + "</div>"
+  );
+}
+
+// ─── Geometry helpers ─────────────────────────────────────────────────────────
+
+function getFeatureCoordinates(feature) {
+  if (!feature || !feature.geometry) return null;
+
+  if (feature.geometry.type === "Point") {
+    return feature.geometry.coordinates;
+  }
+
+  if (feature.geometry.type === "GeometryCollection") {
+    const pt = feature.geometry.geometries.find(function(g) {
+      return g.type === "Point" && Array.isArray(g.coordinates);
+    });
+    return pt ? pt.coordinates : null;
+  }
+
+  return null;
+}
+
+function getNonPointGeometries(feature) {
+  if (!feature || !feature.geometry) return [];
+
+  if (feature.geometry.type === "GeometryCollection") {
+    return feature.geometry.geometries.filter(function(g) { return g.type !== "Point"; });
+  }
+
+  if (feature.geometry.type !== "Point") {
+    return [feature.geometry];
+  }
+
+  return [];
+}
+
+// ─── Area/polygon layers ──────────────────────────────────────────────────────
+
+function addIncidentAreaLayers(map, areaFeatureCollection) {
+  if (map.getSource("incident-areas")) {
+    map.getSource("incident-areas").setData(areaFeatureCollection);
+    return;
+  }
+
+  map.addSource("incident-areas", { type: "geojson", data: areaFeatureCollection });
+
+  map.addLayer({
+    id: "incident-areas-fill",
+    type: "fill",
+    source: "incident-areas",
+    filter: ["==", ["geometry-type"], "Polygon"],
+    paint: {
+      "fill-color": [
+        "match", ["get", "categoryKey"],
+        "emergencyWarning", AREA_FILL_COLOUR.emergencyWarning,
+        "watchAndAct", AREA_FILL_COLOUR.watchAndAct,
+        "advice", AREA_FILL_COLOUR.advice,
+        AREA_FILL_COLOUR.other,
+      ],
+      "fill-opacity": 0.22,
+    },
+  });
+
+  map.addLayer({
+    id: "incident-areas-outline",
+    type: "line",
+    source: "incident-areas",
+    filter: ["==", ["geometry-type"], "Polygon"],
+    paint: {
+      "line-color": [
+        "match", ["get", "categoryKey"],
+        "emergencyWarning", AREA_FILL_COLOUR.emergencyWarning,
+        "watchAndAct", AREA_FILL_COLOUR.watchAndAct,
+        "advice", AREA_FILL_COLOUR.advice,
+        AREA_FILL_COLOUR.other,
+      ],
+      "line-width": 2,
+      "line-opacity": 0.75,
+    },
+  });
+
+  map.addLayer({
+    id: "incident-areas-line",
+    type: "line",
+    source: "incident-areas",
+    filter: ["==", ["geometry-type"], "LineString"],
+    paint: {
+      "line-color": [
+        "match", ["get", "categoryKey"],
+        "emergencyWarning", AREA_FILL_COLOUR.emergencyWarning,
+        "watchAndAct", AREA_FILL_COLOUR.watchAndAct,
+        "advice", AREA_FILL_COLOUR.advice,
+        AREA_FILL_COLOUR.other,
+      ],
+      "line-width": 2.5,
+      "line-dasharray": [3, 2],
+    },
+  });
+
+  map.on("click", "incident-areas-fill", function(e) {
+    const props = (e.features[0] && e.features[0].properties) || {};
+    const fields = extractFields(props.description || "");
+    showDetailPanel(buildIncidentDetailHTML(props.title || "Incident", props.category || "", fields));
+  });
+
+  map.on("mouseenter", "incident-areas-fill", function() { map.getCanvas().style.cursor = "pointer"; });
+  map.on("mouseleave", "incident-areas-fill", function() { map.getCanvas().style.cursor = ""; });
+}
+
+// ─── Icon selection ───────────────────────────────────────────────────────────
+
+function getIconUrlForFeature(feature, categoryCounts) {
+  const category = (feature.properties && feature.properties.category) || "";
+
+  if (category.includes("Emergency Warning")) {
+    categoryCounts["Emergency Warning"]++;
+    return ICONS.emergencyWarning;
+  }
+  if (category.includes("Watch and Act")) {
+    categoryCounts["Watch and Act"]++;
+    return ICONS.watchAndAct;
+  }
+  if (category.includes("Advice")) {
+    categoryCounts.Advice++;
+    return ICONS.advice;
+  }
+
+  categoryCounts.Other++;
+  return ICONS.other;
+}
+
+// ─── Incident loading ─────────────────────────────────────────────────────────
+
+function loadIncidentData(map) {
+  fetch(getApiBaseUrl() + "/api/fire-incidents", {
+    method: "GET",
+    headers: {
+      "X-Request-ID": "Get-Fire-Incidents",
+      "Content-Type": "application/json",
+    },
+  })
+    .then(function(response) {
+      if (!response.ok) throw new Error("HTTP error! status: " + response.status);
       return response.json();
     })
-    .then((data) => {
-      const accessToken = data?.token;
-      if (!accessToken) {
-        throw new Error("Mapbox token missing from API response");
+    .then(function(data) {
+      const features = Array.isArray(data && data.features) ? data.features : [];
+      const filteredFeatures = filterFeaturesForEnvironment(features);
+      const categoryCounts = { Other: 0, Advice: 0, "Watch and Act": 0, "Emergency Warning": 0 };
+
+      populateFireInfoTable({ features: filteredFeatures });
+
+      const bounds = new mapboxgl.LngLatBounds();
+      const incidentsList = [];
+      const areaFeatures = [];
+
+      filteredFeatures.forEach(function(feature) {
+        const category = (feature.properties && feature.properties.category) || "";
+        const iconUrl = getIconUrlForFeature(feature, categoryCounts);
+        const fields = extractFields((feature.properties && feature.properties.description) || "");
+        const title = (feature.properties && feature.properties.title) || "Incident";
+        const alertLevel = fields.alertlevel || "Not Applicable";
+        const categoryKey = getCategoryKey(category);
+
+        // Collect non-point geometries for area rendering
+        getNonPointGeometries(feature).forEach(function(geom) {
+          areaFeatures.push({
+            type: "Feature",
+            geometry: geom,
+            properties: {
+              category: category,
+              categoryKey: categoryKey,
+              title: title,
+              description: (feature.properties && feature.properties.description) || "",
+            },
+          });
+        });
+
+        // Point marker
+        const coordinates = getFeatureCoordinates(feature);
+        if (coordinates) {
+          const markerEl = createMarkerElement(iconUrl, alertLevel, category);
+
+          (function(t, c, f) {
+            markerEl.addEventListener("click", function() {
+              showDetailPanel(buildIncidentDetailHTML(t, c, f));
+            });
+            markerEl.addEventListener("keydown", function(e) {
+              if (e.key === "Enter" || e.key === " ") {
+                showDetailPanel(buildIncidentDetailHTML(t, c, f));
+              }
+            });
+          })(title, category, fields);
+
+          new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
+            .setLngLat(coordinates)
+            .addTo(map);
+
+          bounds.extend(coordinates);
+        }
+
+        incidentsList.push({
+          title: title,
+          status: fields.status || alertLevel || "Unknown",
+          location: fields.location || "Unknown location",
+        });
+      });
+
+      if (areaFeatures.length > 0) {
+        addIncidentAreaLayers(map, { type: "FeatureCollection", features: areaFeatures });
       }
-      createStandardMap(accessToken);
+
+      addStationMarker(map, bounds);
+      updateIncidentSummary(categoryCounts);
+      updateEmergencyWidget(incidentsList, categoryCounts);
+
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
+      }
     })
-    .catch((error) => {
-      console.error("Error fetching Mapbox token:", error);
-      showMapError(error);
+    .catch(function(error) {
+      console.error("Error fetching the GeoJSON data:", error);
+      const errorMessage = getUserFriendlyErrorMessage(error);
+      const incidentCountCell = document.getElementById("incidentCountCell");
+      const incidentCountLabel = document.getElementById("incidentCountLabel");
+      const incidentTotalCount = document.getElementById("incidentTotalCount");
+
+      if (incidentTotalCount) incidentTotalCount.textContent = "0";
+
+      if (incidentCountCell) {
+        incidentCountCell.innerHTML = DOMPurify.sanitize(
+          "<div role=\"alert\" style=\"color:var(--rfs-error-color,#c33);padding:1rem;\">" +
+          "<i class=\"fas fa-exclamation-triangle\"></i> " + errorMessage + "</div>"
+        );
+      }
+
+      if (incidentCountLabel) incidentCountLabel.textContent = "No active incidents in our area";
+
+      populateFireInfoTable({ features: [] });
+
+      if (typeof window.updateEmergencyDashboard === "function") {
+        const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
+        const fireDangerMessage = document.getElementById("fireDangerMessage");
+        window.updateEmergencyDashboard({
+          dangerLevel: (fireDangerRatingCell && fireDangerRatingCell.textContent) || "NO RATING",
+          message: (fireDangerMessage && fireDangerMessage.textContent) || "Rating information currently unavailable.",
+          incidentCount: 0,
+          incidents: [],
+        });
+      }
     });
 }
+
+// ─── Station marker ───────────────────────────────────────────────────────────
+
+function addStationMarker(map, bounds) {
+  const stationCoordinates = [149.43974909148088, -35.26165168903826];
+  const markerEl = createStationMarkerElement();
+
+  markerEl.addEventListener("click", function() {
+    showDetailPanel(buildStationDetailHTML());
+  });
+
+  markerEl.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      showDetailPanel(buildStationDetailHTML());
+    }
+  });
+
+  new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
+    .setLngLat(stationCoordinates)
+    .addTo(map);
+
+  bounds.extend(stationCoordinates);
+}
+
+// ─── Incident summary widget ──────────────────────────────────────────────────
+
+function updateIncidentSummary(categoryCounts) {
+  const incidentCountCell = document.getElementById("incidentCountCell");
+  const incidentCountLabel = document.getElementById("incidentCountLabel");
+  const incidentTotalCount = document.getElementById("incidentTotalCount");
+
+  const total =
+    categoryCounts["Emergency Warning"] +
+    categoryCounts["Watch and Act"] +
+    categoryCounts.Advice +
+    categoryCounts.Other;
+
+  if (incidentTotalCount) incidentTotalCount.textContent = String(total);
+
+  const rows = [
+    ["Emergency Warning", ICONS.emergencyWarning],
+    ["Watch and Act", ICONS.watchAndAct],
+    ["Advice", ICONS.advice],
+    ["Other", ICONS.other],
+  ]
+    .filter(function(pair) { return categoryCounts[pair[0]] > 0; })
+    .map(function(pair) {
+      return "<tr><td><img src=\"" + pair[1] + "\" alt=\"" + pair[0] + "\" /></td><td>" + categoryCounts[pair[0]] + "</td></tr>";
+    })
+    .join("");
+
+  if (incidentCountCell) {
+    incidentCountCell.innerHTML = total === 0 ? "" : DOMPurify.sanitize("<table>" + rows + "</table>");
+  }
+
+  if (incidentCountLabel) {
+    incidentCountLabel.textContent =
+      total === 0 ? "No active incidents in our area" : "Current incidents in our area";
+  }
+}
+
+function updateEmergencyWidget(incidentsList, categoryCounts) {
+  if (typeof window.updateEmergencyDashboard !== "function") return;
+
+  const total =
+    categoryCounts["Emergency Warning"] +
+    categoryCounts["Watch and Act"] +
+    categoryCounts.Advice +
+    categoryCounts.Other;
+
+  const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
+  const fireDangerMessage = document.getElementById("fireDangerMessage");
+
+  window.updateEmergencyDashboard({
+    dangerLevel: (fireDangerRatingCell && fireDangerRatingCell.textContent) || "MODERATE",
+    message: (fireDangerMessage && fireDangerMessage.textContent) || "Plan and prepare for fires in your area",
+    incidentCount: total,
+    incidents: incidentsList.slice(0, 5),
+  });
+}
+
+// ─── Filtering ────────────────────────────────────────────────────────────────
+
+function filterFeaturesForEnvironment(features) {
+  const hostname = window.location.hostname;
+  const isTest =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname.endsWith(".githubpreview.dev") ||
+    hostname.endsWith(".app.github.dev") ||
+    hostname.includes("lively-flower-0577f4700-livedev");
+
+  if (isTest) return features;
+
+  return features.filter(function(feature) {
+    const desc = (feature.properties && feature.properties.description) || "";
+    return desc.includes("COUNCIL AREA: Queanbeyan-Palerang") || desc.includes("COUNCIL AREA: ACT");
+  });
+}
+
+// ─── Error display ────────────────────────────────────────────────────────────
+
+function showMapError(error) {
+  const mapContainer = document.getElementById("map");
+  if (!mapContainer) return;
+
+  const errorMessage = getUserFriendlyErrorMessage(error);
+  mapContainer.innerHTML = DOMPurify.sanitize(
+    "<div role=\"alert\" style=\"" +
+    "display:flex;align-items:center;justify-content:center;height:100%;" +
+    "background-color:var(--rfs-error-bg,#fee);" +
+    "border:2px solid var(--rfs-error-border,#c33);" +
+    "color:var(--rfs-error-color,#c33);padding:2rem;text-align:center;\">" +
+    "<div>" +
+    "<i class=\"fas fa-exclamation-triangle\" style=\"font-size:2rem;margin-bottom:1rem;\"></i>" +
+    "<p style=\"font-weight:bold;margin-bottom:0.5rem;\">Unable to Load Map</p>" +
+    "<p>" + errorMessage + "</p>" +
+    "<button onclick=\"location.reload()\" style=\"margin-top:1rem;padding:0.5rem 1rem;" +
+    "cursor:pointer;border:1px solid var(--rfs-error-border,#c33);" +
+    "background-color:white;color:var(--rfs-error-color,#c33);border-radius:4px;\">Retry</button>" +
+    "</div></div>"
+  );
+}
+
+// ─── Lighting preset (time-of-day + site theme) ───────────────────────────────
 
 function createStandardMap(accessToken) {
   mapboxgl.accessToken = accessToken;
@@ -38,8 +518,26 @@ function createStandardMap(accessToken) {
   map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), "top-right");
 
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
-  const updateLightPreset = () => {
-    const lightPreset = prefersDark.matches ? "night" : "day";
+  let currentLightPreset = "";
+
+  const getTimeOfDayPreset = function() {
+    const hour = new Date().getHours();
+    if (hour < 5) return "night";
+    if (hour < 7) return "dawn";
+    if (hour < 17) return "day";
+    if (hour < 19) return "dusk";
+    return "night";
+  };
+
+  const resolveStyledLightPreset = function() {
+    const timePreset = getTimeOfDayPreset();
+    if (!prefersDark.matches) return timePreset;
+    return timePreset === "day" ? "dusk" : timePreset;
+  };
+
+  const updateLightPreset = function() {
+    const lightPreset = resolveStyledLightPreset();
+    if (lightPreset === currentLightPreset) return;
     if (typeof map.setConfigProperty === "function") {
       map.setConfigProperty("basemap", "lightPreset", lightPreset);
       map.setConfigProperty("basemap", "show3dObjects", true);
@@ -47,370 +545,71 @@ function createStandardMap(accessToken) {
       map.setConfigProperty("basemap", "showPointOfInterestLabels", true);
       map.setConfigProperty("basemap", "showRoadLabels", true);
       map.setConfigProperty("basemap", "showTransitLabels", true);
+      currentLightPreset = lightPreset;
     }
   };
 
-  map.on("load", () => {
+  map.on("load", function() {
     updateLightPreset();
     loadIncidentData(map);
+    window.setInterval(updateLightPreset, 5 * 60 * 1000);
   });
 
-  prefersDark.addEventListener("change", updateLightPreset);
-}
+  // Clicking empty map area clears the detail panel
+  map.on("click", function(e) {
+    if (!e.originalEvent.defaultPrevented) {
+      clearDetailPanel();
+    }
+  });
 
-function loadIncidentData(map) {
-  const icons = {
-    advice: "/Images/advice.png",
-    watchAndAct: "/Images/watch-and-act.png",
-    emergencyWarning: "/Images/emergency-warning.png",
-    other: "/Images/other.png",
-    station: "/Images/station.png",
-  };
+  if (typeof prefersDark.addEventListener === "function") {
+    prefersDark.addEventListener("change", updateLightPreset);
+  } else if (typeof prefersDark.addListener === "function") {
+    prefersDark.addListener(updateLightPreset);
+  }
 
-  fetch(`${getApiBaseUrl()}/api/fire-incidents`, {
-    method: "GET",
-    headers: {
-      "X-Request-ID": "Get-Fire-Incidents",
-      "Content-Type": "application/json",
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((data) => {
-      const features = Array.isArray(data?.features) ? data.features : [];
-      const filteredFeatures = filterFeaturesForEnvironment(features);
-      const categoryCounts = {
-        Other: 0,
-        Advice: 0,
-        "Watch and Act": 0,
-        "Emergency Warning": 0,
-      };
+  // ── Fullscreen toggle ────────────────────────────────────────────────────
+  const expandBtn = document.getElementById("mapExpandBtn");
+  const mapContainerEl = document.getElementById("fireInfoMapContainer");
 
-      populateFireInfoTable({ features: filteredFeatures });
+  if (expandBtn && mapContainerEl) {
+    expandBtn.addEventListener("click", function() {
+      const isExpanded = mapContainerEl.classList.toggle("map-expanded");
+      document.body.classList.toggle("map-fullscreen-active", isExpanded);
+      expandBtn.setAttribute("aria-expanded", String(isExpanded));
 
-      const bounds = new mapboxgl.LngLatBounds();
-      const incidentsList = [];
+      const icon = expandBtn.querySelector("i");
+      const label = expandBtn.querySelector("span");
+      if (icon) icon.className = isExpanded ? "fas fa-compress" : "fas fa-expand";
+      if (label) label.textContent = isExpanded ? "Close" : "Expand";
 
-      filteredFeatures.forEach((feature) => {
-        const coordinates = getFeatureCoordinates(feature);
-        if (!coordinates) {
-          return;
-        }
+      setTimeout(function() { map.resize(); }, 60);
+    });
 
-        const iconUrl = getIconUrlForFeature(feature, categoryCounts, icons);
-        const fields = extractFields(feature.properties?.description || "");
-        const alertLevel = fields.alertlevel || "Not Applicable";
-        const location = fields.location || "Unknown";
-        const councilArea = fields.councilarea || "Unknown";
-        const status = fields.status || "Unknown";
-        const type = fields.type || "Unknown";
-        const size = fields.size || "Unknown";
-        const responsibleAgency = fields.responsibleagency || "Unknown";
-        const updated = fields.updated || "Unknown";
-
-        const cardHTML = `
-          <article class="feature-card compact">
-            <div class="compact-header">
-              <span id="feature-card-header-span">
-                <img src="${iconUrl}" alt="${alertLevel}" class="cardIcon"> ${status}
-              </span>
-              <p>${feature.properties?.title || "Incident"}</p>
-            </div>
-            <div class="card-content">
-              <p>${location}</p>
-              <div class="three-column-grid">
-                <p>${councilArea}</p>
-                <p>${type}</p>
-                <p>${size}</p>
-              </div>
-            </div>
-            <div>
-              <p class="align-bottom">${responsibleAgency} Updated ${updated}</p>
-            </div>
-          </article>
-        `;
-
-        const markerEl = document.createElement("img");
-        markerEl.src = iconUrl;
-        markerEl.alt = alertLevel;
-        markerEl.width = 32;
-        markerEl.height = 32;
-        markerEl.style.cursor = "pointer";
-
-        new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
-          .setLngLat(coordinates)
-          .setPopup(new mapboxgl.Popup({ offset: 24 }).setHTML(DOMPurify.sanitize(cardHTML)))
-          .addTo(map);
-
-        bounds.extend(coordinates);
-
-        incidentsList.push({
-          title: feature.properties?.title || "Unknown",
-          status: status || alertLevel || "Unknown",
-          location: location || "Unknown location",
-        });
-      });
-
-      addStationMarker(map, bounds, icons.station);
-      updateIncidentSummary(categoryCounts, icons);
-      updateEmergencyWidget(incidentsList, categoryCounts);
-
-      if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, {
-          padding: 80,
-          maxZoom: 12,
-        });
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching the GeoJSON data:", error);
-      const errorMessage = getUserFriendlyErrorMessage(error);
-      const incidentCountCell = document.getElementById("incidentCountCell");
-      const incidentCountLabel = document.getElementById("incidentCountLabel");
-      const incidentTotalCount = document.getElementById("incidentTotalCount");
-
-      if (incidentTotalCount) {
-        incidentTotalCount.textContent = "0";
-      }
-
-      if (incidentCountCell) {
-        incidentCountCell.innerHTML = DOMPurify.sanitize(`
-          <div role="alert" style="color: var(--rfs-error-color, #c33); padding: 1rem;">
-            <i class="fas fa-exclamation-triangle"></i> ${errorMessage}
-          </div>
-        `);
-      }
-
-      if (incidentCountLabel) {
-        incidentCountLabel.textContent = "No active incidents in our area";
-      }
-
-      populateFireInfoTable({ features: [] });
-
-      if (typeof window.updateEmergencyDashboard === "function") {
-        const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
-        const fireDangerMessage = document.getElementById("fireDangerMessage");
-        window.updateEmergencyDashboard({
-          dangerLevel: fireDangerRatingCell?.textContent || "NO RATING",
-          message: fireDangerMessage?.textContent || "Rating information currently unavailable.",
-          incidentCount: 0,
-          incidents: [],
-        });
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape" && mapContainerEl.classList.contains("map-expanded")) {
+        expandBtn.click();
       }
     });
-}
-
-function addStationMarker(map, bounds, stationIconUrl) {
-  const stationCoordinates = [149.43974909148088, -35.26165168903826];
-  const stationCard = document.getElementById("stationCard");
-  const stationCardContent = stationCard ? stationCard.innerHTML : "Bungendore RFS Station";
-
-  const markerEl = document.createElement("img");
-  markerEl.src = stationIconUrl;
-  markerEl.alt = "Station";
-  markerEl.width = 32;
-  markerEl.height = 32;
-  markerEl.style.cursor = "pointer";
-
-  new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
-    .setLngLat(stationCoordinates)
-    .setPopup(new mapboxgl.Popup({ offset: 24 }).setHTML(DOMPurify.sanitize(stationCardContent)))
-    .addTo(map);
-
-  bounds.extend(stationCoordinates);
-}
-
-function getFeatureCoordinates(feature) {
-  if (!feature?.geometry) {
-    return null;
-  }
-
-  if (feature.geometry.type === "Point" && Array.isArray(feature.geometry.coordinates)) {
-    return feature.geometry.coordinates;
-  }
-
-  if (feature.geometry.type === "GeometryCollection" && Array.isArray(feature.geometry.geometries)) {
-    const pointGeometry = feature.geometry.geometries.find(
-      (geometry) => geometry.type === "Point" && Array.isArray(geometry.coordinates)
-    );
-    return pointGeometry ? pointGeometry.coordinates : null;
-  }
-
-  return null;
-}
-
-function getIconUrlForFeature(feature, categoryCounts, icons) {
-  const category = feature.properties?.category || "";
-
-  if (category.includes("Emergency Warning")) {
-    categoryCounts["Emergency Warning"]++;
-    return icons.emergencyWarning;
-  }
-
-  if (category.includes("Watch and Act")) {
-    categoryCounts["Watch and Act"]++;
-    return icons.watchAndAct;
-  }
-
-  if (category.includes("Advice")) {
-    categoryCounts["Advice"]++;
-    return icons.advice;
-  }
-
-  categoryCounts.Other++;
-  return icons.other;
-}
-
-function updateIncidentSummary(categoryCounts, icons) {
-  const incidentCountCell = document.getElementById("incidentCountCell");
-  const incidentCountLabel = document.getElementById("incidentCountLabel");
-  const incidentTotalCount = document.getElementById("incidentTotalCount");
-
-  let tableHTML = "<table>";
-
-  if (categoryCounts["Emergency Warning"] > 0) {
-    tableHTML += `
-      <tr>
-        <td><img src="${icons.emergencyWarning}" alt="Emergency Warning" /></td>
-        <td>${categoryCounts["Emergency Warning"]}</td>
-      </tr>
-    `;
-  }
-
-  if (categoryCounts["Watch and Act"] > 0) {
-    tableHTML += `
-      <tr>
-        <td><img src="${icons.watchAndAct}" alt="Watch and Act" /></td>
-        <td>${categoryCounts["Watch and Act"]}</td>
-      </tr>
-    `;
-  }
-
-  if (categoryCounts.Advice > 0) {
-    tableHTML += `
-      <tr>
-        <td><img src="${icons.advice}" alt="Advice" /></td>
-        <td>${categoryCounts.Advice}</td>
-      </tr>
-    `;
-  }
-
-  if (categoryCounts.Other > 0) {
-    tableHTML += `
-      <tr>
-        <td><img src="${icons.other}" alt="Other" /></td>
-        <td>${categoryCounts.Other}</td>
-      </tr>
-    `;
-  }
-
-  tableHTML += "</table>";
-
-  const totalIncidents =
-    categoryCounts["Emergency Warning"] +
-    categoryCounts["Watch and Act"] +
-    categoryCounts.Advice +
-    categoryCounts.Other;
-
-  if (incidentTotalCount) {
-    incidentTotalCount.textContent = `${totalIncidents}`;
-  }
-
-  if (incidentCountCell) {
-    incidentCountCell.innerHTML = totalIncidents === 0 ? "" : DOMPurify.sanitize(tableHTML);
-  }
-
-  if (incidentCountLabel) {
-    incidentCountLabel.textContent =
-      totalIncidents === 0 ? "No active incidents in our area" : "Current incidents in our area";
   }
 }
 
-function updateEmergencyWidget(incidentsList, categoryCounts) {
-  if (typeof window.updateEmergencyDashboard !== "function") {
-    return;
-  }
+// ─── Entry point ──────────────────────────────────────────────────────────────
 
-  const totalIncidents =
-    categoryCounts["Emergency Warning"] +
-    categoryCounts["Watch and Act"] +
-    categoryCounts.Advice +
-    categoryCounts.Other;
-
-  const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
-  const fireDangerMessage = document.getElementById("fireDangerMessage");
-
-  window.updateEmergencyDashboard({
-    dangerLevel: fireDangerRatingCell?.textContent || "MODERATE",
-    message: fireDangerMessage?.textContent || "Plan and prepare for fires in your area",
-    incidentCount: totalIncidents,
-    incidents: incidentsList.slice(0, 5),
-  });
-}
-
-function filterFeaturesForEnvironment(features) {
-  const hostname = window.location.hostname;
-  const isDevHost =
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "0.0.0.0" ||
-    hostname.endsWith(".githubpreview.dev") ||
-    hostname.endsWith(".app.github.dev");
-  const isLiveDevHost = hostname.includes("lively-flower-0577f4700-livedev");
-  const isTest = isDevHost || isLiveDevHost;
-
-  if (isTest) {
-    return features;
-  }
-
-  return features.filter((feature) => {
-    const description = feature.properties?.description || "";
-    return (
-      description.includes("COUNCIL AREA: Queanbeyan-Palerang") ||
-      description.includes("COUNCIL AREA: ACT")
-    );
-  });
-}
-
-function showMapError(error) {
-  const mapContainer = document.getElementById("map");
-  if (!mapContainer) {
-    return;
-  }
-
-  const errorMessage = getUserFriendlyErrorMessage(error);
-  mapContainer.innerHTML = DOMPurify.sanitize(`
-    <div role="alert" style="
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      background-color: var(--rfs-error-bg, #fee);
-      border: 2px solid var(--rfs-error-border, #c33);
-      color: var(--rfs-error-color, #c33);
-      padding: 2rem;
-      text-align: center;
-    ">
-      <div>
-        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-        <p style="font-weight: bold; margin-bottom: 0.5rem;">Unable to Load Map</p>
-        <p>${errorMessage}</p>
-        <button onclick="location.reload()" style="
-          margin-top: 1rem;
-          padding: 0.5rem 1rem;
-          cursor: pointer;
-          border: 1px solid var(--rfs-error-border, #c33);
-          background-color: white;
-          color: var(--rfs-error-color, #c33);
-          border-radius: 4px;
-        ">Retry</button>
-      </div>
-    </div>
-  `);
+function initMap() {
+  fetch(getApiBaseUrl() + "/api/mapbox-token")
+    .then(function(response) {
+      if (!response.ok) throw new Error("HTTP error! status: " + response.status);
+      return response.json();
+    })
+    .then(function(data) {
+      if (!data || !data.token) throw new Error("Mapbox token missing from API response");
+      createStandardMap(data.token);
+    })
+    .catch(function(error) {
+      console.error("Error fetching Mapbox token:", error);
+      showMapError(error);
+    });
 }
 
 document.addEventListener("DOMContentLoaded", initMap);
