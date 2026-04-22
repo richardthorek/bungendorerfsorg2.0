@@ -1,0 +1,13 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "MAPBOX_ACCESS_TOKEN": "pk.your_mapbox_token",
+    "AZURE_CONTACT_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
+    "AZURE_CALENDAR_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
+    "AZURE_INCIDENTS_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
+    "AZURE_FIRE_DANGER_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
+    "ALLOWED_ORIGINS": "http://localhost:3000,https://bungendorerfs.org,https://www.bungendorerfs.org"
+  }
+}

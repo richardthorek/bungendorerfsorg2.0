@@ -121,15 +121,12 @@ function getUserFriendlyErrorMessage(error) {
 }
 
 /**
- * Get the API base URL based on the current hostname.
- * Uses the dedicated API host in production and relative paths in dev.
+ * Get the API base URL.
+ * Integrated SWA APIs are same-origin across all environments.
  * @returns {string}
  */
 function getApiBaseUrl() {
-  const hostname = window.location.hostname;
-  if (hostname === "bungendorerfs.org" || hostname === "www.bungendorerfs.org") {
-    return "https://api.bungendorerfs.org";
-  }
+  // Integrated SWA Functions are exposed on the same origin.
   return "";
 }
 

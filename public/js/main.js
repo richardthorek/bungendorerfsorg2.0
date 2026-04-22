@@ -176,10 +176,19 @@ document.addEventListener("DOMContentLoaded", () => {
             if (southernRangesDistrict) {
               const dangerNode = southernRangesDistrict.getElementsByTagName("DangerLevelToday")[0];
               let dangerLevelToday = dangerNode ? dangerNode.textContent : "";
-              dangerLevelToday = dangerLevelToday.trim().toUpperCase();
+              dangerLevelToday = dangerLevelToday
+                .replace(/-/g, " ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .toUpperCase();
 
               const ratingInfo = fireDangerRatings.FireDangerRatings.find(
-                (rating) => rating.Rating === dangerLevelToday
+                (rating) =>
+                  String(rating.Rating || "")
+                    .replace(/-/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim()
+                    .toUpperCase() === dangerLevelToday
               );
 
               if (!ratingInfo || !dangerLevelToday) {

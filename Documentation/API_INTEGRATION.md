@@ -24,9 +24,9 @@ The Bungendore RFS website uses a combination of server-side proxy endpoints and
 
 ```
 Frontend (Browser)
-    ↓
-Express Server (Proxy)
-    ↓
+  ↓
+Static Web Apps Integrated API (HTTP-trigger Azure Functions)
+  ↓
 Azure Logic Apps / External APIs
 ```
 

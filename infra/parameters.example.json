@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "staticWebAppName": {
+      "value": "bungendorerfs-static"
+    },
+    "location": {
+      "value": "eastasia"
+    },
+    "skuName": {
+      "value": "Free"
+    },
+    "mapboxAccessToken": {
+      "value": "pk.your_mapbox_token"
+    },
+    "azureContactWebhookUrl": {
+      "value": "https://prod-xx.australiaeast.logic.azure.com/workflows/..."
+    },
+    "azureCalendarWebhookUrl": {
+      "value": "https://prod-xx.australiaeast.logic.azure.com/workflows/..."
+    },
+    "azureIncidentsWebhookUrl": {
+      "value": "https://prod-xx.australiaeast.logic.azure.com/workflows/..."
+    },
+    "azureFireDangerWebhookUrl": {
+      "value": "https://prod-xx.australiaeast.logic.azure.com/workflows/..."
+    },
+    "allowedOrigins": {
+      "value": "https://bungendorerfs.org,https://www.bungendorerfs.org,https://lively-flower-0577f4700.5.azurestaticapps.net"
+    }
+  }
+}

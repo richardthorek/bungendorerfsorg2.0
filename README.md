@@ -13,14 +13,14 @@ This project is a website for the Bungendore Volunteer Rural Fire Brigade. It pr
 - **Contact Form**: Secure form with spam prevention and comprehensive validation
 - **Events Calendar**: Displays upcoming training and community events
 - **Optimized Assets**: Consolidated and optimized image assets and CSS
-- **Security**: Server-side proxies, XSS protection, input validation, and spam prevention
+- **Security**: Integrated API proxies, XSS protection, input validation, and spam prevention
 
 ## Technologies Used
 
 - **HTML5**: Semantic structure with accessibility features
 - **CSS3**: Modern styling with CSS variables and responsive design
 - **JavaScript (ES6+)**: Interactive features and API integrations
-- **Express.js**: Node.js web server with API proxy endpoints
+- **Azure Functions (SWA Integrated API)**: HTTP-trigger backend endpoints deployed with the static app
 - **Leaflet**: Interactive map with Mapbox tiles
 - **Azure Logic Apps**: Backend workflow integration
 - **DOMPurify**: XSS protection for dynamic content
@@ -53,7 +53,9 @@ This project is a website for the Bungendore Volunteer Rural Fire Brigade. It pr
 │   └── CODEBASE_REVIEW.md    # Technical review
 ├── __tests__/           # Jest unit tests
 ├── .github/workflows/   # CI/CD workflows
-├── server.js            # Express server with API proxies
+├── api/                 # Integrated SWA Functions API
+├── infra/               # Bicep IaC for SWA + app settings
+├── server.js            # Local Express fallback for non-SWA development
 ├── replace-token.js     # Build-time token replacement
 ├── jest.config.js       # Jest configuration
 ├── .eslintrc.json       # ESLint configuration
@@ -114,11 +116,29 @@ AZURE_FIRE_DANGER_WEBHOOK_URL=https://prod-...
 
 # Server Configuration
 PORT=3000
+
+# Optional mapbox-token origin allow-list
+ALLOWED_ORIGINS=https://bungendorerfs.org,https://www.bungendorerfs.org,http://localhost:3000
 ```
 
 **Important:** Never commit the `.env` file to version control. It contains sensitive credentials.
 
 ## Development
+
+### Infrastructure (IaC)
+
+Provision/update infrastructure with Bicep:
+
+```bash
+az group create --name BungendoreRFS --location eastasia
+cp infra/parameters.example.json infra/parameters.json
+az deployment group create \
+   --resource-group BungendoreRFS \
+   --template-file infra/main.bicep \
+   --parameters @infra/parameters.json
+```
+
+See `infra/README.md` for full details.
 
 ### Available Scripts
 
