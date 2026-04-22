@@ -11,21 +11,33 @@ const allowedOrigins = [
   "https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net",
 ];
 
-module.exports = async function (context, req) {
-  const origin = req.headers.origin || req.headers.referer;
+const allowedOriginPatterns = [
+  /^https:\/\/lively-flower-0577f4700-[0-9]+\.eastasia\.5\.azurestaticapps\.net$/,
+  /^https:\/\/[a-z0-9-]+\.githubpreview\.dev$/,
+  /^https:\/\/[a-z0-9-]+\.app\.github\.dev$/,
+];
 
-  // Extract origin from referer if needed
-  let validatedOrigin = origin;
-  if (!validatedOrigin && req.headers.referer) {
+module.exports = async function (context, req) {
+  const originHeader = req.headers.origin;
+  const refererHeader = req.headers.referer;
+
+  // Always normalize to an origin value before validation.
+  let validatedOrigin = originHeader;
+  if (!validatedOrigin && refererHeader) {
     try {
-      validatedOrigin = new URL(req.headers.referer).origin;
+      validatedOrigin = new URL(refererHeader).origin;
     } catch (e) {
-      // Invalid referer URL, ignore
+      // Invalid referer URL, ignore.
     }
   }
 
+  const isAllowedOrigin =
+    !validatedOrigin ||
+    allowedOrigins.includes(validatedOrigin) ||
+    allowedOriginPatterns.some((pattern) => pattern.test(validatedOrigin));
+
   // Allow requests without origin (same-origin requests) or validate origin
-  if (validatedOrigin && !allowedOrigins.includes(validatedOrigin)) {
+  if (!isAllowedOrigin) {
     context.res = {
       status: 403,
       headers: {
@@ -58,7 +70,7 @@ module.exports = async function (context, req) {
     "Access-Control-Allow-Headers": "Content-Type",
   };
 
-  if (validatedOrigin && allowedOrigins.includes(validatedOrigin)) {
+  if (validatedOrigin && isAllowedOrigin) {
     headers["Access-Control-Allow-Origin"] = validatedOrigin;
     headers["Vary"] = "Origin";
   }
