@@ -2018,8 +2018,13 @@ main {
 
 .map-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 0;
   height: 300px;
+  transition: grid-template-columns 0.25s ease;
+}
+
+.map-layout.panel-visible {
+  grid-template-columns: minmax(0, 1fr) 280px;
 }
 
 #fireInfoSummaryCard #map {
@@ -2033,7 +2038,9 @@ main {
   background: linear-gradient(180deg, #ffffff, #f6f6f6);
   padding: var(--space-sm);
   overflow-y: auto;
+  overflow-x: hidden;
   font-size: 0.84rem;
+  width: 280px; /* hold size when grid column animates */
 }
 
 .map-detail-panel h5 {
@@ -2165,20 +2172,38 @@ main {
   display: none; /* Hide duplicate header from stationCard */
 }
 
-.fire-info-map.map-expanded {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  bottom: 1rem;
-  left: 1rem;
-  z-index: 1300;
+/* Fullscreen via native Fullscreen API – browser handles containment */
+.fire-info-map:fullscreen,
+.fire-info-map:-webkit-full-screen,
+.fire-info-map:-moz-full-screen,
+.fire-info-map:-ms-fullscreen {
   background: #fff;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-  min-height: 0;
+  border-radius: 0;
+  border: none;
+  overflow: hidden;
+}
+
+.fire-info-map:fullscreen .map-layout,
+.fire-info-map:-webkit-full-screen .map-layout,
+.fire-info-map:-moz-full-screen .map-layout,
+.fire-info-map:-ms-fullscreen .map-layout {
+  height: calc(100vh - 48px);
+}
+
+/* CSS-class fallback for browsers that block Fullscreen API */
+.fire-info-map.map-expanded {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  z-index: 9999 !important;
+  border-radius: 0;
+  border: none;
 }
 
 .fire-info-map.map-expanded .map-layout {
-  height: calc(100% - 48px);
+  height: calc(100vh - 48px);
 }
 
 body.map-fullscreen-active {
@@ -2307,13 +2332,15 @@ body.map-fullscreen-active {
     min-width: 80px;
   }
 
-  .map-layout {
+  .map-layout,
+  .map-layout.panel-visible {
     grid-template-columns: 1fr;
     grid-template-rows: 220px auto;
     height: auto;
   }
 
   .map-detail-panel {
+    width: auto;
     border-left: 0;
     border-top: 1px solid var(--rfs-light-grey);
     max-height: 180px;

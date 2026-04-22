@@ -72,16 +72,22 @@ function createStationMarkerElement() {
 
 function showDetailPanel(html) {
   const panel = document.getElementById("mapDetailPanel");
-  if (panel) panel.innerHTML = DOMPurify.sanitize(html);
+  const layout = document.querySelector(".map-layout");
+  if (panel) {
+    panel.innerHTML = DOMPurify.sanitize(html);
+    panel.removeAttribute("hidden");
+  }
+  if (layout) layout.classList.add("panel-visible");
 }
 
 function clearDetailPanel() {
   const panel = document.getElementById("mapDetailPanel");
+  const layout = document.querySelector(".map-layout");
   if (panel) {
-    panel.innerHTML =
-      "<p class=\"map-detail-title\">Incident Details</p>" +
-      "<p class=\"map-detail-placeholder\">Select an incident marker or area on the map.</p>";
+    panel.innerHTML = "";
+    panel.setAttribute("hidden", "");
   }
+  if (layout) layout.classList.remove("panel-visible");
 }
 
 function buildIncidentDetailHTML(title, category, fields) {
@@ -572,23 +578,66 @@ function createStandardMap(accessToken) {
   const expandBtn = document.getElementById("mapExpandBtn");
   const mapContainerEl = document.getElementById("fireInfoMapContainer");
 
+  function updateExpandBtnState(isExpanded) {
+    expandBtn.setAttribute("aria-expanded", String(isExpanded));
+    const icon = expandBtn.querySelector("i");
+    const label = expandBtn.querySelector("span");
+    if (icon) icon.className = isExpanded ? "fas fa-compress" : "fas fa-expand";
+    if (label) label.textContent = isExpanded ? "Close" : "Expand";
+    setTimeout(function() { map.resize(); }, 100);
+  }
+
   if (expandBtn && mapContainerEl) {
-    expandBtn.addEventListener("click", function() {
-      const isExpanded = mapContainerEl.classList.toggle("map-expanded");
-      document.body.classList.toggle("map-fullscreen-active", isExpanded);
-      expandBtn.setAttribute("aria-expanded", String(isExpanded));
+    // Prefer native Fullscreen API – escapes any transform/overflow ancestor
+    const canFullscreen =
+      typeof mapContainerEl.requestFullscreen === "function" ||
+      typeof mapContainerEl.webkitRequestFullscreen === "function" ||
+      typeof mapContainerEl.mozRequestFullScreen === "function" ||
+      typeof mapContainerEl.msRequestFullscreen === "function";
 
-      const icon = expandBtn.querySelector("i");
-      const label = expandBtn.querySelector("span");
-      if (icon) icon.className = isExpanded ? "fas fa-compress" : "fas fa-expand";
-      if (label) label.textContent = isExpanded ? "Close" : "Expand";
+    const enterFullscreen = function() {
+      if (mapContainerEl.requestFullscreen) return mapContainerEl.requestFullscreen();
+      if (mapContainerEl.webkitRequestFullscreen) return mapContainerEl.webkitRequestFullscreen();
+      if (mapContainerEl.mozRequestFullScreen) return mapContainerEl.mozRequestFullScreen();
+      if (mapContainerEl.msRequestFullscreen) return mapContainerEl.msRequestFullscreen();
+    };
 
-      setTimeout(function() { map.resize(); }, 60);
+    const exitFullscreen = function() {
+      if (document.exitFullscreen) return document.exitFullscreen();
+      if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+      if (document.mozCancelFullScreen) return document.mozCancelFullScreen();
+      if (document.msExitFullscreen) return document.msExitFullscreen();
+    };
+
+    const getFullscreenElement = function() {
+      return document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement ||
+        null;
+    };
+
+    // Listen to native fullscreenchange to keep button in sync
+    ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evName) {
+      document.addEventListener(evName, function() {
+        const isExpanded = getFullscreenElement() === mapContainerEl ||
+          mapContainerEl.classList.contains("map-expanded");
+        updateExpandBtnState(isExpanded);
+      });
     });
 
-    document.addEventListener("keydown", function(e) {
-      if (e.key === "Escape" && mapContainerEl.classList.contains("map-expanded")) {
-        expandBtn.click();
+    expandBtn.addEventListener("click", function() {
+      if (canFullscreen) {
+        if (!getFullscreenElement()) {
+          enterFullscreen();
+        } else {
+          exitFullscreen();
+        }
+      } else {
+        // CSS-class fallback
+        const isExpanded = mapContainerEl.classList.toggle("map-expanded");
+        document.body.classList.toggle("map-fullscreen-active", isExpanded);
+        updateExpandBtnState(isExpanded);
       }
     });
   }
