@@ -580,6 +580,7 @@ a:focus {
 
 .hero.hero--incident .hero-map {
   opacity: 1;
+  cursor: pointer; /* clicking navigates to the Fire Information tab */
 }
 
 /* Narrow the content panel so map markers on the right are fully visible.

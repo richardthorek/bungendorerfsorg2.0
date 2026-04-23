@@ -336,6 +336,89 @@ function addMarkersToHeroMap(heroMap, markerData) {
 }
 
 /**
+ * Activate the Fire Information tab and scroll it into view.
+ * Used when the user clicks anywhere on the hero map so they are taken
+ * directly to the detailed incident information below the fold.
+ */
+function scrollToFireInfo() {
+  const btn = document.querySelector("[data-tab=\"fire-info\"]");
+  if (btn) btn.click();
+}
+
+/**
+ * Add incident geometry layers (polygon fill, outline, line) to the hero map.
+ * Mirrors addIncidentAreaLayers but uses hero-specific source/layer IDs so there
+ * is no collision with the main Fire Info map, and omits the detail-panel click
+ * handler (hero clicks are handled at the container level via scrollToFireInfo).
+ *
+ * @param {mapboxgl.Map} heroMap
+ * @param {GeoJSON.FeatureCollection} areaFeatureCollection
+ */
+function addHeroAreaLayers(heroMap, areaFeatureCollection) {
+  if (!heroMap || !areaFeatureCollection) return;
+
+  if (heroMap.getSource("hero-incident-areas")) {
+    heroMap.getSource("hero-incident-areas").setData(areaFeatureCollection);
+    return;
+  }
+
+  heroMap.addSource("hero-incident-areas", { type: "geojson", data: areaFeatureCollection });
+
+  heroMap.addLayer({
+    id: "hero-areas-fill",
+    type: "fill",
+    source: "hero-incident-areas",
+    filter: ["==", ["geometry-type"], "Polygon"],
+    paint: {
+      "fill-color": [
+        "match", ["get", "categoryKey"],
+        "emergencyWarning", AREA_FILL_COLOUR.emergencyWarning,
+        "watchAndAct", AREA_FILL_COLOUR.watchAndAct,
+        "advice", AREA_FILL_COLOUR.advice,
+        AREA_FILL_COLOUR.other,
+      ],
+      "fill-opacity": 0.22,
+    },
+  });
+
+  heroMap.addLayer({
+    id: "hero-areas-outline",
+    type: "line",
+    source: "hero-incident-areas",
+    filter: ["==", ["geometry-type"], "Polygon"],
+    paint: {
+      "line-color": [
+        "match", ["get", "categoryKey"],
+        "emergencyWarning", AREA_FILL_COLOUR.emergencyWarning,
+        "watchAndAct", AREA_FILL_COLOUR.watchAndAct,
+        "advice", AREA_FILL_COLOUR.advice,
+        AREA_FILL_COLOUR.other,
+      ],
+      "line-width": 2,
+      "line-opacity": 0.75,
+    },
+  });
+
+  heroMap.addLayer({
+    id: "hero-areas-line",
+    type: "line",
+    source: "hero-incident-areas",
+    filter: ["==", ["geometry-type"], "LineString"],
+    paint: {
+      "line-color": [
+        "match", ["get", "categoryKey"],
+        "emergencyWarning", AREA_FILL_COLOUR.emergencyWarning,
+        "watchAndAct", AREA_FILL_COLOUR.watchAndAct,
+        "advice", AREA_FILL_COLOUR.advice,
+        AREA_FILL_COLOUR.other,
+      ],
+      "line-width": 2.5,
+      "line-dasharray": [3, 2],
+    },
+  });
+}
+
+/**
  * Toggle the hero between calm (photo) and incident-active (map-led) states.
  *
  * When there are active incidents and the hero map hasn't been initialised yet,
@@ -347,8 +430,9 @@ function addMarkersToHeroMap(heroMap, markerData) {
  * @param {number} total - Total number of active incidents.
  * @param {mapboxgl.LngLatBounds} [bounds] - Bounds of active incidents (used to fit the hero map).
  * @param {Array} [markerData] - Marker data to render on the hero map.
+ * @param {GeoJSON.FeatureCollection} [areaFeatureCollection] - Incident geometry for the hero map.
  */
-function updateHeroState(total, bounds, markerData) {
+function updateHeroState(total, bounds, markerData, areaFeatureCollection) {
   const hero = document.getElementById("heroSection");
   const heroIncidentPanel = document.getElementById("heroIncidentCountPanel");
   const heroIncidentCount = document.getElementById("heroIncidentCount");
@@ -364,7 +448,7 @@ function updateHeroState(total, bounds, markerData) {
     // event so the transition fires only once tiles are ready.
     if (!_heroMapInitialised && _heroMapToken) {
       _heroMapInitialised = true;
-      initHeroMap(_heroMapToken, bounds, markerData || [], hero, heroIncidentPanel);
+      initHeroMap(_heroMapToken, bounds, markerData || [], areaFeatureCollection, hero, heroIncidentPanel);
     } else if (_heroMapInitialised) {
       // Map already loaded — apply class immediately and fit to new bounds
       hero.classList.add("hero--incident");
@@ -372,6 +456,9 @@ function updateHeroState(total, bounds, markerData) {
       const existingHeroMap = window._heroMapInstance;
       if (existingHeroMap && bounds && !bounds.isEmpty()) {
         existingHeroMap.fitBounds(bounds, { padding: heroMapFitPadding(), maxZoom: HERO_MAP_MAX_ZOOM });
+      }
+      if (existingHeroMap && areaFeatureCollection) {
+        addHeroAreaLayers(existingHeroMap, areaFeatureCollection);
       }
     }
   } else {
@@ -392,7 +479,7 @@ function updateHeroState(total, bounds, markerData) {
  * @param {HTMLElement} [heroEl] - The hero section element.
  * @param {HTMLElement} [heroIncidentPanel] - The incident count panel element.
  */
-function initHeroMap(token, bounds, markerData, heroEl, heroIncidentPanel) {
+function initHeroMap(token, bounds, markerData, areaFeatureCollection, heroEl, heroIncidentPanel) {
   const heroMapEl = document.getElementById("heroMap");
   if (!heroMapEl) return;
 
@@ -409,6 +496,12 @@ function initHeroMap(token, bounds, markerData, heroEl, heroIncidentPanel) {
 
   window._heroMapInstance = heroMap;
 
+  // Clicking anywhere on the hero map (marker or canvas) navigates to the
+  // Fire Information tab so the user can see incident detail below the fold.
+  // The container element always receives DOM click events even when the map
+  // is initialised with interactive: false.
+  heroMapEl.addEventListener("click", scrollToFireInfo);
+
   heroMap.on("load", function() {
     const preset = calculateLightPreset();
     if (typeof heroMap.setConfigProperty === "function") {
@@ -417,6 +510,12 @@ function initHeroMap(token, bounds, markerData, heroEl, heroIncidentPanel) {
     }
 
     addMarkersToHeroMap(heroMap, markerData || []);
+
+    // Render incident geometry (polygon fills/outlines, line strings) so the
+    // hero map mirrors the extent overlays visible on the main Fire Info map.
+    if (areaFeatureCollection) {
+      addHeroAreaLayers(heroMap, areaFeatureCollection);
+    }
 
     // Ensure the Mapbox canvas is sized to match the container.
     // This is necessary in case the canvas was created before the browser had
@@ -546,7 +645,10 @@ function loadIncidentData(map) {
         categoryCounts["Watch and Act"] +
         categoryCounts.Advice +
         categoryCounts.Other;
-      updateHeroState(total, bounds, markerDataList);
+      const heroAreaCollection = areaFeatures.length > 0
+        ? { type: "FeatureCollection", features: areaFeatures }
+        : null;
+      updateHeroState(total, bounds, markerDataList, heroAreaCollection);
 
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
