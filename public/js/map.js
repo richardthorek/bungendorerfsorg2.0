@@ -431,6 +431,26 @@ function initHeroMap(token, bounds, markerData, heroEl, heroIncidentPanel) {
     // The map fades in over the background photo; the hgroup narrows smoothly.
     if (heroEl) heroEl.classList.add("hero--incident");
     if (heroIncidentPanel) heroIncidentPanel.removeAttribute("hidden");
+
+    // After the opacity transition completes (0.9 s), resize again to correct
+    // any pixel-density mismatch that occurred while the canvas was at opacity:0.
+    // Also re-fit bounds so markers are correctly positioned in the final viewport.
+    setTimeout(function() {
+      heroMap.resize();
+      if (bounds && !bounds.isEmpty()) {
+        heroMap.fitBounds(bounds, { padding: heroMapFitPadding(), maxZoom: HERO_MAP_MAX_ZOOM, animate: false });
+      }
+    }, 1000);
+
+    // ResizeObserver keeps the canvas correctly sized whenever the hero container
+    // changes dimensions (e.g. window resize), matching the pattern used for the
+    // main fire-info map.
+    if (typeof ResizeObserver !== "undefined") {
+      const heroRo = new ResizeObserver(function() {
+        heroMap.resize();
+      });
+      heroRo.observe(heroMapEl);
+    }
   });
 }
 

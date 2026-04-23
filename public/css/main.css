@@ -704,7 +704,11 @@ a:focus {
    Explicit width/height combined with inset: 0 ensures Mapbox reads correct
    clientWidth/clientHeight at initialisation time for proper canvas sizing. */
 .hero-map {
-  position: absolute;
+  /* !important on position overrides mapboxgl-map { position: relative } that Mapbox GL
+     injects via its CDN stylesheet (loaded after main.css at line 32 of index.html).
+     Without this, Mapbox's class wins the same-specificity cascade and collapses the
+     element (all children are position:absolute → height folds to 0, canvas reads 0px). */
+  position: absolute !important;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -713,11 +717,12 @@ a:focus {
   transition: opacity 0.9s ease;
 }
 
-/* Mapbox creates a .mapboxgl-map root div (position: relative, no explicit size)
-   inside #heroMap. Without explicit dimensions this div collapses and the canvas
-   reads clientWidth/clientHeight as 0, producing an invisible render surface.
-   Force it to fill the absolutely-positioned #heroMap container. */
-.hero-map .mapboxgl-map {
+/* Mapbox GL adds .mapboxgl-map to #heroMap itself (not a child), so the
+   canvas-container is a direct child of .hero-map. Ensure it fills the container
+   so the canvas pixel dimensions (set via heroMap.resize()) are always correct. */
+.hero-map > .mapboxgl-canvas-container {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
 }
