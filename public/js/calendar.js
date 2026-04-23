@@ -18,14 +18,29 @@ document.addEventListener("DOMContentLoaded", () => {
     .then((data) => {
       const events = Array.isArray(data?.value) ? data.value : [];
 
+      // Keep only upcoming events (start of today in local timezone or later).
+      const todayStart = luxon.DateTime.now().setZone("Australia/Sydney").startOf("day");
+      const futureEvents = events
+        .filter((event) => {
+          const startDateTime = luxon.DateTime.fromISO(event.start?.dateTime || event.start, {
+            zone: "utc",
+          }).setZone("Australia/Sydney");
+          return startDateTime >= todayStart;
+        })
+        .sort((a, b) => {
+          const aStart = luxon.DateTime.fromISO(a.start?.dateTime || a.start, { zone: "utc" });
+          const bStart = luxon.DateTime.fromISO(b.start?.dateTime || b.start, { zone: "utc" });
+          return aStart - bStart;
+        });
+
       // Filter and display Membership events
-      const membershipEvents = events.filter(
+      const membershipEvents = futureEvents.filter(
         (event) => Array.isArray(event.categories) && event.categories.includes("Public - Training")
       );
       displayEvents(membershipEvents, membershipCalendar);
 
       // Filter and display Community Events
-      const communityEvents = events.filter(
+      const communityEvents = futureEvents.filter(
         (event) =>
           Array.isArray(event.categories) &&
           event.categories.includes("Public - Community Engagement")
@@ -57,6 +72,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function displayEvents(events, container) {
   container.innerHTML = ""; // Clear any existing content
+
+  if (events.length === 0) {
+    const emptyEl = document.createElement("p");
+    emptyEl.className = "events-empty";
+    emptyEl.textContent = "No upcoming events scheduled at this time.";
+    container.appendChild(emptyEl);
+    return;
+  }
 
   events.forEach((event) => {
     const eventElement = document.createElement("div");
