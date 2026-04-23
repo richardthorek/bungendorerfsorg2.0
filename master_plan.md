@@ -34,7 +34,7 @@ Surface the four high-stakes facts (fire danger rating, active local incidents, 
 |---|-------|--------|----|-------|-------|
 | 0 | Audit, baseline, wireframe preview, plan | **Ready for Phase 1** | _this branch_ | richardthorek + Claude (analysis) | #56 |
 | 1 | IA cleanup — remove duplicate summary cards | **Done** | copilot/redesign-phase-1-ia-cleanup | Copilot | #57 |
-| 2 | Adaptive hero + utility-bar move for secondary CTAs | Not started | — | worker agent | TBD |
+| 2 | Adaptive hero + utility-bar move for secondary CTAs | **Done** | copilot/redesign-phase-2-adaptive-hero | Copilot | #56 |
 | 3 | Live status strip + map continuity — replaces fire-info card + header status bar + emergency overlay | Not started | — | worker agent | TBD |
 | 4 | Spacing + typography token reductions | Not started | — | worker agent | TBD |
 | 5 | Footer flattening + scoped hover-lift + header polish | Not started | — | worker agent | TBD |
