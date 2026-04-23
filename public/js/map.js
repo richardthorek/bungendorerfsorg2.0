@@ -295,11 +295,36 @@ let _heroMapToken = null;
 let _heroMapInitialised = false;
 
 /**
+ * Add incident and station markers to a hero map instance.
+ * Called after the hero map's "load" event fires so the canvas is ready.
+ * @param {mapboxgl.Map} heroMap - The hero map instance.
+ * @param {Array<{coordinates: number[], iconUrl: string, alertLevel: string, category: string}>} markerData
+ */
+function addMarkersToHeroMap(heroMap, markerData) {
+  if (!heroMap || !Array.isArray(markerData)) return;
+
+  markerData.forEach(function(data) {
+    if (!data.coordinates) return;
+    const markerEl = createMarkerElement(data.iconUrl, data.alertLevel, data.category);
+    new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
+      .setLngLat(data.coordinates)
+      .addTo(heroMap);
+  });
+
+  // Always show the station marker on the hero map
+  const stationEl = createStationMarkerElement();
+  new mapboxgl.Marker({ element: stationEl, anchor: "bottom" })
+    .setLngLat([149.43974909148088, -35.26165168903826])
+    .addTo(heroMap);
+}
+
+/**
  * Toggle the hero between calm (photo) and incident-active (map-led) states.
  * @param {number} total - Total number of active incidents.
  * @param {mapboxgl.LngLatBounds} [bounds] - Bounds of active incidents (used to fit the hero map).
+ * @param {Array} [markerData] - Marker data to render on the hero map.
  */
-function updateHeroState(total, bounds) {
+function updateHeroState(total, bounds, markerData) {
   const hero = document.getElementById("heroSection");
   const heroIncidentPanel = document.getElementById("heroIncidentCountPanel");
   const heroIncidentCount = document.getElementById("heroIncidentCount");
@@ -314,7 +339,7 @@ function updateHeroState(total, bounds) {
     // Initialise the hero map on first incident load
     if (!_heroMapInitialised && _heroMapToken) {
       _heroMapInitialised = true;
-      initHeroMap(_heroMapToken, bounds);
+      initHeroMap(_heroMapToken, bounds, markerData || []);
     } else if (_heroMapInitialised && bounds && !bounds.isEmpty()) {
       // Fit existing hero map to updated incident bounds
       const existingHeroMap = window._heroMapInstance;
@@ -332,8 +357,9 @@ function updateHeroState(total, bounds) {
  * Create a lightweight Mapbox GL map in #heroMap that mirrors the incident view.
  * @param {string} token - Mapbox access token.
  * @param {mapboxgl.LngLatBounds} [bounds] - Incident bounds to fit on load.
+ * @param {Array} [markerData] - Marker data to render on the hero map.
  */
-function initHeroMap(token, bounds) {
+function initHeroMap(token, bounds, markerData) {
   const heroMapEl = document.getElementById("heroMap");
   if (!heroMapEl) return;
 
@@ -356,6 +382,8 @@ function initHeroMap(token, bounds) {
       heroMap.setConfigProperty("basemap", "lightPreset", preset);
       heroMap.setConfigProperty("basemap", "show3dObjects", false);
     }
+
+    addMarkersToHeroMap(heroMap, markerData || []);
 
     if (bounds && !bounds.isEmpty()) {
       heroMap.fitBounds(bounds, { padding: HERO_MAP_PADDING, maxZoom: HERO_MAP_MAX_ZOOM });
@@ -385,6 +413,7 @@ function loadIncidentData(map) {
       const bounds = new mapboxgl.LngLatBounds();
       const incidentsList = [];
       const areaFeatures = [];
+      const markerDataList = [];
 
       filteredFeatures.forEach(function(feature) {
         const category = (feature.properties && feature.properties.category) || "";
@@ -429,6 +458,9 @@ function loadIncidentData(map) {
             .addTo(map);
 
           bounds.extend(coordinates);
+
+          // Collect data so the hero map can render the same markers
+          markerDataList.push({ coordinates: coordinates, iconUrl: iconUrl, alertLevel: alertLevel, category: category });
         }
 
         incidentsList.push({
@@ -451,7 +483,7 @@ function loadIncidentData(map) {
         categoryCounts["Watch and Act"] +
         categoryCounts.Advice +
         categoryCounts.Other;
-      updateHeroState(total, bounds);
+      updateHeroState(total, bounds, markerDataList);
 
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
