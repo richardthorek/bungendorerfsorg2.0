@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bungendore RFS — UI Redesign Wireframe (Current vs Future)</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #181b22;
+    --ink: #e8ebf1;
+    --muted: #9aa3b2;
+    --accent: #4fc3f7;
+    --rfs-red: #e5281b;
+    --rfs-amber: #fbb034;
+    --rfs-blue: #215e9e;
+    --rfs-lime: #cbdb2a;
+    --rfs-grey: #4d4d4f;
+    --pin: #ffd54f;
+    --good: #66bb6a;
+    --bad: #ef5350;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
+               font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  header.app {
+    position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(180deg, #1a1d24 0%, #14171d 100%);
+    border-bottom: 1px solid #262a33;
+    padding: 12px 20px;
+    display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
+  }
+  header.app h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  header.app h1 small { color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .controls label { color: var(--muted); font-size: 12px; margin-right: 4px; text-transform: uppercase; letter-spacing: .5px; }
+  .controls button {
+    background: #232732; color: var(--ink); border: 1px solid #2c313d;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .controls button:hover { background: #2c313d; }
+  .controls button.active { background: var(--accent); color: #0a0d12; border-color: var(--accent); font-weight: 600; }
+  .stage {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    justify-items: center;
+  }
+  .stage.split { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 1100px) { .stage.split { grid-template-columns: 1fr; } }
+  .device-wrap { display: flex; flex-direction: column; gap: 8px; align-items: center; max-width: 100%; }
+  .device-label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); display: flex; gap: 8px; align-items: center;
+  }
+  .device-label strong { color: var(--ink); font-size: 13px; }
+  .device-label .height { color: var(--good); font-variant-numeric: tabular-nums; }
+  .device-label .height.bad { color: var(--bad); }
+  .device {
+    background: #f5f6f8; color: #1a1d24;
+    border: 1px solid #2c313d; border-radius: 6px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    transition: width .25s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    position: relative;
+  }
+  .device .fold {
+    position: absolute; left: 0; right: 0; pointer-events: none;
+    border-top: 2px dashed rgba(229,40,27,0.55);
+  }
+  .device .fold::after {
+    content: "fold @ 800px"; position: absolute; right: 6px; top: -18px;
+    background: rgba(229,40,27,0.85); color: white;
+    font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 600;
+  }
+  /* ============== Generic page chrome ============== */
+  .blk { padding: 8px 12px; font-size: 12px; position: relative; }
+  .blk small { display: block; color: rgba(0,0,0,0.55); font-size: 10px; }
+  .blk .pin {
+    position: absolute; top: 6px; right: 6px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--pin); color: #1a1d24;
+    font-size: 11px; font-weight: 700; display: none;
+    align-items: center; justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .annotated .pin { display: flex; }
+  .util-bar { background: #1a1d24; color: #e8ebf1; padding: 6px 12px; font-size: 11px;
+              display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .util-bar .left { color: #9aa3b2; }
+  .util-bar .right { margin-left: auto; display: flex; gap: 10px; }
+  .util-bar .pill { background: #2c313d; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+  .nav { background: rgba(255,255,255,0.95); border-bottom: 1px solid #e0e0e0;
+         padding: 12px 14px; display: flex; gap: 14px; align-items: center; }
+  .nav .logo { width: 28px; height: 28px; background: var(--rfs-red); border-radius: 4px;
+               display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; }
+  .nav .links { display: flex; gap: 14px; font-size: 12px; color: #4d4d4f; flex-wrap: wrap; }
+  .nav .links span { padding: 2px 0; }
+  .status-pillbar { background: #2a2e36; color: #e8ebf1; padding: 6px 12px;
+                    font-size: 11px; display: flex; gap: 10px; align-items: center; }
+  .status-pillbar .pill { background: var(--rfs-amber); color: #1a1d24;
+                          padding: 2px 8px; border-radius: 10px; font-weight: 600; font-size: 10px; }
+  /* ============== Hero ============== */
+  .hero {
+    background:
+      linear-gradient(135deg, rgba(229,40,27,0.85) 0%, rgba(77,77,79,0.7) 100%),
+      repeating-linear-gradient(45deg, #999 0 6px, #aaa 6px 12px);
+    color: white; text-align: center; padding: 28px 16px;
+    position: relative;
+  }
+  .hero h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; }
+  .hero p { margin: 0 0 12px; font-size: 13px; opacity: 0.95; }
+  .hero .cta-primary {
+    display: inline-block; background: white; color: var(--rfs-red);
+    padding: 8px 16px; border-radius: 4px; font-weight: 600; font-size: 13px;
+  }
+  .hero .cta-row { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .hero .cta-row .cta-secondary {
+    background: rgba(255,255,255,0.18); color: white;
+    padding: 5px 10px; border-radius: 3px; font-size: 11px; border: 1px solid rgba(255,255,255,0.4);
+  }
+  .hero .bounce {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    color: white; font-size: 18px; opacity: 0.8;
+  }
+  .hero.compact { padding: 18px 16px; }
+  .hero.compact h1 { font-size: 20px; }
+  /* ============== Status strip (FUTURE) ============== */
+  .strip {
+    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1.6fr;
+    background: white; border-bottom: 1px solid #e0e0e0;
+    border-top: 4px solid var(--rfs-red);
+  }
+  .strip .cell {
+    padding: 10px 12px; border-right: 1px solid #ececec;
+    display: flex; flex-direction: column; gap: 2px;
+    position: relative;
+  }
+  .strip .cell:last-child { border-right: none; }
+  .strip .cell .lbl {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.7px;
+    color: #6a6e75; font-weight: 600;
+  }
+  .strip .cell .val {
+    font-size: 18px; font-weight: 700; line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .strip .cell .sub { font-size: 10px; color: #4d4d4f; }
+  .strip .cell.danger { background: linear-gradient(180deg, #fff7e6 0%, #fff 100%); }
+  .strip .cell.danger .val { color: var(--rfs-amber); }
+  .strip .cell.warning .val { color: var(--rfs-blue); }
+  .strip .cell.toban .val { color: var(--good); }
+  .strip .cell.minimap {
+    background: linear-gradient(135deg, #d6e4f0 0%, #b6cde0 100%);
+    background-image:
+      linear-gradient(135deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.15) 100%),
+      radial-gradient(circle at 30% 40%, rgba(229,40,27,0.7) 0 6px, transparent 7px),
+      radial-gradient(circle at 65% 60%, rgba(251,176,52,0.7) 0 5px, transparent 6px),
+      radial-gradient(circle at 80% 30%, rgba(229,40,27,0.7) 0 4px, transparent 5px);
+    color: white; align-items: flex-end; justify-content: flex-end;
+  }
+  .strip .cell.minimap .lbl { color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); align-self: flex-start; }
+  .strip .cell.minimap .val { color: white; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  /* mobile collapse */
+  .narrow .strip { grid-template-columns: 1fr 1fr; }
+  .narrow .strip .cell.minimap { grid-column: span 2; min-height: 80px; }
+  /* ============== Tabs ============== */
+  .tabs {
+    background: white; border-bottom: 1px solid #e0e0e0;
+    padding: 8px 12px; display: flex; gap: 4px;
+  }
+  .tabs .tab {
+    padding: 8px 12px; font-size: 12px;
+    border-bottom: 2px solid transparent; color: var(--rfs-grey);
+  }
+  .tabs .tab.active { border-bottom-color: var(--rfs-red); color: var(--rfs-red); font-weight: 600; }
+  .tab-panel {
+    background: white; padding: 16px 12px; min-height: 220px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  .tab-panel .panel-head {
+    background: var(--rfs-red); color: white; padding: 10px 12px;
+    border-radius: 4px; margin-bottom: 12px; font-weight: 600; font-size: 13px;
+  }
+  .tab-panel .placeholder {
+    background: #f4f5f7; border: 1px dashed #cfd2d9;
+    height: 120px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: #9aa3b2; font-size: 12px;
+  }
+  /* ============== Summary cards (CURRENT only) ============== */
+  .card-row {
+    background: #fafbfc; padding: 16px 12px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+  }
+  .narrow .card-row { grid-template-columns: 1fr; }
+  .card {
+    background: white; border: 1px solid #e0e0e0; border-radius: 6px;
+    overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  .card .head { padding: 10px 12px; color: white; font-size: 13px; font-weight: 600; }
+  .card .head.amber { background: var(--rfs-amber); color: #1a1d24; }
+  .card .head.blue { background: var(--rfs-blue); }
+  .card .head.lime { background: var(--rfs-lime); color: #1a1d24; }
+  .card .body { padding: 12px; font-size: 12px; color: #4d4d4f; min-height: 60px; }
+  .fireinfo-card {
+    background: white; margin: -32px 12px 16px; border: 1px solid #e0e0e0;
+    border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    position: relative; z-index: 2;
+  }
+  .fireinfo-card .head {
+    background: var(--rfs-red); color: white; padding: 12px;
+    font-size: 14px; font-weight: 600;
+  }
+  .fireinfo-card .body { padding: 16px; }
+  .fireinfo-card .grid2 { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; }
+  .narrow .fireinfo-card .grid2 { grid-template-columns: 1fr; }
+  .fireinfo-card .panel { background: #fafbfc; border: 1px solid #ececec; padding: 12px; border-radius: 4px; }
+  .fireinfo-card .panel h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; color: #6a6e75; }
+  .fireinfo-card .panel .big { font-size: 22px; font-weight: 700; color: var(--rfs-amber); }
+  .fireinfo-card .map-mock {
+    background: linear-gradient(135deg, #d6e4f0 0%, #b6cde0 100%);
+    height: 140px; border-radius: 4px; position: relative;
+  }
+  /* ============== Footer ============== */
+  .footer-current {
+    background: #2a2e36; color: white; padding: 16px 12px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;
+  }
+  .footer-current .fcard {
+    background: #383c45; border: 1px solid #4d525c; border-radius: 6px;
+    padding: 12px; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    min-height: 80px;
+  }
+  .footer-current .fcard strong { display: block; margin-bottom: 4px; font-size: 12px; }
+  .footer-future {
+    background: #2a2e36; color: white; padding: 12px;
+    display: flex; gap: 24px; flex-wrap: wrap;
+    border-top: 1px solid #444;
+  }
+  .footer-future .col { font-size: 11px; min-width: 120px; }
+  .footer-future .col strong { display: block; margin-bottom: 2px; font-size: 12px; color: white; }
+  .narrow .footer-current { grid-template-columns: 1fr 1fr; }
+  /* ============== Annotations panel ============== */
+  .annotations {
+    margin: 16px auto; max-width: 1400px; padding: 0 24px;
+    color: var(--ink);
+  }
+  .annotations h2 { font-size: 14px; color: var(--muted); margin: 0 0 12px;
+                    text-transform: uppercase; letter-spacing: 1px; }
+  .annot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+  .annot {
+    background: var(--panel); border: 1px solid #262a33; border-radius: 6px;
+    padding: 10px 12px; font-size: 12px; display: flex; gap: 10px;
+  }
+  .annot .num {
+    flex: 0 0 24px; height: 24px; border-radius: 50%;
+    background: var(--pin); color: #1a1d24; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .annot strong { display: block; color: var(--ink); margin-bottom: 2px; font-size: 12px; }
+  .annot small { color: var(--muted); }
+  .legend {
+    display: flex; gap: 16px; flex-wrap: wrap; padding: 12px 24px;
+    color: var(--muted); font-size: 11px; border-top: 1px solid #262a33;
+  }
+  .legend span::before {
+    content: ""; display: inline-block; width: 10px; height: 10px;
+    margin-right: 5px; vertical-align: middle; border-radius: 2px;
+  }
+  .legend .removed::before { background: var(--bad); }
+  .legend .new::before { background: var(--good); }
+  .legend .changed::before { background: var(--rfs-amber); }
+  .legend .kept::before { background: var(--muted); }
+  .summary-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin: 0 24px 24px; max-width: 1400px;
+  }
+  @media (max-width: 800px) { .summary-stats { grid-template-columns: 1fr 1fr; } }
+  .stat {
+    background: var(--panel); border: 1px solid #262a33;
+    border-radius: 6px; padding: 12px;
+  }
+  .stat .l { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  .stat .v { font-size: 22px; font-weight: 700; color: var(--ink);
+             font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .stat .d { color: var(--good); font-size: 11px; margin-top: 2px; }
+  .stat .d.bad { color: var(--bad); }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>Bungendore RFS UI Wireframe <small>Phase 0 · Current vs Future · Issue #56</small></h1>
+  <div class="controls">
+    <label>View</label>
+    <button data-view="split" class="active">Split</button>
+    <button data-view="current">Current only</button>
+    <button data-view="future">Future only</button>
+  </div>
+  <div class="controls">
+    <label>Width</label>
+    <button data-w="360">360</button>
+    <button data-w="768">768</button>
+    <button data-w="1280" class="active">1280</button>
+    <button data-w="1920">1920</button>
+  </div>
+  <div class="controls">
+    <label>Annotations</label>
+    <button data-toggle="annot" class="active">On</button>
+  </div>
+</header>
+
+<section class="summary-stats">
+  <div class="stat">
+    <div class="l">Above-the-fold @ 1280×800</div>
+    <div class="v">Current: 0 KPIs <span style="color:var(--muted);font-size:13px;font-weight:400">→</span> Future: 4 + map</div>
+    <div class="d">Status data first-paint</div>
+  </div>
+  <div class="stat">
+    <div class="l">Topics rendered twice</div>
+    <div class="v">4 → 0</div>
+    <div class="d">Duplication eliminated</div>
+  </div>
+  <div class="stat">
+    <div class="l">Hero height</div>
+    <div class="v">60vh → 38vh</div>
+    <div class="d">−37% vertical real-estate</div>
+  </div>
+  <div class="stat">
+    <div class="l">Page height target</div>
+    <div class="v">−35%</div>
+    <div class="d">Acceptance criterion</div>
+  </div>
+</section>
+
+<div id="stage" class="stage split"></div>
+
+<section class="annotations">
+  <h2>Annotations — what each pin means (cross-references <code>docs/current_state/ui-baseline.md</code>)</h2>
+  <div class="annot-grid">
+    <div class="annot"><div class="num">1</div><div><strong>F2 · Hero too tall</strong><small>500–700 px clamps the entire first viewport. Future: 340–480 px.</small></div></div>
+    <div class="annot"><div class="num">2</div><div><strong>F2 · CTA cluster</strong><small>4 buttons + 2 social icons + bounce indicator. Future: 1 primary CTA only; rest moved to utility bar.</small></div></div>
+    <div class="annot"><div class="num">3</div><div><strong>F2 · −8 rem hack</strong><small>Card pulled up under the hero with negative margin. Future: strip sits flush, no hack.</small></div></div>
+    <div class="annot"><div class="num">4</div><div><strong>F1 · Duplicate teasers</strong><small>3-up summary cards repeat what the tabs already show. Future: removed.</small></div></div>
+    <div class="annot"><div class="num">5</div><div><strong>F7 · Status surface #1 of 3</strong><small>Header status bar. Future: removed; data lives in the strip.</small></div></div>
+    <div class="annot"><div class="num">6</div><div><strong>F7 · Status surface #2 of 3</strong><small>Embedded fire-info card duplicates the header bar. Future: replaced by strip.</small></div></div>
+    <div class="annot"><div class="num">7</div><div><strong>F8 · Footer over-cardified</strong><small>4 nested &lt;article&gt; cards with shadow + hover-lift. Future: flat 4-column row of &lt;section&gt;.</small></div></div>
+    <div class="annot"><div class="num">8</div><div><strong>NEW · Live status strip</strong><small>5 cells: Danger · Incidents · Warning · TOBAN · Mini-map. The single source of truth above the fold.</small></div></div>
+    <div class="annot"><div class="num">9</div><div><strong>NEW · Utility bar</strong><small>RFS · Permits · Donate · Contact · FB · IG — moved out of hero.</small></div></div>
+  </div>
+  <div class="legend">
+    <span class="removed">Removed</span>
+    <span class="new">New</span>
+    <span class="changed">Changed</span>
+    <span class="kept">Kept</span>
+  </div>
+</section>
+
+<template id="tpl-current">
+  <div class="device-wrap">
+    <div class="device-label"><strong>CURRENT</strong> · <span class="vp"></span> · <span class="height bad" data-h>≈ 2280 px</span></div>
+    <div class="device" data-current>
+      <div class="status-pillbar">
+        <span>🔥 Fire Danger:</span><span class="pill">MODERATE</span>
+        <span>·</span><span>0 Incidents</span>
+        <span class="pin">5</span>
+      </div>
+      <div class="nav">
+        <div class="logo">B</div>
+        <div class="links"><span>Fire Info</span><span>Prepare</span><span>Membership</span><span>Events</span></div>
+      </div>
+      <div class="hero" style="min-height:340px">
+        <h1>Bungendore Volunteer Rural Fire Brigade</h1>
+        <p>Stay Safe. Stay Informed.</p>
+        <a class="cta-primary">Get Fire Updates</a>
+        <div class="cta-row">
+          <span class="cta-secondary">RFS Website</span>
+          <span class="cta-secondary">Contact Us</span>
+          <span class="cta-secondary">Permits</span>
+          <span class="cta-secondary">Donate</span>
+          <span class="cta-secondary">f</span>
+          <span class="cta-secondary">@</span>
+        </div>
+        <div class="bounce">▼</div>
+        <span class="pin" style="top:8px;right:8px">1</span>
+        <span class="pin" style="bottom:36px;right:50%;transform:translateX(50%)">2</span>
+      </div>
+      <div class="fireinfo-card">
+        <div class="head">🔥 Fire Information<span class="pin" style="top:10px;right:10px">3</span></div>
+        <div class="body">
+          <div class="grid2">
+            <div class="panel">
+              <h4>Fire Danger Rating</h4>
+              <div class="big">MODERATE</div>
+              <div style="font-size:11px;color:#6a6e75;margin-top:4px">Plan and prepare for fires</div>
+            </div>
+            <div class="panel">
+              <h4>Local Incidents Map</h4>
+              <div class="map-mock"></div>
+              <div style="font-size:11px;color:#6a6e75;margin-top:6px">0 Incidents — none in our area</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <span class="cta-secondary" style="background:#f0f0f0;color:#4d4d4f;border:1px solid #ddd;padding:5px 10px;border-radius:3px;font-size:11px">View Map</span>
+            <span class="cta-secondary" style="background:#f0f0f0;color:#4d4d4f;border:1px solid #ddd;padding:5px 10px;border-radius:3px;font-size:11px">Prepare Now</span>
+          </div>
+          <span class="pin" style="bottom:8px;right:8px">6</span>
+        </div>
+      </div>
+      <div class="card-row">
+        <div class="card"><div class="head amber">Prepare for Bushfires</div><div class="body">Bushfires are real. Plan your home and stay safe.</div></div>
+        <div class="card"><div class="head blue">Membership</div><div class="body">Become a volunteer. Help protect the community.</div></div>
+        <div class="card"><div class="head lime">Community Events</div><div class="body">Find upcoming community events and fundraisers.</div></div>
+        <span class="pin" style="top:8px;right:8px">4</span>
+      </div>
+      <div class="tabs">
+        <span class="tab active">🔥 Fire Information</span>
+        <span class="tab">🛡 Prepare</span>
+        <span class="tab">👥 Membership</span>
+        <span class="tab">📅 Events</span>
+      </div>
+      <div class="tab-panel">
+        <div class="panel-head">Fire Information in Our Area</div>
+        <div class="placeholder">Fire danger table + content (same data as the card above)</div>
+      </div>
+      <div class="footer-current">
+        <div class="fcard"><strong>Bungendore RFS</strong>f · @</div>
+        <div class="fcard"><strong>Station</strong>28 King St<br/>Bungendore NSW 2621</div>
+        <div class="fcard"><strong>Postal</strong>Box 23<br/>Bungendore NSW 2621</div>
+        <div class="fcard"><strong>Hours</strong>7-8pm Friday<br/>(ex Public Holidays)</div>
+        <span class="pin" style="top:8px;right:8px">7</span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-future">
+  <div class="device-wrap">
+    <div class="device-label"><strong>FUTURE</strong> · <span class="vp"></span> · <span class="height" data-h>≈ 1480 px</span></div>
+    <div class="device" data-future>
+      <div class="util-bar">
+        <span class="left">bungendorerfs.org</span>
+        <div class="right">
+          <span class="pill">RFS Website</span>
+          <span class="pill">Permits</span>
+          <span class="pill">Donate</span>
+          <span class="pill">Contact</span>
+          <span class="pill">f</span>
+          <span class="pill">@</span>
+        </div>
+        <span class="pin" style="top:4px;right:4px">9</span>
+      </div>
+      <div class="nav">
+        <div class="logo">B</div>
+        <div class="links"><span>Fire Info</span><span>Prepare</span><span>Membership</span><span>Events</span></div>
+      </div>
+      <div class="hero compact" style="min-height:200px">
+        <h1>Bungendore Volunteer Rural Fire Brigade</h1>
+        <p>Stay Safe. Stay Informed.</p>
+        <a class="cta-primary">Get Fire Updates ↓</a>
+      </div>
+      <div class="strip">
+        <div class="cell danger">
+          <div class="lbl">Fire Danger</div>
+          <div class="val">MODERATE</div>
+          <div class="sub">Plan and prepare</div>
+        </div>
+        <div class="cell">
+          <div class="lbl">Active Incidents</div>
+          <div class="val">0</div>
+          <div class="sub">None within 50 km</div>
+        </div>
+        <div class="cell warning">
+          <div class="lbl">Warning Level</div>
+          <div class="val">None</div>
+          <div class="sub">No current alerts</div>
+        </div>
+        <div class="cell toban">
+          <div class="lbl">Total Fire Ban</div>
+          <div class="val">No</div>
+          <div class="sub">Permits available</div>
+        </div>
+        <div class="cell minimap">
+          <div class="lbl">Local Map</div>
+          <div class="val">View Map →</div>
+        </div>
+        <span class="pin" style="top:6px;left:6px">8</span>
+      </div>
+      <div class="tabs">
+        <span class="tab active">🔥 Fire Information</span>
+        <span class="tab">🛡 Prepare</span>
+        <span class="tab">👥 Membership</span>
+        <span class="tab">📅 Events</span>
+      </div>
+      <div class="tab-panel">
+        <div class="panel-head">Fire Information in Our Area</div>
+        <div class="placeholder">Single canonical content for selected tab — no duplication</div>
+      </div>
+      <div class="footer-future">
+        <div class="col"><strong>Bungendore RFS</strong>f · @ · bungendorerfs.org</div>
+        <div class="col"><strong>Station</strong>28 King St, Bungendore NSW 2621</div>
+        <div class="col"><strong>Postal</strong>Box 23, Bungendore NSW 2621</div>
+        <div class="col"><strong>Hours</strong>7–8pm Fri (ex public holidays)</div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  const stage = document.getElementById('stage');
+  const tplCurrent = document.getElementById('tpl-current');
+  const tplFuture = document.getElementById('tpl-future');
+  let view = 'split';
+  let width = 1280;
+  let annotations = true;
+
+  function render() {
+    stage.innerHTML = '';
+    stage.classList.toggle('split', view === 'split');
+    if (view === 'current' || view === 'split') stage.appendChild(tplCurrent.content.cloneNode(true));
+    if (view === 'future' || view === 'split') stage.appendChild(tplFuture.content.cloneNode(true));
+    document.querySelectorAll('.device').forEach(d => {
+      d.style.width = Math.min(width, window.innerWidth - 80) + 'px';
+      d.classList.toggle('annotated', annotations);
+      d.classList.toggle('narrow', width < 600);
+      // fold marker at 800px from top of device
+      const fold = document.createElement('div');
+      fold.className = 'fold';
+      fold.style.top = '800px';
+      d.appendChild(fold);
+    });
+    document.querySelectorAll('.vp').forEach(s => s.textContent = width + ' px wide');
+    // height read-out
+    requestAnimationFrame(() => {
+      document.querySelectorAll('[data-current]').forEach(el => {
+        const h = el.scrollHeight;
+        const lbl = el.parentElement.querySelector('[data-h]');
+        if (lbl) { lbl.textContent = '≈ ' + h + ' px'; lbl.classList.add('bad'); lbl.classList.remove('height'); lbl.classList.add('height'); }
+      });
+      document.querySelectorAll('[data-future]').forEach(el => {
+        const h = el.scrollHeight;
+        const lbl = el.parentElement.querySelector('[data-h]');
+        if (lbl) { lbl.textContent = '≈ ' + h + ' px'; lbl.classList.remove('bad'); }
+      });
+    });
+  }
+
+  document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-view]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); view = b.dataset.view; render();
+  }));
+  document.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-w]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active'); width = parseInt(b.dataset.w, 10); render();
+  }));
+  document.querySelector('[data-toggle="annot"]').addEventListener('click', (e) => {
+    annotations = !annotations;
+    e.currentTarget.classList.toggle('active', annotations);
+    e.currentTarget.textContent = annotations ? 'On' : 'Off';
+    document.querySelectorAll('.device').forEach(d => d.classList.toggle('annotated', annotations));
+  });
+  window.addEventListener('resize', render);
+  render();
+</script>
+</body>
+</html>

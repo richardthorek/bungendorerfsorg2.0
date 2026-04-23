@@ -1,0 +1,87 @@
+# Bungendore RFS Website 2.0 — Master Plan
+
+> Single source of truth for in-flight work. Update on every PR that changes scope, status, or acceptance criteria. Each phase below maps to one or more GitHub issues.
+
+**Last updated:** 2026-04-23 · **Maintainer:** @richardthorek
+
+---
+
+## Active programme: UI/UX Redesign — "Command Centre" Home Page
+
+**Tracking issue:** [#56 Comprehensive UI/UX Assessment and Redesign Plan](https://github.com/richardthorek/bungendorerfsorg2.0/issues/56)
+**Topic branch root:** `claude/fix-dynamic-site-elements-loading` (Phase 0)
+**Target outcome:** Home page becomes a compact, dense public-safety dashboard. Above-the-fold (1280×800) shows nav + hero + live status strip. No content topic appears twice. Total page height reduced ≥ 35%, `main.css` reduced ≥ 30%, Lighthouse Performance ≥ 90 mobile / Accessibility ≥ 95.
+
+### Intent
+Surface the four high-stakes facts (fire danger rating, active local incidents, current warning level, total fire ban status) immediately, with one map glance and one click to "what to do next". Everything else is reachable in ≤ 2 interactions via the existing tab/accordion shell.
+
+### Scope (in)
+- `public/index.html` structure (hero, status surfaces, summary cards, footer markup).
+- `public/css/main.css` tokens, scope of hover/animation rules, dead-rule removal.
+- Asset loading order in `public/index.html` `<head>` and end-of-body scripts.
+- JS that maintains duplicated emergency state: `public/js/emergency-dashboard.js`, `public/js/main.js`, `public/js/dynamicContent.js`, `public/js/map.js`, `public/js/tabs-accordion.js`.
+- Accessibility (skip link, contrast, tablist keyboard handling, focus order).
+
+### Scope (out)
+- Backend / Azure Functions in `api/`.
+- Content rewrites in `public/Content/` (copy stays as-is unless layout demands).
+- Auth, forms, contact webhook plumbing — already addressed by SECURITY_FIXES.md.
+- Any change to deployment workflow.
+
+### Phases
+
+| # | Phase | Status | PR | Owner | Issue |
+|---|-------|--------|----|-------|-------|
+| 0 | Audit, baseline, wireframe preview, plan | **In progress** (this PR) | _this branch_ | richardthorek + Claude (analysis) | #56 |
+| 1 | IA cleanup — remove duplicate summary cards | Not started | — | worker agent | TBD |
+| 2 | Compact hero + utility-bar move for secondary CTAs | Not started | — | worker agent | TBD |
+| 3 | Live status strip — replaces fire-info card + header status bar + emergency overlay | Not started | — | worker agent | TBD |
+| 4 | Spacing + typography token reductions | Not started | — | worker agent | TBD |
+| 5 | Footer flattening + scoped hover-lift + header polish | Not started | — | worker agent | TBD |
+| 6 | Asset dedupe (Pico, FA), lazy map, CSS dead-code removal | Not started | — | worker agent | TBD |
+| 7 | Accessibility pass + final Lighthouse + after-screenshots | Not started | — | worker agent | TBD |
+
+Phase 0 deliverables (this PR):
+- [x] [docs/current_state/ui-baseline.md](docs/current_state/ui-baseline.md) — quantified baseline + evidence map.
+- [x] [docs/current_state/ui-redesign.md](docs/current_state/ui-redesign.md) — target-state spec, token diff, ID-aliasing strategy, per-PR acceptance criteria.
+- [x] [docs/current_state/wireframe/index.html](docs/current_state/wireframe/index.html) — interactive wireframe: current vs future, 360 / 768 / 1280 / 1920 breakpoints, annotations, height delta read-out. Open in any browser; no server required.
+- [x] master_plan.md (this file) — programme tracker.
+- [ ] Lighthouse run on production home page — recorded in `docs/current_state/ui-baseline.md` once executed (worker agent to fill numbers; structure already in place).
+- [ ] Browser screenshots at 360 / 768 / 1280 / 1920 px → `docs/current_state/images/ui-baseline-YYYYMMDD-*.png` (worker agent; screenshot harness not in repo).
+
+### Done in Phase 0
+- Confirmed structural duplication (index.html L230–354 vs L358–533) — see baseline doc.
+- Quantified spacing tax (~7 rem of pure whitespace between hero and first content) — see baseline doc.
+- Confirmed three duplicated emergency surfaces with four parallel DOM IDs (`statusBarDangerLevel`, `dashboardDangerLevel`, `mobileDangerLevel`, `fireDangerRatingCell`).
+- Confirmed asset bloat: 2 Pico stylesheets, 2 Font Awesome bundles, `main.css` = 72 KB / 2861 lines, `index.html` = 28 KB / 664 lines.
+- Locked in target spacing + type tokens (see redesign doc §3, §4).
+- Designed ID-alias compatibility shim so JS in Phases 3–5 keeps working through the transition.
+
+### Blockers
+- None. Worker agent can begin Phase 1 once Phase 0 PR merges to `liveDev`.
+
+### Next steps (after this PR merges)
+1. Worker agent seeds 7 GitHub issues from the per-phase acceptance criteria in `docs/current_state/ui-redesign.md`.
+2. Worker agent runs Lighthouse on production home page, fills numbers into `docs/current_state/ui-baseline.md` §6.
+3. Worker agent captures baseline screenshots at the four breakpoints.
+4. Begin Phase 1 (IA cleanup) on its own feature branch off `liveDev`.
+
+### Risks & rollback
+- **Risk:** removing summary cards (Phase 1) may surprise returning users. **Mitigation:** the four tab-nav buttons cover the same entry points; ship behind single-commit revert window.
+- **Risk:** status-strip consolidation (Phase 3) touches three JS files. **Mitigation:** keep existing element IDs as hidden aliases for one release; remove in Phase 7. ID-alias map is in `docs/current_state/ui-redesign.md` §6.
+- **Rollback:** every phase ships as one independently revertable PR. Phase 1 and Phase 3 are the only semantic-changing PRs; both revert cleanly with `git revert`.
+
+---
+
+## Other in-flight programmes
+
+| Programme | Status | Tracking |
+|-----------|--------|----------|
+| Security fixes (Phase 1 — token logging, Logic Apps proxy, XSS, mapbox endpoint) | In progress | [SECURITY_FIXES.md](SECURITY_FIXES.md), docs/REVIEW_SUMMARY.md |
+| Test infrastructure bootstrap | Not started | docs/CODEBASE_REVIEW.md Issue #8 |
+| CI: lint + test + audit on PRs | Not started | docs/CODEBASE_REVIEW.md Issue #10 |
+
+---
+
+## Convention changes adopted in this programme
+The redesign mutates global design tokens. When Phase 4 lands, update `.github/copilot-instructions.md` "Coding Conventions and Standards" section with the new spacing scale and type scale. Token diff is in `docs/current_state/ui-redesign.md` §3–§4.

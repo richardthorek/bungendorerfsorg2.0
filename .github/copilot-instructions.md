@@ -1,333 +1,266 @@
-# GitHub Copilot Instructions
+# GitHub Copilot Instructions — Bungendore RFS Website 2.0
 
-This document serves as the single source of truth for development workflows, conventions, and standards for the Bungendore RFS Website 2.0 repository.
-
----
-
-## Table of Contents
-
-- [Planning and Documentation](#planning-and-documentation)
-- [Branching Strategy and Review Policy](#branching-strategy-and-review-policy)
-- [Build, Test, and CI/CD](#build-test-and-cicd)
-- [Coding Conventions and Standards](#coding-conventions-and-standards)
-- [Repository-Specific Quirks](#repository-specific-quirks)
-- [Security Considerations](#security-considerations)
-- [Contact and Ownership](#contact-and-ownership)
+Single source of truth for how Copilot (and human contributors) work in this repository. Keep this file accurate; if a convention changes in a PR, update this file in the same PR.
 
 ---
 
-## Planning and Documentation
+## 1. Planning model — start here every time
 
-### Documentation Structure
+**All in-flight work is tracked in [`master_plan.md`](../master_plan.md) at the repo root.** Before starting any non-trivial task:
 
-This repository uses the following documentation structure:
+1. Open `master_plan.md`. Find the active programme that the request belongs to (or add one if it's net-new).
+2. Read the linked spec doc(s) under `docs/current_state/` for the target state.
+3. Implement against the per-phase acceptance criteria already written there.
+4. Update `master_plan.md` in the same PR — flip phase status, add PR link, note blockers, record done items.
 
-- **README.md** (root): Main project overview, setup instructions, and contribution guidelines
-- **Documentation/** directory: Technical documentation and code reviews
-  - `REVIEW_SUMMARY.md`: Executive summary of codebase review with action items
-  - `CODEBASE_REVIEW.md`: Detailed technical analysis and recommendations
-  - `QUICK_FIXES.md`: Step-by-step implementation checklist
-  - `ASSET_ORGANIZATION.md`: Complete guide to image and icon assets
-  - `CSS_OPTIMIZATION.md`: CSS architecture and optimization details
+If the request is a one-off (typo, doc tweak, dependency bump), skip the plan; otherwise it goes through the plan.
 
-### Current State Documentation
+### Documentation layout
 
-- **Current state documentation** is maintained in `Documentation/REVIEW_SUMMARY.md` and `CODEBASE_REVIEW.md`
-- **Status updates** should be tracked in these files when implementing fixes or improvements
-- **Screenshots and images** related to documentation are stored in relevant documentation files or in `public/Images/` for website assets
+```
+master_plan.md                  # Single source of truth for in-flight work
+docs/                           # All project documentation (consolidated; was Documentation/)
+├── current_state/              # Live state for active programmes
+│   ├── ui-baseline.md          # Quantified pre-change baseline
+│   ├── ui-redesign.md          # Target spec + per-PR acceptance criteria
+│   ├── wireframe/index.html    # Self-contained interactive previews
+│   └── images/                 # Screenshots (baseline + after)
+├── REVIEW_SUMMARY.md           # Codebase review — exec summary
+├── CODEBASE_REVIEW.md          # Codebase review — full
+├── QUICK_FIXES.md              # Codebase review — checklist
+├── API_INTEGRATION.md          # Azure Functions / Logic Apps integration
+├── TESTING.md                  # Jest + Testing-Library guide
+├── ASSET_ORGANIZATION.md       # Images & icons
+├── CSS_OPTIMIZATION.md         # CSS architecture
+├── IMPLEMENTATION_SUMMARY.md   # Historical change log (do not modify)
+├── UI_UX_IMPROVEMENTS_PROPOSAL.md
+└── UI_UX_IMPLEMENTATION_SUMMARY.md
+SECURITY_FIXES.md               # Security remediation log (root, kept for visibility)
+README.md                       # Project overview + setup
+```
 
-### Planning Documents
+> The legacy capital-D `Documentation/` directory has been consolidated into lowercase `docs/`. Do not recreate `Documentation/`.
 
-**Note:** This repository does not currently have a `master_plan.md` or dedicated `/planning/` directory. Project planning and status tracking are done through:
+### When you make changes
 
-- GitHub Issues for task tracking
-- Pull Requests for feature implementation
-- Documentation files in `/Documentation/` for architectural decisions and reviews
-
-### When Making Changes
-
-- Update relevant documentation files when architectural changes are made
-- Reference related GitHub issues in commit messages and PRs
-- Update the README.md if setup instructions or dependencies change
-- Keep Documentation/ files current with code changes
-
----
-
-## Branching Strategy and Review Policy
-
-### Branch Structure
-
-- **main**: Production branch - protected, requires PR approval
-  - Merged into from `liveDev` branch by repository owner
-  - Deploys automatically to production via Azure Static Web Apps
-- **liveDev**: Integration/staging branch
-  - Combined feature testing branch
-  - Has a permanent URL for verification before production
-  - Features merge here first for testing
-- **Feature branches**: Individual issue/feature development
-  - Should be created from `liveDev`
-  - Naming convention: `copilot/<descriptive-name>` or `feature/<descriptive-name>`
-  - Should have a PR to merge into `liveDev` when ready
-
-### Pull Request Policy
-
-1. **Create PR to `liveDev` first** for all features and fixes
-2. Test thoroughly on the `liveDev` deployment URL
-3. After verification, repository owner merges `liveDev` → `main`
-4. PRs should reference the related GitHub issue (e.g., "Fixes #123")
-5. Include clear description of changes and testing performed
-
-### Code Review Requirements
-
-- All PRs require review before merging to `liveDev`
-- Owner approval required for merging `liveDev` → `main`
-- Security-related changes require extra scrutiny
-- Breaking changes must be clearly documented
+- Update `master_plan.md` for any scope/status change.
+- Add new state docs under `docs/current_state/<topic>.md` and link them from `master_plan.md`.
+- Update `README.md` only when setup, scripts, or top-level architecture change.
+- Update this file (`.github/copilot-instructions.md`) when conventions change (tokens, scripts, branch policy).
+- Do **not** spawn ad-hoc summary markdowns in the repo root; put them in `docs/`.
 
 ---
 
-## Build, Test, and CI/CD
+## 2. Branching & PRs
 
-### Local Development
+| Branch | Role | Protected |
+|--------|------|-----------|
+| `main` | Production. Auto-deploys to Azure Static Web Apps. | Yes — owner merges from `liveDev` only |
+| `liveDev` | Integration / staging. Permanent preview URL. | Yes — PRs require review |
+| `copilot/*`, `feature/*` | Topic branches off `liveDev` | No |
+
+**Workflow:** topic branch off `liveDev` → PR into `liveDev` → owner promotes `liveDev` → `main`. Reference the GitHub issue (`Fixes #N`) and link the relevant `master_plan.md` phase. One PR per phase where possible.
+
+---
+
+## 3. Build, test, CI/CD
+
+### Local
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server (runs on http://localhost:3000)
-npm start
-# This runs: node replace-token.js && node server.js
+npm start            # http://localhost:3000  (runs prestart token replace, then server.js)
+npm run dev          # server only
+npm test             # Jest
+npm run test:watch
+npm run test:coverage
+npm run lint         # ESLint over public/js, server.js, replace-token.js
+npm run lint:fix
+npm run format       # Prettier write
+npm run format:check
+npm run build        # lint + test:coverage (CI-style gate)
 ```
 
-### Build Process
+### Test infrastructure (now exists)
 
-- No explicit build step currently
-- `replace-token.js` runs before server start (via `prestart` script)
-- Handles token replacement in JavaScript files at runtime
-- **Note:** This approach is flagged for refactoring to build-time process in CODEBASE_REVIEW.md
+- **Framework:** Jest + jsdom + `@testing-library/dom` + `@testing-library/jest-dom`.
+- **Location:** `__tests__/` at repo root. Current files: `error-handler.test.js`, `validation.test.js`.
+- **Config:** `jest.config.js`.
+- **Conventions:** colocate by responsibility, not by source path. Prefer Testing-Library queries; mock `fetch` for API tests; render fragments instead of full HTML where practical.
+- See [`docs/TESTING.md`](../docs/TESTING.md) for patterns.
 
-### Testing
+### Lint & format (now exists)
 
-⚠️ **Current State:** No test infrastructure exists yet
+- ESLint config: `.eslintrc.json`. Prettier config: `.prettierrc.json`.
+- Run `npm run lint` and `npm run format:check` before pushing. CI does not yet enforce these — running them locally avoids review-cycle churn.
 
-- Zero test coverage currently (see CODEBASE_REVIEW.md Issue #8)
-- Testing improvements are planned in Phase 3 of the technical roadmap
-- When adding features, manual testing is required
+### CI/CD
 
-### CI/CD Pipeline
+- Workflow: `.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`.
+- Triggers: push to `main` / `liveDev`, PRs into `main`.
+- Deploys static site (`public/`) **and** the integrated API (`api/`) to Azure Static Web Apps.
+- Dependabot: `.github/dependabot.yml`.
+- **Gap:** the SWA workflow doesn't yet run `npm run build` (lint + tests). Adding that gate is on the roadmap; until then run it locally.
 
-**Current Setup:**
+### Environment variables
 
-- Azure Static Web Apps deployment workflow at `.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`
-- Triggers on push to `main` and `liveDev` branches
-- Triggers on PRs to `main`
-- Automatically deploys to Azure Static Web Apps
-
-**What's Missing (see CODEBASE_REVIEW.md Issue #10):**
-
-- No automated testing in CI
-- No linting checks on PRs
-- No security scanning
-- Planned improvements in Phase 3
-
-### Environment Variables Required
-
-Create a `.env` file in the root directory with:
+Copy `.env.example` to `.env`. Required for full local function:
 
 ```
-MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
+MAPBOX_ACCESS_TOKEN=...
+AZURE_CONTACT_WEBHOOK_URL=...
+AZURE_CALENDAR_WEBHOOK_URL=...
+AZURE_INCIDENTS_WEBHOOK_URL=...
+AZURE_FIRE_DANGER_WEBHOOK_URL=...
+PORT=3000
 ```
 
-**Note:** No `.env.example` currently exists - this is noted as a gap in CODEBASE_REVIEW.md
+Local dev for the Azure Functions in `api/` uses `api/local.settings.json` (template: `api/local.settings.example.json`); never commit the real one.
 
 ---
 
-## Coding Conventions and Standards
+## 4. Architecture (current state)
 
-### JavaScript Conventions
+### Frontend (`public/`)
 
-- **ES6+ syntax** used throughout
-- **No module bundler**: Plain JavaScript loaded via script tags
-- **DOMPurify** used for XSS sanitization (must be applied to all innerHTML)
-- **Fetch API** for all HTTP requests
-- **Error handling**: Log to console and provide user feedback (being improved)
+- Plain ES6+ JavaScript loaded via `<script defer>`. **No bundler.** Order matters — see `public/index.html` end of body.
+- Vendored libs in `public/js/vendor/` (Luxon, Marked, DOMPurify). External: Mapbox GL, Leaflet, Pico CSS, Font Awesome via CDN.
+- One stylesheet: `public/css/main.css`. CSS variables in `:root` drive theming and dark mode (`prefers-color-scheme`).
+- Markdown content lives in `public/Content/` and is fetched + rendered client-side by `dynamicContent.js` through Marked + DOMPurify.
 
-### CSS Architecture
+### Backend — two deployment targets, one codebase
 
-Follows component-based organization with:
+1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`, `fire-danger`, `fire-incidents`, `calendar-events`, `contact`) act as the proxy layer between the static site and Azure Logic Apps webhooks. This is where the security boundary lives.
+2. **Local dev:** `server.js` (Express) serves `public/` and re-implements the same proxy endpoints by reading from `.env`. Keep the two surfaces semantically identical — when an `api/<fn>/index.js` changes its contract, mirror the change in `server.js`.
 
-- **CSS Variables** for theming (`--rfs-primary`, `--rfs-accent-green`, etc.)
-- **Utility classes** for common patterns
-- **Dark mode support** via CSS custom properties and `prefers-color-scheme`
-- **Responsive design** using mobile-first approach
-- See `Documentation/CSS_OPTIMIZATION.md` for detailed guidelines
+### Infrastructure
 
-### HTML/Accessibility
+- `infra/main.bicep` provisions the SWA + app settings; `infra/parameters.example.json` is the template.
 
-- Use semantic HTML5 elements
-- Include proper ARIA labels where needed
-- Ensure all images have appropriate alt text
-- Support keyboard navigation
-- Test with screen readers when possible
+---
 
-### File Organization
+## 5. Coding conventions
+
+### JavaScript
+
+- ES6+, no transpile step → write code that runs in evergreen browsers (Node 18+ for tests).
+- **Always sanitise:** every `innerHTML =` or `insertAdjacentHTML` goes through `DOMPurify.sanitize(...)`. Tests in `__tests__/` should assert this for new helpers.
+- **Always validate at boundaries:** server-side input validation in the Azure Functions (`api/contact/index.js` is the reference); never trust the client.
+- **Fetch API** for HTTP. Wrap network errors with `error-handler.js` so the user sees a useful message.
+- Keep functions small and pure where the DOM allows. Don't add abstractions for one-off operations.
+
+### CSS
+
+- Component-scoped rules; tokens centralised in `:root` (see `public/css/main.css` top). When changing tokens, update `docs/CSS_OPTIMIZATION.md`.
+- Mobile-first. Dark mode via CSS custom properties + `prefers-color-scheme`.
+- Avoid global rules on broad selectors (e.g. `article:hover`) — they leak into footer/modal contexts. Scope to component classes.
+
+### HTML / Accessibility
+
+- Semantic HTML5: `<header>`, `<nav>`, `<main>`, `<section>`, `<footer>`. Reserve `<article>` for self-contained syndicated content (not generic boxes).
+- Provide `aria-label` on interactive groups; ensure tab/dialog widgets are keyboard-operable (arrow keys for tablists, Escape for dialogs).
+- Visible focus indicators are mandatory; do not strip outlines.
+- All images need meaningful `alt` text (or `alt=""` if decorative).
+
+### File organisation
 
 ```
-/
-├── .github/
-│   ├── workflows/           # CI/CD workflows
-│   └── copilot-instructions.md  # This file
-├── Documentation/           # Technical docs and reviews
-├── public/                  # Static website files
-│   ├── Content/            # Markdown content files
-│   ├── Images/             # All images and icons
-│   ├── css/                # Stylesheets
-│   ├── js/                 # JavaScript files
-│   └── index.html          # Main HTML file
-├── server.js               # Express server
-├── replace-token.js        # Token replacement utility
-└── package.json            # Dependencies and scripts
+.github/                  # Workflows, dependabot, copilot-instructions.md
+__tests__/                # Jest tests
+api/                      # Azure Functions (production proxy layer)
+docs/                     # All documentation (see §1)
+infra/                    # Bicep IaC
+public/                   # Static site (deployed root)
+  ├── Content/            # Markdown sources
+  ├── Images/             # Site assets (favicons live in repo root for browser discovery)
+  ├── css/main.css
+  ├── js/                 # Plain JS modules + vendor/
+  ├── index.html
+  └── staticwebapp.config.json
+master_plan.md            # In-flight work tracker
+SECURITY_FIXES.md         # Security remediation log
+server.js                 # Local-dev Express server
+replace-token.js          # Build-time Mapbox token substitution into main.js
+package.json
+jest.config.js
+.eslintrc.json / .prettierrc.json
 ```
 
 ### Dependencies
 
-- Keep dependencies minimal and up-to-date
-- Run `npm audit` regularly for security vulnerabilities
-- Document any new dependencies in PR description
-- **Note:** Several dependencies are outdated (see CODEBASE_REVIEW.md Issue #7)
+- Keep the surface minimal. Justify new deps in the PR description.
+- `npm audit` clean before merging dependency PRs (Dependabot files them automatically).
 
 ---
 
-## Repository-Specific Quirks
+## 6. Repository-specific quirks
 
-### Token Replacement at Runtime
+### Token replacement
 
-⚠️ **Quirk:** The `replace-token.js` script runs as a `prestart` hook and modifies `main.js` at runtime
+- `replace-token.js` runs as `prestart` and substitutes `MAP_TOKEN_PLACEHOLDER` in `public/js/main.js` for local dev.
+- In production the token is fetched at runtime from the SWA `mapbox-token` function (with origin validation).
+- **Do not log the token** anywhere — past regression (CODEBASE_REVIEW Issue #3).
 
-- Replaces `MAP_TOKEN_PLACEHOLDER` with actual Mapbox token
-- This should ideally be a build-time operation (not runtime)
-- **Issue #3 in CODEBASE_REVIEW.md:** Token is currently logged to console (security risk)
+### Two emergency / status surfaces (transitional)
 
-### Azure Logic Apps Integration
+The home page currently has duplicated emergency surfaces (header bar, expanded overlay, mobile panel, in-page card). The UI Redesign programme (issue #56) consolidates these into a single live status strip. **While that programme is in flight, treat the IDs listed in [`docs/current_state/ui-baseline.md` §5](../docs/current_state/ui-baseline.md) as a stable contract** — JS that reads/writes those IDs must keep working.
 
-- Contact form, calendar, and map features use Azure Logic Apps webhooks
-- ⚠️ **CRITICAL:** Webhook URLs with signatures are currently hardcoded in frontend JavaScript
-  - This is Issue #1 (CRITICAL) in CODEBASE_REVIEW.md
-  - Must be moved to server-side proxy endpoints
-  - **Action required before new features**
+### Favicons
 
-### Mapbox Token Endpoint
+- Favicon files live in repo root (and `public/`) for proper browser discovery. See [`docs/ASSET_ORGANIZATION.md`](../docs/ASSET_ORGANIZATION.md).
 
-- Server exposes `/mapbox-token` endpoint
-- ⚠️ **HIGH RISK:** No origin validation or rate limiting
-- See Issue #4 in CODEBASE_REVIEW.md
+### Dark mode
 
-### Favicon Files
-
-- Favicon files are in root directory (not in public/)
-- This is intentional for proper browser discovery
-- See `Documentation/ASSET_ORGANIZATION.md` for details
-
-### Dark Mode
-
-- Uses CSS `prefers-color-scheme` media query
-- Logo swaps between `logo.png` and `logo-dark.png`
-- CSS variables automatically adjust
+- CSS-driven via `prefers-color-scheme`. Logo swap (`logo.png` ↔ `logo-dark.png`) is the only image asset that varies.
 
 ---
 
-## Security Considerations
+## 7. Security
 
-⚠️ **CRITICAL SECURITY ISSUES IDENTIFIED** - See `Documentation/REVIEW_SUMMARY.md`
+The CRITICAL items from earlier reviews have been addressed: Logic Apps URLs are now server-side in `api/*`, the contact form has spam prevention + validation, the mapbox-token endpoint validates origins. See [`SECURITY_FIXES.md`](../SECURITY_FIXES.md) for the audit trail.
 
-### Immediate Security Actions Required
+### Standing rules
 
-Before adding new features, address these critical issues:
+- **Never commit secrets.** `.env`, `api/local.settings.json`, and any `*.local.*` files are gitignored — keep them that way.
+- **Sanitise every `innerHTML`** with DOMPurify. No exceptions.
+- **Validate all inputs server-side** in `api/<fn>/index.js`. Client validation is UX, not security.
+- **Don't expose internals in error messages.** Log details server-side; show users a friendly string.
+- **Origin-validate any new token / proxy endpoint** the same way `api/mapbox-token/index.js` does.
+- Review against OWASP Top 10 for any new endpoint.
 
-1. **Remove Token Logging** (Issue #3)
-   - Remove all console logging of tokens in `replace-token.js`
-   - Rotate Mapbox token after fix
+### Per-PR security checklist
 
-2. **Secure Azure Logic Apps URLs** (Issue #1)
-   - Regenerate all Azure Logic Apps signatures
-   - Move URLs to `.env` file
-   - Create server-side proxy endpoints
-   - Remove hardcoded URLs from client JavaScript
-
-3. **Fix XSS Vulnerabilities** (Issue #2)
-   - Apply `DOMPurify.sanitize()` to ALL innerHTML assignments
-   - Especially in `main.js`, `dynamicContent.js`, `map.js`
-
-4. **Secure Token Endpoint** (Issue #4)
-   - Add origin validation to `/mapbox-token`
-   - Implement rate limiting
-
-### Security Best Practices
-
-- Never commit secrets to version control
-- Use `.env` for all sensitive configuration
-- Sanitize all user inputs and API responses
-- Validate all form inputs (client and server-side)
-- Keep dependencies updated
-- Run `npm audit` regularly
-
-### Security Review Checklist
-
-When making changes:
-
-- [ ] No secrets in code or commits
-- [ ] All innerHTML uses DOMPurify.sanitize()
-- [ ] Form inputs are validated
-- [ ] Error messages don't expose sensitive information
-- [ ] API endpoints have appropriate access controls
-- [ ] New dependencies are audited for vulnerabilities
+- [ ] No secrets in code, commits, or test fixtures
+- [ ] All new `innerHTML` / `insertAdjacentHTML` uses DOMPurify
+- [ ] All new form/API inputs validated server-side
+- [ ] Error responses don't leak stack traces, env names, or upstream URLs
+- [ ] New endpoints have origin validation and (where appropriate) rate limiting
+- [ ] `npm audit` clean for any new dependency
 
 ---
 
-## Contact and Ownership
+## 8. Contact & ownership
 
-### Repository Owner
-
-- **Owner:** richardthorek (GitHub: @richardthorek)
-- **Organization:** Bungendore Volunteer Rural Fire Brigade
-
-### Getting Help
-
-1. **For code issues:** Open a GitHub issue
-2. **For security concerns:** Contact repository owner directly
-3. **For documentation questions:** Refer to files in `/Documentation/`
-
-### Contributing
-
-This is a community project for the Bungendore Volunteer Rural Fire Brigade. Contributions should:
-
-- Follow the conventions outlined in this document
-- Address items from the codebase review when possible
-- Improve security, accessibility, and user experience
-- Be tested on the `liveDev` environment before production
+- **Owner:** [@richardthorek](https://github.com/richardthorek)
+- **Org:** Bungendore Volunteer Rural Fire Brigade
+- Code issues → GitHub issues. Security issues → contact owner directly. Doc questions → `docs/`.
 
 ---
 
-## Additional Resources
+## 9. Quick reference
 
-### Internal Documentation
-
-- [README.md](../README.md) - Project overview and setup
-- [Documentation/REVIEW_SUMMARY.md](../Documentation/REVIEW_SUMMARY.md) - Action items and priorities
-- [Documentation/CODEBASE_REVIEW.md](../Documentation/CODEBASE_REVIEW.md) - Detailed technical analysis
-- [Documentation/QUICK_FIXES.md](../Documentation/QUICK_FIXES.md) - Step-by-step fix checklist
-- [Documentation/ASSET_ORGANIZATION.md](../Documentation/ASSET_ORGANIZATION.md) - Asset management guide
-- [Documentation/CSS_OPTIMIZATION.md](../Documentation/CSS_OPTIMIZATION.md) - CSS architecture
-
-### External References
-
-- [Express.js Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html)
-- [OWASP Top 10 Web Security Risks](https://owasp.org/www-project-top-ten/)
-- [DOMPurify XSS Sanitization](https://github.com/cure53/DOMPurify)
-- [Leaflet Documentation](https://leafletjs.com/)
+| Task | Where |
+|------|-------|
+| Plan / track work | [`master_plan.md`](../master_plan.md) |
+| Per-phase specs & acceptance criteria | `docs/current_state/<topic>.md` |
+| Run tests | `npm test` |
+| Lint + format | `npm run lint && npm run format:check` |
+| Pre-merge gate (local) | `npm run build` |
+| Add/change a proxy endpoint | `api/<fn>/index.js` **and** mirror in `server.js` |
+| Add new docs | `docs/<NAME>.md` (never recreate `Documentation/`) |
+| Security audit trail | [`SECURITY_FIXES.md`](../SECURITY_FIXES.md) |
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** February 2026  
-**Next Review:** After Phase 1 Security Fixes (see REVIEW_SUMMARY.md)
+**Document version:** 2.0  
+**Last updated:** 2026-04-23 (consolidated `Documentation/` → `docs/`; reflected current Azure Functions, test infra, lint/format tooling; established `master_plan.md` as the planning anchor)

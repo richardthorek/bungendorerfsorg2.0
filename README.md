@@ -45,7 +45,7 @@ This project is a website for the Bungendore Volunteer Rural Fire Brigade. It pr
 │   │   └── dynamicContent.js # Dynamic content loading
 │   ├── Content/          # Markdown content files
 │   └── index.html        # Main HTML file
-├── Documentation/        # Project documentation
+├── docs/        # Project documentation
 │   ├── API_INTEGRATION.md    # API and integration guide
 │   ├── TESTING.md            # Testing guide and best practices
 │   ├── ASSET_ORGANIZATION.md # Asset structure
@@ -182,7 +182,7 @@ Run tests with:
 npm test
 ```
 
-See `Documentation/TESTING.md` for detailed testing guide.
+See `docs/TESTING.md` for detailed testing guide.
 
 ### Code Quality
 
@@ -250,7 +250,7 @@ Displays whether the current date is within the bushfire danger period (October 
 4. Keep dependencies updated
 5. Review server logs for suspicious activity
 
-See `Documentation/API_INTEGRATION.md` for security details.
+See `docs/API_INTEGRATION.md` for security details.
 
 ## API Integrations
 
@@ -264,7 +264,7 @@ The website integrates with:
 
 All API calls go through server-side proxy endpoints for security.
 
-See `Documentation/API_INTEGRATION.md` for complete API documentation.
+See `docs/API_INTEGRATION.md` for complete API documentation.
 
 ## Dark Mode Support
 
@@ -349,7 +349,7 @@ See `.github/workflows/ci.yml` for configuration.
 
 ## Documentation
 
-Additional documentation in `/Documentation/`:
+Additional documentation in `/docs/`:
 
 - **API_INTEGRATION.md** - Complete API integration guide
 - **TESTING.md** - Testing guide and best practices
@@ -385,7 +385,7 @@ Additional documentation in `/Documentation/`:
 - Clear Jest cache: `npm test -- --clearCache`
 - Reinstall dependencies: `rm -rf node_modules && npm install`
 
-See `Documentation/API_INTEGRATION.md` for more troubleshooting.
+See `docs/API_INTEGRATION.md` for more troubleshooting.
 
 ## Performance
 
