@@ -93,10 +93,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Save to localStorage
     localStorage.setItem("activeTab", tabId);
 
-    // Scroll to tabs container or active accordion content
+    // Scroll to tab navigation or active accordion content
     if (scroll) {
-      const tabsContainer = document.querySelector(".content-tabs-container");
-      let scrollTarget = tabsContainer;
+      const tabNavigation = document.querySelector(".tab-navigation");
+      let scrollTarget = tabNavigation;
 
       if (window.innerWidth <= 768) {
         const targetPanel = document.getElementById(`${tabId}-tab`);
