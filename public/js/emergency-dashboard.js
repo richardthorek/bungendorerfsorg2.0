@@ -88,38 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Apply danger-level data attribute to the live status strip for colour coding
-    updateStripDangerLevel(normalizedLevel);
-  }
-
-  /**
-   * Apply the danger level class/attribute to the live status strip Cell 1
-   * so CSS can colour-code the strip accordingly.
-   */
-  function updateStripDangerLevel(level) {
-    const strip = document.getElementById("liveStatusStrip");
-    if (!strip) return;
-
-    const dangerClasses = ["level-moderate", "level-high", "level-extreme", "level-catastrophic", "level-none"];
-    strip.classList.remove(...dangerClasses);
-
-    switch (level.toUpperCase()) {
-    case "HIGH":
-      strip.classList.add("level-high");
-      break;
-    case "EXTREME":
-      strip.classList.add("level-extreme");
-      break;
-    case "CATASTROPHIC":
-      strip.classList.add("level-catastrophic");
-      break;
-    case "NO RATING":
-    case "N/A":
-    case "ERROR":
-      strip.classList.add("level-none");
-      break;
-    default:
-      strip.classList.add("level-moderate");
-    }
+    // CSS targets #fireDangerRatingCell[data-level] directly for colour-banding.
   }
 
   /**
