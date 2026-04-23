@@ -39,7 +39,7 @@ Surface the four high-stakes facts (fire danger rating, active local incidents, 
 | 4 | Spacing + typography token reductions | **Done** | copilot/redesign-phase-4-spacing-typography | Copilot | #56 |
 | 5 | Footer flattening + scoped hover-lift + header polish | Not started | — | worker agent | TBD |
 | 6 | Asset dedupe (Pico, FA), lazy map, CSS dead-code removal | Not started | — | worker agent | TBD |
-| 7 | Accessibility pass + final Lighthouse + after-screenshots | Not started | — | worker agent | TBD |
+| 7 | Accessibility pass + final Lighthouse + after-screenshots | **Done** | copilot/implement-accessibility-pass-phase-7 | Copilot | #56 |
 
 Phase 0 deliverables (this PR):
 - [x] [docs/current_state/ui-baseline.md](docs/current_state/ui-baseline.md) — quantified baseline + evidence map.
@@ -47,7 +47,18 @@ Phase 0 deliverables (this PR):
 - [x] [docs/current_state/wireframe/index.html](docs/current_state/wireframe/index.html) — interactive wireframe: current vs future, 360 / 768 / 1280 / 1920 breakpoints, annotations, height delta read-out. Open in any browser; no server required.
 - [x] master_plan.md (this file) — programme tracker.
 - [ ] Lighthouse run on production home page — recorded in `docs/current_state/ui-baseline.md` once executed (worker agent follow-up; not blocking Phase 1).
-- [ ] Browser screenshots at 360 / 768 / 1280 / 1920 px → `docs/current_state/images/ui-baseline-YYYYMMDD-*.png` (worker agent follow-up; not blocking Phase 1).
+
+Phase 7 deliverables:
+- [x] Visible skip link (`<a href="#main" class="skip-link">`) added as first focusable element.
+- [x] `id="main"` added to `<main>` element (skip link target).
+- [x] Coloured header h3 font-size raised to 1.2rem (≥14pt bold = WCAG "large text" → 3:1 AA).
+- [x] Roving `tabindex` implemented in `tabs-accordion.js` (init: active=0/others=-1; arrow keys update tabindex + focus; explicit Enter/Space activation).
+- [x] `aria-label` added to `[role="tablist"]`; `aria-hidden="true"` on decorative icons.
+- [x] `id` attributes added to tab buttons; `aria-labelledby` on tab panels updated to use button IDs.
+- [x] Legacy ID alias shim (9 hidden elements) removed from `index.html`.
+- [x] `emergency-dashboard.js` cleaned up — legacy alias writes removed.
+- [x] `main.js` fixed — fire-danger fetch no longer blocked by `fireMessages` element.
+- [x] After-screenshots committed: `docs/current_state/images/ui-redesign-20260423-{360,768,1280}.png`.
 
 ### Done in Phase 0
 - Confirmed structural duplication (index.html L230–354 vs L358–533) — see baseline doc.

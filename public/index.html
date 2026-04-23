@@ -39,6 +39,8 @@
   </head>
 
   <body>
+    <!-- Skip navigation link — first focusable element on the page (Phase 7) -->
+    <a href="#main" class="skip-link">Skip to main content</a>
     <header id="siteHeader">
       <!-- Utility Bar (Phase 2): secondary CTAs and social links -->
       <div id="utilityBar" class="utility-bar" aria-label="Utility links">
@@ -99,7 +101,7 @@
       </nav>
     </header>
 
-    <main class="container-fluid">
+    <main id="main" class="container-fluid">
       <!-- Header section with navigation -->
 
       <!-- Hero section with main heading -->
@@ -166,18 +168,6 @@
           </div>
           <p class="strip-cell__sub">Open fire incident map</p>
         </article>
-
-        <!-- Legacy ID alias shim (Phase 3 → Phase 7 compatibility window).
-             JS files continue to write to these IDs unchanged; Phase 7 removes them. -->
-        <span id="statusBarDangerLevel" hidden></span>
-        <span id="statusBarIncidentCount" hidden></span>
-        <span id="dashboardDangerLevel" hidden></span>
-        <span id="dashboardDangerMessage" hidden></span>
-        <span id="dashboardIncidentCount" hidden></span>
-        <span id="mobileDangerLevel" hidden></span>
-        <span id="mobileIncidentBadge" hidden></span>
-        <div id="mobileIncidentsList" hidden></div>
-        <span id="fireMessages" hidden></span>
       </section>
 
       <!-- Grid section with article cards -->
@@ -185,15 +175,17 @@
         <!-- Tabbed Content Navigation -->
         <div class="content-tabs-container">
           <!-- Tab Navigation (Desktop/Tablet) -->
-          <div class="tab-navigation" role="tablist">
+          <div class="tab-navigation" role="tablist" aria-label="Main content sections">
             <button
               class="tab-btn active"
               role="tab"
               aria-selected="true"
               aria-controls="fire-info-tab"
+              id="tab-fire-info"
               data-tab="fire-info"
+              tabindex="0"
             >
-              <i class="fas fa-fire"></i>
+              <i class="fas fa-fire" aria-hidden="true"></i>
               <span>Fire Information</span>
             </button>
             <button
@@ -201,9 +193,11 @@
               role="tab"
               aria-selected="false"
               aria-controls="prepare-tab"
+              id="tab-prepare"
               data-tab="prepare"
+              tabindex="-1"
             >
-              <i class="fas fa-shield-alt"></i>
+              <i class="fas fa-shield-alt" aria-hidden="true"></i>
               <span>Prepare</span>
             </button>
             <button
@@ -211,9 +205,11 @@
               role="tab"
               aria-selected="false"
               aria-controls="membership-tab"
+              id="tab-membership"
               data-tab="membership"
+              tabindex="-1"
             >
-              <i class="fas fa-users"></i>
+              <i class="fas fa-users" aria-hidden="true"></i>
               <span>Membership</span>
             </button>
             <button
@@ -221,9 +217,11 @@
               role="tab"
               aria-selected="false"
               aria-controls="events-tab"
+              id="tab-events"
               data-tab="events"
+              tabindex="-1"
             >
-              <i class="fas fa-calendar-alt"></i>
+              <i class="fas fa-calendar-alt" aria-hidden="true"></i>
               <span>Events</span>
             </button>
           </div>
@@ -235,7 +233,7 @@
               class="tab-panel active"
               role="tabpanel"
               id="fire-info-tab"
-              aria-labelledby="fire-info"
+              aria-labelledby="tab-fire-info"
             >
               <div class="accordion-header mobile-only" data-accordion="fire-info">
                 <i class="fas fa-fire"></i>
@@ -271,7 +269,7 @@
             </div>
 
             <!-- Prepare Tab -->
-            <div class="tab-panel" role="tabpanel" id="prepare-tab" aria-labelledby="prepare">
+            <div class="tab-panel" role="tabpanel" id="prepare-tab" aria-labelledby="tab-prepare">
               <div class="accordion-header mobile-only" data-accordion="prepare">
                 <i class="fas fa-shield-alt"></i>
                 <span>Prepare</span>
@@ -317,7 +315,7 @@
             </div>
 
             <!-- Membership Tab -->
-            <div class="tab-panel" role="tabpanel" id="membership-tab" aria-labelledby="membership">
+            <div class="tab-panel" role="tabpanel" id="membership-tab" aria-labelledby="tab-membership">
               <div class="accordion-header mobile-only" data-accordion="membership">
                 <i class="fas fa-users"></i>
                 <span>Membership</span>
@@ -340,7 +338,7 @@
             </div>
 
             <!-- Events Tab -->
-            <div class="tab-panel" role="tabpanel" id="events-tab" aria-labelledby="events">
+            <div class="tab-panel" role="tabpanel" id="events-tab" aria-labelledby="tab-events">
               <div class="accordion-header mobile-only" data-accordion="events">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Events</span>

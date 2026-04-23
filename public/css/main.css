@@ -93,6 +93,35 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Skip link (Phase 7) ─────────────────────────────────────────────────────
+   Visually hidden until focused; moves into view for keyboard users.
+   Position: fixed so it works regardless of scroll state. */
+.skip-link {
+  position: fixed;
+  top: -3rem;
+  left: var(--space-md);
+  z-index: 9999;
+  background-color: var(--rfs-core-red);
+  color: var(--rfs-white);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 0 0 var(--pico-border-radius) var(--pico-border-radius);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid var(--rfs-white);
+  outline-offset: 2px;
+}
+
+/* Prevent the link-underline pseudo-element from applying to the skip link */
+.skip-link::after {
+  display: none;
+}
+
 article,
 .content-section {
   animation: fadeIn 0.5s ease-out forwards;
@@ -385,7 +414,7 @@ article > header.lime {
 article > header.lime h3 {
   color: inherit; /* Inherits black from parent header.lime */
   margin-bottom: 0;
-  font-size: var(--font-size-h4); /* 1.25rem */
+  font-size: 1.2rem; /* ≥ 14pt bold → WCAG "large text" → 3:1 AA contrast threshold */
 }
 
 /* Shared styles for h3 within explicitly colored headers (red, amber, blue, green) */
@@ -394,8 +423,8 @@ article > header.amber h3,
 article > header.blue h3,
 article > header.green h3 {
   color: inherit; /* Inherit color from parent header */
-  margin-bottom: 0; /* Adjust as needed */
-  font-size: var(--font-size-h4); /* 1.25rem - Consistent h3 size in headers */
+  margin-bottom: 0;
+  font-size: 1.2rem; /* ≥ 14pt bold → WCAG "large text" → 3:1 AA contrast threshold */
 }
 
 h4 {
