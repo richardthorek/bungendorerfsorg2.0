@@ -713,6 +713,15 @@ a:focus {
   transition: opacity 0.9s ease;
 }
 
+/* Mapbox creates a .mapboxgl-map root div (position: relative, no explicit size)
+   inside #heroMap. Without explicit dimensions this div collapses and the canvas
+   reads clientWidth/clientHeight as 0, producing an invisible render surface.
+   Force it to fill the absolutely-positioned #heroMap container. */
+.hero-map .mapboxgl-map {
+  width: 100%;
+  height: 100%;
+}
+
 /* Incident summary shown inside the heading panel in incident-active state */
 .hero-incident-summary {
   font-size: 1rem;
@@ -744,6 +753,22 @@ a:focus {
   margin-top: var(--space-xxl); /* Ensure clear separation from the hero CTA */
   position: relative; /* Keep stacking context predictable */
   z-index: auto;
+}
+
+/* ── Desktop/tablet: hero fills the above-fold viewport ─────────────────────
+   On screens ≥769px wide the hero should expand so that the hero and the
+   live-status-strip together fill the full viewport height. The tab content
+   starts just below the strip, so users naturally scroll to reach it.
+
+   Calculation: 100vh – header (≈96px) – main padding-top (20px) – strip (≈82px) ≈ 200px
+   The hero itself is 100vh-200px; the strip (~82px) sits directly below it,
+   and header+hero+strip ≈ 100vh. */
+@media (min-width: 769px) {
+  .hero {
+    height: calc(100vh - 200px);
+    min-height: 420px;
+    max-height: none; /* remove the 480px desktop cap */
+  }
 }
 
 @media (prefers-color-scheme: dark) {
