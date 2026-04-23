@@ -1538,7 +1538,7 @@ a:focus {
   gap: var(--space-sm);
   padding: 0 var(--space-lg);
   height: 40px;
-  background-color: rgba(0, 0, 0, 0.15); /* Slightly darker band above the nav */
+  background-color: #c42216; /* Slightly darker than --rfs-core-red for contrast over header */
   font-size: 0.8rem;
   flex-wrap: nowrap;
   overflow: hidden;
@@ -1590,7 +1590,10 @@ a:focus {
   }
 }
 
-/* Hide utility bar entirely on very small screens — use hamburger overflow */
+/* Hide utility bar entirely on very small screens.
+   Note: a hamburger overflow menu for these links is a deferred enhancement (Phase 5).
+   On ≤420px, secondary actions remain accessible via the footer links and
+   the main navigation which keeps the core entry points. */
 @media (max-width: 420px) {
   #utilityBar {
     display: none;
