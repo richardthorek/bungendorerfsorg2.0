@@ -22,7 +22,7 @@
   /* Emergency Red is --rfs-core-red */
 
   /* General UI & Text Colors */
-  --rfs-accent-green: #4caf50;
+  --rfs-accent-green: #4caf50; /* Assess alongside RFS Lime (--rfs-lime) and UI Green (--ui-green) */
   --rfs-neutral-light: #f4f4f4; /* Style guide uses specific greys, this might need to align with --rfs-light-grey or similar */
   --rfs-neutral-medium: #e0e0e0; /* Assess against style guide greys */
   --rfs-neutral-dark: #333333; /* Consider replacing with --rfs-dark-grey or another specified grey */
