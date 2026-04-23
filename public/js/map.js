@@ -11,7 +11,9 @@ const ICONS = {
 
 // ─── Map constants ────────────────────────────────────────────────────────────
 const DEFAULT_MAP_CENTER = [149.4431761913284, -35.25870948687002];
-const HERO_MAP_PADDING = 60;
+// Asymmetric padding: generous left padding pushes incident markers to the right
+// side of the viewport, keeping them clear of the title panel (~400 px wide).
+const HERO_MAP_PADDING = { top: 60, bottom: 60, left: 460, right: 60 };
 const HERO_MAP_MAX_ZOOM = 12;
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
