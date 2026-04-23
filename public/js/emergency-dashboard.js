@@ -1,31 +1,25 @@
 /**
  * Emergency Dashboard Module
- * Manages the sticky emergency status bar and mobile emergency badge
+ * Manages the live status strip (Phase 3).
+ * Legacy emergency bar / overlay / mobile-panel elements have been removed from
+ * index.html; their IDs survive as hidden alias spans inside #liveStatusStrip so
+ * the writes below continue to work through the Phase 3 → Phase 7 transition window.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Emergency Dashboard Elements
-  const emergencyStatusBar = document.getElementById("emergencyStatusBar");
-  const expandEmergencyBtn = document.getElementById("expandEmergencyBtn");
-  const emergencyDashboard = document.getElementById("emergencyDashboard");
-  const closeEmergencyDashboard = document.getElementById("closeEmergencyDashboard");
+  // Live Status Strip — canonical visible elements
+  const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
+  const fireDangerMessageEl = document.getElementById("fireDangerMessage");
+  const incidentTotalCount = document.getElementById("incidentTotalCount");
 
-  // Status Bar Elements
+  // Legacy alias elements (hidden spans inside #liveStatusStrip)
   const statusBarDangerLevel = document.getElementById("statusBarDangerLevel");
   const statusBarIncidentCount = document.getElementById("statusBarIncidentCount");
-
-  // Dashboard Elements
   const dashboardDangerLevel = document.getElementById("dashboardDangerLevel");
   const dashboardDangerMessage = document.getElementById("dashboardDangerMessage");
   const dashboardIncidentCount = document.getElementById("dashboardIncidentCount");
-  const fireDangerPanel = document.querySelector(".dashboard-panel.fire-danger-panel");
-
-  // Mobile Elements
-  const mobileEmergencyBadge = document.getElementById("mobileEmergencyBadge");
-  const mobileIncidentBadge = document.getElementById("mobileIncidentBadge");
-  const mobileEmergencyPanel = document.getElementById("mobileEmergencyPanel");
-  const closeMobilePanel = document.getElementById("closeMobilePanel");
   const mobileDangerLevel = document.getElementById("mobileDangerLevel");
+  const mobileIncidentBadge = document.getElementById("mobileIncidentBadge");
   const mobileIncidentsList = document.getElementById("mobileIncidentsList");
 
   // State
@@ -34,7 +28,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let dangerMessage = "Plan and prepare for fires in your area";
 
   /**
-   * Update all emergency displays with latest data
+   * Update all emergency displays with latest data.
+   * Canonical strip elements are updated visibly; legacy alias elements are
+   * updated as hidden spans for backward-compatible reads by other JS modules.
    */
   function updateEmergencyDisplays(level, message, count, incidentList = []) {
     const normalizedLevel = (level || "NO RATING").toString().trim().toUpperCase();
@@ -43,90 +39,60 @@ document.addEventListener("DOMContentLoaded", () => {
     dangerMessage = message;
     incidentCount = count;
 
-    // Update status bar (desktop/tablet)
+    // Update canonical strip Cell 1 (Fire Danger Rating)
+    if (fireDangerRatingCell) {
+      fireDangerRatingCell.textContent = normalizedLevel;
+      fireDangerRatingCell.setAttribute("data-level", normalizedLevel);
+    }
+    if (fireDangerMessageEl) {
+      fireDangerMessageEl.textContent = message;
+    }
+
+    // Update legacy alias spans — Cell 1
     if (statusBarDangerLevel) {
       statusBarDangerLevel.textContent = normalizedLevel;
       statusBarDangerLevel.setAttribute("data-level", normalizedLevel);
     }
-    if (emergencyStatusBar) {
-      emergencyStatusBar.setAttribute("data-level", normalizedLevel);
-    }
-    if (statusBarIncidentCount) {
-      const incidentText = count === 1 ? "1 Incident" : `${count} Incidents`;
-      statusBarIncidentCount.textContent = incidentText;
-    }
-
-    // Update dashboard
     if (dashboardDangerLevel) {
       dashboardDangerLevel.textContent = normalizedLevel;
       dashboardDangerLevel.setAttribute("data-level", normalizedLevel);
     }
-    if (fireDangerPanel) {
-      fireDangerPanel.setAttribute("data-level", normalizedLevel);
-    }
-    if (dashboardDangerMessage) {
-      dashboardDangerMessage.textContent = message;
-    }
-    if (dashboardIncidentCount) {
-      dashboardIncidentCount.textContent = count;
-    }
-
-    // Update mobile badge
-    if (mobileIncidentBadge) {
-      mobileIncidentBadge.textContent = count;
-    }
-
-    // Update mobile panel
     if (mobileDangerLevel) {
       mobileDangerLevel.textContent = normalizedLevel;
       mobileDangerLevel.setAttribute("data-level", normalizedLevel);
     }
+    if (dashboardDangerMessage) {
+      dashboardDangerMessage.textContent = message;
+    }
+
+    // Update canonical strip Cell 2 (Active Incidents)
+    if (incidentTotalCount) {
+      incidentTotalCount.textContent = String(count);
+    }
+
+    // Update legacy alias spans — Cell 2
+    const incidentText = count === 1 ? "1 Incident" : `${count} Incidents`;
+    if (statusBarIncidentCount) {
+      statusBarIncidentCount.textContent = incidentText;
+    }
+    if (dashboardIncidentCount) {
+      dashboardIncidentCount.textContent = count;
+    }
+    if (mobileIncidentBadge) {
+      mobileIncidentBadge.textContent = count;
+    }
+
+    // Update mobile incidents list alias
     if (mobileIncidentsList) {
       updateMobileIncidentsList(incidentList);
     }
 
-    // Apply color coding to status bar based on danger level
-    updateStatusBarStyling(normalizedLevel);
+    // Apply danger-level data attribute to the live status strip for colour coding
+    // CSS targets #fireDangerRatingCell[data-level] directly for colour-banding.
   }
 
   /**
-   * Update status bar background color based on danger level
-   */
-  function updateStatusBarStyling(level) {
-    if (!emergencyStatusBar) return;
-
-    // Remove existing level classes
-    emergencyStatusBar.classList.remove(
-      "level-moderate",
-      "level-high",
-      "level-extreme",
-      "level-catastrophic",
-      "level-none"
-    );
-
-    // Add appropriate class
-    switch (level.toUpperCase()) {
-    case "HIGH":
-      emergencyStatusBar.classList.add("level-high");
-      break;
-    case "EXTREME":
-      emergencyStatusBar.classList.add("level-extreme");
-      break;
-    case "CATASTROPHIC":
-      emergencyStatusBar.classList.add("level-catastrophic");
-      break;
-    case "NO RATING":
-    case "N/A":
-    case "ERROR":
-      emergencyStatusBar.classList.add("level-none");
-      break;
-    default:
-      emergencyStatusBar.classList.add("level-moderate");
-    }
-  }
-
-  /**
-   * Update mobile incidents list
+   * Update mobile incidents list alias element
    */
   function updateMobileIncidentsList(incidentList) {
     if (!mobileIncidentsList) return;
@@ -136,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Limit to first 3 incidents for mobile view
+    // Limit to first 3 incidents for compact view
     const displayIncidents = incidentList.slice(0, 3);
     let html = "<ul>";
     displayIncidents.forEach((incident) => {
@@ -152,117 +118,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Toggle emergency dashboard (desktop/tablet)
-   */
-  function toggleEmergencyDashboard() {
-    if (!emergencyDashboard) return;
-
-    const isHidden = emergencyDashboard.hasAttribute("hidden");
-    if (isHidden) {
-      emergencyDashboard.removeAttribute("hidden");
-      // Update expand button icon
-      if (expandEmergencyBtn) {
-        const icon = expandEmergencyBtn.querySelector("i");
-        if (icon) {
-          icon.classList.remove("fa-chevron-down");
-          icon.classList.add("fa-chevron-up");
-        }
-      }
-    } else {
-      emergencyDashboard.setAttribute("hidden", "");
-      // Update expand button icon
-      if (expandEmergencyBtn) {
-        const icon = expandEmergencyBtn.querySelector("i");
-        if (icon) {
-          icon.classList.remove("fa-chevron-up");
-          icon.classList.add("fa-chevron-down");
-        }
-      }
-    }
-  }
-
-  /**
-   * Toggle mobile emergency panel
-   */
-  function toggleMobileEmergencyPanel() {
-    if (!mobileEmergencyPanel) return;
-
-    const isHidden = mobileEmergencyPanel.hasAttribute("hidden");
-    if (isHidden) {
-      mobileEmergencyPanel.removeAttribute("hidden");
-    } else {
-      mobileEmergencyPanel.setAttribute("hidden", "");
-    }
-  }
-
-  /**
-   * Close emergency dashboard
-   */
-  function closeEmergencyDashboardPanel() {
-    if (emergencyDashboard) {
-      emergencyDashboard.setAttribute("hidden", "");
-    }
-    if (expandEmergencyBtn) {
-      const icon = expandEmergencyBtn.querySelector("i");
-      if (icon) {
-        icon.classList.remove("fa-chevron-up");
-        icon.classList.add("fa-chevron-down");
-      }
-    }
-  }
-
-  /**
-   * Close mobile emergency panel
-   */
-  function closeMobileEmergencyPanel() {
-    if (mobileEmergencyPanel) {
-      mobileEmergencyPanel.setAttribute("hidden", "");
-    }
-  }
-
-  // Event Listeners
-  if (emergencyStatusBar) {
-    emergencyStatusBar.addEventListener("click", (e) => {
-      // Don't toggle if clicking the expand button (it has its own handler)
-      if (!e.target.closest("#expandEmergencyBtn")) {
-        toggleEmergencyDashboard();
-      }
-    });
-  }
-
-  if (expandEmergencyBtn) {
-    expandEmergencyBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      toggleEmergencyDashboard();
-    });
-  }
-
-  if (closeEmergencyDashboard) {
-    closeEmergencyDashboard.addEventListener("click", closeEmergencyDashboardPanel);
-  }
-
-  if (mobileEmergencyBadge) {
-    mobileEmergencyBadge.addEventListener("click", toggleMobileEmergencyPanel);
-  }
-
-  if (closeMobilePanel) {
-    closeMobilePanel.addEventListener("click", closeMobileEmergencyPanel);
-  }
-
-  // Close panels when clicking on action links
-  const dashboardActionLinks = document.querySelectorAll(
-    ".dashboard-action-btn, .mobile-action-btn"
-  );
-  dashboardActionLinks.forEach((link) => {
-    link.addEventListener("click", () => {
-      closeEmergencyDashboardPanel();
-      closeMobileEmergencyPanel();
-    });
-  });
-
-  /**
-   * Integrate with existing fire danger data fetching
-   * This function will be called by main.js when fire data is loaded
+   * Integrate with existing fire danger data fetching.
+   * Called by main.js / map.js when fire data is loaded.
    */
   window.updateEmergencyDashboard = function (fireDangerData) {
     if (fireDangerData.dangerLevel) {
@@ -277,10 +134,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize with default values
   updateEmergencyDisplays(dangerLevel, dangerMessage, incidentCount, []);
-
-  // Store preference for dismissing low-priority updates (optional feature)
-  const dismissPreference = localStorage.getItem("dismissLowPriority");
-  if (dismissPreference === "true" && dangerLevel === "MODERATE") {
-    // Could implement auto-collapse behavior here
-  }
 });

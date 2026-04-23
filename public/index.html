@@ -111,105 +111,7 @@
           <li><a class="whiteText contrast" href="#membership">Membership</a></li>
           <li><a class="whiteText contrast" href="#events">Events</a></li>
         </ul>
-        <!-- Emergency Status Bar (Desktop/Tablet) -->
-        <div id="emergencyStatusBar" class="emergency-status-bar">
-          <div class="emergency-status-compact">
-            <img class="status-icon" src="/Images/afdrs.png" alt="Fire danger rating sign" />
-            <span class="status-text">
-              <span id="statusBarDangerLevel">MODERATE</span>
-              <span class="separator">|</span>
-              <span id="statusBarIncidentCount">0 Incidents</span>
-            </span>
-          </div>
-          <button
-            id="expandEmergencyBtn"
-            class="expand-emergency-btn"
-            aria-label="View emergency details"
-          >
-            <i class="fas fa-chevron-down"></i>
-          </button>
-        </div>
-        <!-- Mobile Emergency Badge -->
-        <button
-          id="mobileEmergencyBadge"
-          class="mobile-emergency-badge"
-          aria-label="View emergency information"
-        >
-          <i class="fas fa-fire"></i>
-          <span id="mobileIncidentBadge" class="incident-badge">0</span>
-        </button>
       </nav>
-      <!-- Emergency Dashboard Overlay (Expanded State) -->
-      <div id="emergencyDashboard" class="emergency-dashboard" hidden>
-        <div class="emergency-dashboard-content">
-          <button
-            id="closeEmergencyDashboard"
-            class="close-dashboard-btn"
-            aria-label="Close emergency dashboard"
-          >
-            <i class="fas fa-times"></i>
-          </button>
-          <div class="dashboard-header">
-            <span class="dashboard-icon">🔥</span>
-            <h3>Emergency Information</h3>
-          </div>
-          <div class="dashboard-body">
-            <div class="dashboard-panel fire-danger-panel">
-              <h4>Fire Danger Rating</h4>
-              <div id="dashboardDangerLevel" class="danger-level-display">MODERATE</div>
-              <p id="dashboardDangerMessage" class="danger-message">
-                Plan and prepare for fires in your area
-              </p>
-            </div>
-            <div class="dashboard-panel incidents-panel">
-              <h4>Active Incidents</h4>
-              <div id="dashboardIncidentCount" class="incident-count-display">0</div>
-              <p class="incident-label">Current incidents in our area</p>
-            </div>
-          </div>
-          <div class="dashboard-actions">
-            <a href="#info" class="dashboard-action-btn">
-              <i class="fas fa-map-marked-alt"></i>
-              View Map
-            </a>
-            <a href="#prepare" class="dashboard-action-btn">
-              <i class="fas fa-shield-alt"></i>
-              Prepare Now
-            </a>
-          </div>
-        </div>
-      </div>
-      <!-- Mobile Emergency Panel -->
-      <div id="mobileEmergencyPanel" class="mobile-emergency-panel" hidden>
-        <div class="mobile-panel-content">
-          <div class="mobile-panel-header">
-            <h4>Emergency Information</h4>
-            <button
-              id="closeMobilePanel"
-              class="close-panel-btn"
-              aria-label="Close emergency panel"
-            >
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="mobile-panel-body">
-            <div class="mobile-danger-info">
-              <span class="mobile-danger-label">Fire Danger:</span>
-              <span id="mobileDangerLevel" class="mobile-danger-level">MODERATE</span>
-            </div>
-            <div class="mobile-incidents-info">
-              <h5>Active Incidents:</h5>
-              <div id="mobileIncidentsList" class="mobile-incidents-list">
-                <p>Loading incident information...</p>
-              </div>
-            </div>
-          </div>
-          <div class="mobile-panel-actions">
-            <a href="#info" class="mobile-action-btn">View Full Details</a>
-            <a href="#info" class="mobile-action-btn secondary">View Map</a>
-          </div>
-        </div>
-      </div>
     </header>
 
     <main class="container-fluid">
@@ -237,88 +139,64 @@
         </hgroup>
       </div>
 
+      <!-- Live Status Strip (Phase 3): replaces header status bar, dashboard overlay, mobile panel, and fire-info summary card -->
+      <section id="liveStatusStrip" class="live-status-strip" aria-label="Current fire status for our area">
+        <!-- Cell 1: Fire Danger Rating -->
+        <article class="strip-cell strip-cell--danger" role="group" aria-label="Fire Danger Rating" tabindex="0">
+          <p class="strip-cell__label"><i class="fas fa-thermometer-half" aria-hidden="true"></i> Fire Danger</p>
+          <div id="fireDangerRatingCell" class="strip-cell__value tabular-nums">Loading…</div>
+          <p id="fireDangerMessage" class="strip-cell__sub">Fetching latest data…</p>
+        </article>
+
+        <!-- Cell 2: Active Incidents -->
+        <article class="strip-cell strip-cell--incidents" role="group" aria-label="Active Incidents" tabindex="0">
+          <p class="strip-cell__label"><i class="fas fa-fire-alt" aria-hidden="true"></i> Incidents</p>
+          <div class="strip-cell__value tabular-nums"><span id="incidentTotalCount">0</span></div>
+          <div id="incidentCountCell" class="strip-cell__breakdown"></div>
+          <p id="incidentCountLabel" class="strip-cell__sub">No active incidents in our area</p>
+        </article>
+
+        <!-- Cell 3: Warning Level -->
+        <article class="strip-cell strip-cell--warning" role="group" aria-label="Current Warning Level" tabindex="0">
+          <p class="strip-cell__label"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Warning Level</p>
+          <div id="stripWarningLevel" class="strip-cell__value">None</div>
+          <p class="strip-cell__sub">No current warning</p>
+        </article>
+
+        <!-- Cell 4: Total Fire Ban -->
+        <article class="strip-cell strip-cell--toban" role="group" aria-label="Total Fire Ban" tabindex="0">
+          <p class="strip-cell__label"><i class="fas fa-ban" aria-hidden="true"></i> Total Fire Ban</p>
+          <div id="stripTotalFireBan" class="strip-cell__value">No</div>
+          <p class="strip-cell__sub">No total fire ban today</p>
+        </article>
+
+        <!-- Cell 5: Map context / full-map CTA -->
+        <article class="strip-cell strip-cell--map" role="group" aria-label="Incident Map" tabindex="0">
+          <p class="strip-cell__label"><i class="fas fa-map-marked-alt" aria-hidden="true"></i> Incident Map</p>
+          <div class="strip-cell__map-cta">
+            <a href="#info" class="strip-map-cta-btn">
+              <i class="fas fa-map-marked-alt" aria-hidden="true"></i>
+              View Full Map
+            </a>
+          </div>
+          <p class="strip-cell__sub">Open fire incident map</p>
+        </article>
+
+        <!-- Legacy ID alias shim (Phase 3 → Phase 7 compatibility window).
+             JS files continue to write to these IDs unchanged; Phase 7 removes them. -->
+        <span id="statusBarDangerLevel" hidden></span>
+        <span id="statusBarIncidentCount" hidden></span>
+        <span id="dashboardDangerLevel" hidden></span>
+        <span id="dashboardDangerMessage" hidden></span>
+        <span id="dashboardIncidentCount" hidden></span>
+        <span id="mobileDangerLevel" hidden></span>
+        <span id="mobileIncidentBadge" hidden></span>
+        <div id="mobileIncidentsList" hidden></div>
+        <span id="fireMessages" hidden></span>
+      </section>
+
       <!-- Grid section with article cards -->
       <div class="container-fluid content-container">
-        <!-- Fire Information Card - Full Width -->
-        <div class="grid">
-          <article class="summaryCard status-panel" id="fireInfoSummaryCard">
-            <header class="red">
-              <h3><i class="fas fa-fire"></i> Fire Information</h3>
-              <a
-                href="#info"
-                class="header-action-icon"
-                aria-label="Learn more about Fire Information"
-                ><i class="fas fa-chevron-circle-right"></i
-              ></a>
-            </header>
-
-            <div class="fire-info-compact">
-              <div id="fireMessages" class="fire-messages-banner">
-                <i class="fas fa-info-circle"></i>
-                <span>Latest fire danger ratings and local incident updates.</span>
-              </div>
-
-              <div class="fire-info-grid-enhanced">
-                <div class="fire-info-panel fire-danger-panel">
-                  <div class="panel-header">
-                    <i class="fas fa-thermometer-half"></i>
-                    <h4>Fire Danger Rating</h4>
-                  </div>
-                  <div class="panel-content">
-                    <div id="fireDangerRatingCell" class="data-value primary-metric">
-                      Loading...
-                    </div>
-                    <p id="fireDangerMessage" class="data-label">
-                      Fetching latest fire danger rating...
-                    </p>
-                  </div>
-                </div>
-
-                <div class="fire-info-panel incident-map-panel">
-                  <div class="panel-header">
-                    <i class="fas fa-map-marked-alt"></i>
-                    <h4>Local Incidents Map</h4>
-                  </div>
-                  <div class="panel-content">
-                    <div class="fire-info-map" id="fireInfoMapContainer">
-                      <div class="map-toolbar">
-                        <button id="mapExpandBtn" class="map-expand-btn" type="button" aria-expanded="false">
-                          <i class="fas fa-expand"></i>
-                          <span>Expand</span>
-                        </button>
-                      </div>
-                      <div class="map-layout">
-                        <div id="map" aria-label="Local incident map"></div>
-                        <aside id="mapDetailPanel" class="map-detail-panel" aria-live="polite" hidden></aside>
-                      </div>
-                      <div class="incident-summary" aria-live="polite">
-                        <div class="incident-count">
-                          <span id="incidentTotalCount">0</span> Incidents
-                        </div>
-                        <div id="incidentCountCell" class="incident-breakdown"></div>
-                        <p id="incidentCountLabel" class="incident-label">
-                          No active incidents in our area
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="fire-info-actions">
-                <a href="#info" class="quick-action-btn">
-                  <i class="fas fa-map-marked-alt"></i>
-                  View Map
-                </a>
-                <a href="#prepare" class="quick-action-btn">
-                  <i class="fas fa-shield-alt"></i>
-                  Prepare Now
-                </a>
-              </div>
-            </div>
-          </article>
-        </div>
-
         <!-- Tabbed Content Navigation -->
         <div class="content-tabs-container">
           <!-- Tab Navigation (Desktop/Tablet) -->
@@ -388,6 +266,19 @@
                   <div class="">
                     <div id="fireDangerTableContainer"></div>
                     <div id="fireInfoContent"></div>
+                    <!-- Incident map (moved from summary card in Phase 3) -->
+                    <div class="fire-info-map" id="fireInfoMapContainer">
+                      <div class="map-toolbar">
+                        <button id="mapExpandBtn" class="map-expand-btn" type="button" aria-expanded="false">
+                          <i class="fas fa-expand"></i>
+                          <span>Expand</span>
+                        </button>
+                      </div>
+                      <div class="map-layout">
+                        <div id="map" aria-label="Local incident map"></div>
+                        <aside id="mapDetailPanel" class="map-detail-panel" aria-live="polite" hidden></aside>
+                      </div>
+                    </div>
                     <div id="fireInfoTableContainer" class="grid-container"></div>
                   </div>
                 </article>
