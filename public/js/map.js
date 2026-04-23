@@ -820,4 +820,80 @@ function initMap() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", initMap);
+// ─── Dynamic Mapbox GL loader ─────────────────────────────────────────────────
+
+/**
+ * Dynamically load the Mapbox GL JS bundle and its companion CSS.
+ * Resolves when the script is ready; rejects on network error.
+ * Safe to call multiple times – subsequent calls resolve immediately.
+ */
+let _mapboxLoadPromise = null;
+
+function loadMapbox() {
+  if (_mapboxLoadPromise) return _mapboxLoadPromise;
+  _mapboxLoadPromise = new Promise(function(resolve, reject) {
+    const MAPBOX_VERSION = "v3.9.4";
+    const MAPBOX_BASE    = "https://api.mapbox.com/mapbox-gl-js/" + MAPBOX_VERSION;
+
+    // Inject CSS
+    const link = document.createElement("link");
+    link.rel  = "stylesheet";
+    link.href = MAPBOX_BASE + "/mapbox-gl.css";
+    document.head.appendChild(link);
+
+    // Inject JS
+    const script = document.createElement("script");
+    script.src     = MAPBOX_BASE + "/mapbox-gl.js";
+    script.onload  = resolve;
+    script.onerror = function() {
+      reject(new Error("Failed to load Mapbox GL JS"));
+    };
+    document.head.appendChild(script);
+  });
+  return _mapboxLoadPromise;
+}
+
+/**
+ * Bootstrap: use IntersectionObserver to kick off the Mapbox load + map init
+ * as soon as the map container (or the hero) enters the viewport.
+ * Falls back to immediate load on browsers without IntersectionObserver.
+ */
+document.addEventListener("DOMContentLoaded", function() {
+  const mapContainer  = document.getElementById("fireInfoMapContainer");
+  const heroSection   = document.getElementById("heroSection");
+  let initiated       = false;
+
+  function start() {
+    if (initiated) return;
+    initiated = true;
+    loadMapbox()
+      .then(initMap)
+      .catch(function(err) {
+        console.error("Mapbox GL load failed:", err);
+        showMapError(err);
+      });
+  }
+
+  if (!("IntersectionObserver" in window)) {
+    // Fallback for older browsers
+    start();
+    return;
+  }
+
+  // Use a generous root margin so the library starts loading before
+  // the map section is fully scrolled into view.
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        start();
+        observer.disconnect();
+      }
+    });
+  }, { rootMargin: "300px" });
+
+  if (mapContainer) observer.observe(mapContainer);
+  if (heroSection)  observer.observe(heroSection);
+
+  // Safety: if neither element found, load immediately
+  if (!mapContainer && !heroSection) start();
+});

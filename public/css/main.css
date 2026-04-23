@@ -5,10 +5,6 @@
   --hero-min-height: 340px; /* Minimum height for readability */
   --hero-max-height: 480px; /* Maximum height to fit above-the-fold */
   --hero-bg: url("/Images/hero4.jpeg");
-  --prepare-bg-light: url("https://bungendorerfs.org/images/prepare.jpg");
-  --info-bg-light: url("https://bungendorerfs.org/images/info.jpg");
-  --membership-bg-light: url("https://bungendorerfs.org/images/membership.jpg");
-  --events-bg-light: url("https://bungendorerfs.org/images/events.jpg");
 
   /* NSW RFS Brand Colors (from Style Guide Sept 2024) */
   --rfs-core-red: #e5281b;
@@ -26,7 +22,7 @@
   /* Emergency Red is --rfs-core-red */
 
   /* General UI & Text Colors */
-  --rfs-accent-green: #4caf50; /* Retained for now, assess if needed alongside RFS Lime/UI Green */
+  --rfs-accent-green: #4caf50;
   --rfs-neutral-light: #f4f4f4; /* Style guide uses specific greys, this might need to align with --rfs-light-grey or similar */
   --rfs-neutral-medium: #e0e0e0; /* Assess against style guide greys */
   --rfs-neutral-dark: #333333; /* Consider replacing with --rfs-dark-grey or another specified grey */
@@ -93,15 +89,13 @@
 }
 
 article,
-.content-section,
-.summaryCard {
+.content-section {
   animation: fadeIn 0.5s ease-out forwards;
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
 }
 
-.summaryCard:hover,
 .tab-panel article:hover,
 .live-status-strip article:hover {
   transform: translateY(-4px);
@@ -160,20 +154,13 @@ a:hover::after {
 .tab-btn::after,
 .accordion-header::after,
 button::after,
-.custom-button::after,
-.dashboard-action-btn::after,
-.mobile-action-btn::after,
-.quick-action-btn::after {
+.custom-button::after {
   display: none;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --hero-bg: url("/Images/hero1.jpg");
-    --prepare-bg: url("https://bungendorerfs.org/images/prepare-dark.jpg");
-    --info-bg: url("https://bungendorerfs.org/images/info-dark.jpg");
-    --membership-bg: url("https://bungendorerfs.org/images/membership-dark.jpg");
-    --events-bg: url("https://bungendorerfs.org/images/events-dark.jpg");
     --rfs-logo: url("/Images/logo.png");
 
     /* Dark Theme Semantic UI Colors - Adjust if style guide provides specific dark versions */
@@ -307,99 +294,57 @@ h2 {
   /* color will be set by specific sections */
 }
 
-.prepare-section > h2:first-child {
-  /* Amber for Prepare / Watch & Act */
-  background-color: var(--ui-amber);
-  color: var(--rfs-black); /* Changed from --text-color-light to --rfs-black for better contrast */
-}
-
-.incidents-section > h2:first-child {
-  /* Red for Incidents / Emergency Warning */
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-}
-
-.info-section > h2:first-child {
-  /* Blue for Info / Advice (e.g., Fire Danger Rating) */
-  background-color: var(--ui-blue);
-  color: var(--text-color-light);
-}
-
-.membership-section > h2:first-child {
-  /* Green for Membership section title */
-  background-color: var(--ui-green);
-  color: var(--text-color-light);
-}
-
-.events-section > h2:first-child {
-  /* Lime for Events section title */
-  background-color: var(--rfs-lime);
-  color: var(--rfs-black);
-}
-
 h3 {
   font-size: var(--font-size-h3); /* 1.125rem / 18px */
   color: var(--text-color-dark); /* Changed from --rfs-dark-grey */
 }
 
-/* Colored Headers for Summary Cards and Detailed Sections */
-/* These headers are direct children of <article> (which might be .summaryCard or a main content article like #info) */
-/* They use negative margins to align with the parent article's padding box, similar to section h2 banners. */
+/* Colored Headers for Detailed Sections */
+/* They use negative margins to align with the parent article's padding box. */
 article > header.red,
-article.summaryCard > header.red,
 article > header.amber,
-article.summaryCard > header.amber,
 article > header.blue,
-article.summaryCard > header.blue,
-article > header.green,
-article.summaryCard > header.green {
+article > header.green {
   padding: var(--space-md); /* Consistent padding */
   margin-bottom: var(--space-lg); /* Space after the header, before content below it */
   border-bottom: none; /* Remove Pico's default border for article > header */
   border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0; /* Top corners rounded */
 
   /* Negative margins to make the header flush with the parent article's padding edges */
-  /* The parent 'article' or 'summaryCard' should have 'overflow: hidden' and 'padding: var(--pico-card-padding)' */
   margin-left: calc(-1 * var(--pico-card-padding));
   margin-right: calc(-1 * var(--pico-card-padding));
   margin-top: calc(-1 * var(--pico-card-padding));
 }
 
 /* Additional styles for green headers */
-article > header.green,
-article.summaryCard > header.green {
+article > header.green {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-/* Ensure colored backgrounds are applied to summary card headers */
-article > header.red,
-article.summaryCard > header.red {
+/* Ensure colored backgrounds are applied to article headers */
+article > header.red {
   background-color: var(--rfs-core-red);
   color: var(--rfs-white); /* White text on red */
 }
 
-article > header.amber,
-article.summaryCard > header.amber {
+article > header.amber {
   background-color: var(--ui-amber);
   color: var(--rfs-black); /* Black text on amber */
 }
 
-article > header.blue,
-article.summaryCard > header.blue {
+article > header.blue {
   background-color: var(--ui-blue);
   color: var(--rfs-white); /* White text on blue */
 }
 
-article > header.green,
-article.summaryCard > header.green {
+article > header.green {
   background-color: var(--ui-green); /* Dark green */
   color: var(--rfs-white); /* White text on dark green */
 }
 
-article > header.lime,
-article.summaryCard > header.lime {
+article > header.lime {
   padding: var(--space-md);
   margin: calc(-1 * var(--pico-card-padding)) calc(-1 * var(--pico-card-padding)) var(--space-lg);
   border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
@@ -411,8 +356,7 @@ article.summaryCard > header.lime {
   color: var(--rfs-black); /* Black text for LIME */
 }
 
-article > header.lime h3,
-article.summaryCard > header.lime h3 {
+article > header.lime h3 {
   color: inherit; /* Inherits black from parent header.lime */
   margin-bottom: 0;
   font-size: var(--font-size-h4); /* 1.25rem */
@@ -420,13 +364,9 @@ article.summaryCard > header.lime h3 {
 
 /* Shared styles for h3 within explicitly colored headers (red, amber, blue, green) */
 article > header.red h3,
-article.summaryCard > header.red h3,
 article > header.amber h3,
-article.summaryCard > header.amber h3,
 article > header.blue h3,
-article.summaryCard > header.blue h3,
-article > header.green h3,
-article.summaryCard > header.green h3 {
+article > header.green h3 {
   color: inherit; /* Inherit color from parent header */
   margin-bottom: 0; /* Adjust as needed */
   font-size: var(--font-size-h4); /* 1.25rem - Consistent h3 size in headers */
@@ -455,108 +395,6 @@ a:focus {
   color: var(--rfs-core-red); /* Core red for hover */
 }
 
-.learn-more-link {
-  display: inline-block; /* Change from block to inline-block */
-  text-align: center;
-  margin-top: var(--space-md);
-  padding: var(--space-xs) var(--space-sm); /* Reduce padding */
-  font-size: 0.9rem; /* Smaller font size */
-  font-weight: 500; /* Less bold */
-  text-transform: none; /* Normal case */
-  letter-spacing: normal; /* Normal letter spacing */
-  border: 1px solid var(--ui-blue); /* Thinner border */
-  transition:
-    background-color 0.2s ease-in-out,
-    color 0.2s ease-in-out;
-  text-decoration: none;
-}
-
-.learn-more-link:hover,
-.learn-more-link:focus {
-  text-decoration: underline; /* Add underline on hover/focus for link affordance */
-}
-
-#fireInfoSummaryCard .learn-more-link:focus {
-  text-decoration: underline; /* Add underline on hover/focus for link affordance */
-}
-
-/* Responsive adjustments for Fire Info Summary Card */
-@media (min-width: 600px) {
-  .fire-info-grid {
-    grid-template-columns: 1fr 1fr; /* Two columns for wider screens */
-  }
-}
-
-/* Styles for the new Fire Info Status Panel (kept for reference; card removed in Phase 3) */
-#fireInfoSummaryCard.status-panel {
-  width: 100%; /* Make panel full width */
-  margin-left: 0;
-  margin-right: 0;
-  margin-bottom: var(--space-xl); /* Ensure space before next content */
-  padding: var(--space-md);
-  background-color: rgba(255, 255, 255, 0.95); /* Slightly more opaque */
-  border: 1px solid var(--rfs-light-grey);
-  border-radius: var(--pico-border-radius);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  z-index: 15; /* Ensure it's above hero but below nav */
-  position: relative; /* Needed for z-index and positioning */
-}
-
-#fireInfoSummaryCard.status-panel header.red {
-  display: flex; /* Show the header with enhanced styling */
-  justify-content: space-between;
-  align-items: center;
-}
-
-#fireInfoSummaryCard.status-panel header.red h3 {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-/* Dark Mode for Enhanced Fire Info Summary Card */
-@media (prefers-color-scheme: dark) {
-  #fireInfoSummaryCard .fire-messages-banner {
-    background-color: var(--rfs-neutral-dark);
-    border-left-color: var(--ui-blue-dark);
-    color: var(--text-color-dark);
-  }
-
-  #fireInfoSummaryCard .fire-messages-banner i {
-    color: var(--ui-blue-dark);
-  }
-
-  .fire-info-panel {
-    background-color: var(--rfs-neutral-dark);
-    border-color: #4a4a4a;
-  }
-
-  .fire-info-panel .panel-header h4 {
-    color: var(--text-color-dark);
-  }
-
-  .fire-info-panel .data-value.primary-metric,
-  .fire-info-panel .data-value.secondary-metric {
-    background-color: var(--pico-card-background-color);
-    border-color: var(--pico-card-border-color);
-    color: var(--text-color-dark);
-  }
-
-  .fire-info-panel .data-label {
-    color: var(--text-color-dark);
-  }
-
-  .fire-info-actions {
-    border-top-color: #4a4a4a;
-  }
-
-  #incidentCountCell.data-value {
-    color: var(--text-color-dark);
-  }
-}
-
 /* Membership Section Grid */
 .membership-grid {
   display: grid;
@@ -582,8 +420,7 @@ a:focus {
 .inline-icon,
 .markdown-icon,
 #incidentCountCell img,
-#fireInfoTableContainer img,
-.feature-card.compact .cardIcon {
+#fireInfoTableContainer img {
   width: 1.5em; /* Standardized icon size */
   height: 1.5em;
   margin-right: var(--space-sm); /* Consistent margin */
@@ -794,356 +631,6 @@ a:focus {
   margin-bottom: var(--space-lg); /* Add some space below the map */
 }
 
-/* Leaflet Marker and Control Styles */
-.leaflet-marker-icon,
-.leaflet-control {
-  all: unset;
-  display: inline-block;
-  width: auto;
-  height: auto;
-  cursor: pointer;
-}
-
-/* Emergency Dashboard Styles */
-/* Emergency Status Bar (Desktop/Tablet) */
-.emergency-status-bar {
-  display: none; /* Hidden by default, shown on desktop/tablet */
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xs) var(--space-md);
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: var(--pico-border-radius);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.emergency-status-bar:hover {
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-.emergency-status-compact {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.emergency-status-bar .status-icon {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-  display: inline-block;
-}
-
-.emergency-status-bar .status-text {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.emergency-status-bar .separator {
-  opacity: 0.5;
-}
-
-.expand-emergency-btn {
-  background: none;
-  border: none;
-  color: var(--text-color-light);
-  cursor: pointer;
-  padding: var(--space-xs);
-  display: flex;
-  align-items: center;
-  transition: transform 0.3s ease;
-}
-
-.expand-emergency-btn:hover {
-  transform: scale(1.1);
-}
-
-/* Mobile Emergency Badge */
-.mobile-emergency-badge {
-  display: none; /* Hidden by default, shown on mobile */
-  position: relative;
-  background: rgba(0, 0, 0, 0.2);
-  border: none;
-  color: var(--text-color-light);
-  padding: var(--space-sm);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.mobile-emergency-badge:hover {
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-.mobile-emergency-badge .fa-fire {
-  font-size: 1.5rem;
-}
-
-.incident-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: bold;
-}
-
-/* Emergency Dashboard Overlay */
-.emergency-dashboard {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: var(--pico-card-background-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 999;
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.emergency-dashboard-content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: var(--space-lg);
-  position: relative;
-}
-
-.close-dashboard-btn {
-  position: absolute;
-  top: var(--space-md);
-  right: var(--space-md);
-  background: none;
-  border: none;
-  color: var(--text-color-dark);
-  cursor: pointer;
-  font-size: 1.5rem;
-  padding: var(--space-xs);
-  transition: transform 0.2s ease;
-}
-
-.close-dashboard-btn:hover {
-  transform: scale(1.2);
-}
-
-.dashboard-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-lg);
-}
-
-.dashboard-icon {
-  font-size: 2rem;
-}
-
-.dashboard-header h3 {
-  margin: 0;
-  color: var(--text-color-dark);
-}
-
-.dashboard-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-lg);
-  margin-bottom: var(--space-lg);
-}
-
-.dashboard-panel {
-  background-color: var(--rfs-neutral-light);
-  padding: var(--space-md);
-  border-radius: var(--pico-border-radius);
-  text-align: center;
-}
-
-.fire-danger-panel {
-  border: 1px solid transparent;
-}
-
-.fire-danger-panel .danger-level-display {
-  background: none;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  display: block;
-  border-radius: 0;
-}
-
-.fire-danger-panel h4,
-.fire-danger-panel .danger-message {
-  color: inherit;
-}
-
-.dashboard-panel h4 {
-  margin-top: 0;
-  margin-bottom: var(--space-sm);
-  font-size: 1rem;
-  color: var(--text-color-dark);
-}
-
-.danger-level-display,
-.incident-count-display {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin: var(--space-sm) 0;
-}
-
-.danger-message,
-.incident-label {
-  font-size: 0.9rem;
-  color: var(--rfs-dark-grey);
-  margin: 0;
-}
-
-.dashboard-actions {
-  display: flex;
-  gap: var(--space-md);
-  justify-content: center;
-}
-
-.dashboard-action-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-lg);
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-  text-decoration: none;
-  border-radius: var(--pico-border-radius);
-  font-weight: 600;
-  transition:
-    background-color 0.2s ease,
-    transform 0.1s ease;
-}
-
-.dashboard-action-btn:hover {
-  background-color: #c42216;
-  transform: translateY(-1px);
-  text-decoration: none;
-}
-
-/* Mobile Emergency Panel */
-.mobile-emergency-panel {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: var(--pico-card-background-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 999;
-  animation: slideDown 0.3s ease-out;
-}
-
-.mobile-panel-content {
-  padding: var(--space-md);
-}
-
-.mobile-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-md);
-  padding-bottom: var(--space-sm);
-  border-bottom: 2px solid var(--rfs-light-grey);
-}
-
-.mobile-panel-header h4 {
-  margin: 0;
-  color: var(--text-color-dark);
-}
-
-.close-panel-btn {
-  background: none;
-  border: none;
-  color: var(--text-color-dark);
-  cursor: pointer;
-  font-size: 1.3rem;
-  padding: var(--space-xs);
-}
-
-.mobile-danger-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-md);
-  background-color: var(--rfs-neutral-light);
-  border-radius: var(--pico-border-radius);
-  margin-bottom: var(--space-md);
-}
-
-.mobile-danger-label {
-  font-size: 0.9rem;
-  color: var(--rfs-dark-grey);
-}
-
-.mobile-danger-level {
-  font-size: 1.8rem;
-  font-weight: bold;
-}
-
-.mobile-incidents-info h5 {
-  margin-top: 0;
-  margin-bottom: var(--space-sm);
-  color: var(--text-color-dark);
-}
-
-.mobile-incidents-list {
-  background-color: var(--rfs-neutral-light);
-  padding: var(--space-md);
-  border-radius: var(--pico-border-radius);
-  margin-bottom: var(--space-md);
-}
-
-.mobile-panel-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.mobile-action-btn {
-  padding: var(--space-sm);
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-  text-align: center;
-  text-decoration: none;
-  border-radius: var(--pico-border-radius);
-  font-weight: 600;
-  transition: background-color 0.2s ease;
-}
-
-.mobile-action-btn:hover {
-  background-color: #c42216;
-  text-decoration: none;
-}
-
-.mobile-action-btn.secondary {
-  background-color: var(--ui-blue);
-}
-
-.mobile-action-btn.secondary:hover {
-  background-color: #1565c0;
-}
-
 /* ─── Live Status Strip (Phase 3) ──────────────────────────────────────────── */
 
 .live-status-strip {
@@ -1351,135 +838,6 @@ a:focus {
   }
 }
 
-/* Show/hide emergency components based on screen size */
-@media (min-width: 769px) {
-  .emergency-status-bar {
-    display: flex;
-  }
-  .mobile-emergency-badge,
-  .mobile-emergency-panel {
-    display: none !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .emergency-status-bar,
-  .emergency-dashboard {
-    display: none !important;
-  }
-  .mobile-emergency-badge {
-    display: flex;
-  }
-  .dashboard-body {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Fire danger level color coding */
-.danger-level-display[data-level="MODERATE"],
-.mobile-danger-level[data-level="MODERATE"],
-#statusBarDangerLevel[data-level="MODERATE"] {
-  color: #ffffff;
-  background-color: var(--ui-green);
-  border: 1px solid #0b5f3b;
-  padding: 0 var(--space-xs);
-  border-radius: 999px;
-  display: inline-block;
-}
-
-.fire-danger-panel[data-level="MODERATE"] {
-  background-color: var(--ui-green);
-  color: #ffffff;
-  border-color: #0b5f3b;
-}
-
-.danger-level-display[data-level="HIGH"],
-.mobile-danger-level[data-level="HIGH"],
-#statusBarDangerLevel[data-level="HIGH"] {
-  color: #000000;
-  background-color: var(--ui-yellow);
-  border: 1px solid #b5891e;
-  padding: 0 var(--space-xs);
-  border-radius: 999px;
-  display: inline-block;
-}
-
-.fire-danger-panel[data-level="HIGH"] {
-  background-color: var(--ui-yellow);
-  color: #000000;
-  border-color: #b5891e;
-}
-
-.danger-level-display[data-level="EXTREME"],
-.mobile-danger-level[data-level="EXTREME"],
-#statusBarDangerLevel[data-level="EXTREME"] {
-  color: #000000;
-  background-color: #ff6b00;
-  border: 1px solid #c65300;
-  padding: 0 var(--space-xs);
-  border-radius: 999px;
-  display: inline-block;
-}
-
-.fire-danger-panel[data-level="EXTREME"] {
-  background-color: #ff6b00;
-  color: #000000;
-  border-color: #c65300;
-}
-
-.danger-level-display[data-level="CATASTROPHIC"],
-.mobile-danger-level[data-level="CATASTROPHIC"],
-#statusBarDangerLevel[data-level="CATASTROPHIC"] {
-  color: #ffffff;
-  background-color: var(--rfs-core-red);
-  border: 1px solid #a51c13;
-  padding: 0 var(--space-xs);
-  border-radius: 999px;
-  display: inline-block;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.fire-danger-panel[data-level="CATASTROPHIC"] {
-  background-color: var(--rfs-core-red);
-  color: #ffffff;
-  border-color: #a51c13;
-}
-
-.danger-level-display[data-level="NO RATING"],
-.danger-level-display[data-level="N/A"],
-.danger-level-display[data-level="ERROR"],
-.mobile-danger-level[data-level="NO RATING"],
-.mobile-danger-level[data-level="N/A"],
-.mobile-danger-level[data-level="ERROR"],
-#statusBarDangerLevel[data-level="NO RATING"],
-#statusBarDangerLevel[data-level="N/A"],
-#statusBarDangerLevel[data-level="ERROR"] {
-  color: #000000;
-  background-color: #ffffff;
-  border: 1px solid #000000;
-  padding: 0 var(--space-xs);
-  border-radius: 999px;
-  display: inline-block;
-}
-
-.fire-danger-panel[data-level="NO RATING"],
-.fire-danger-panel[data-level="N/A"],
-.fire-danger-panel[data-level="ERROR"] {
-  background-color: #ffffff;
-  color: #000000;
-  border-color: #000000;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
 /* Tabbed Content Navigation Styles */
 .content-tabs-container {
   margin-top: var(--space-xl);
@@ -1660,8 +1018,7 @@ a:focus {
   }
 
   .accordion-content article,
-  .accordion-content .content-section,
-  .accordion-content .summaryCard {
+  .accordion-content .content-section {
     animation: none;
     transform: none;
     box-shadow: none;
@@ -2102,19 +1459,6 @@ main {
   vertical-align: middle;
 }
 
-/* Header and Button Container Styles */
-.header-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.button-container {
-  display: flex;
-  gap: 10px;
-}
-
 .custom-button {
   padding: var(--space-sm) var(--space-lg); /* More horizontal padding */
   background-color: var(--rfs-core-red);
@@ -2194,85 +1538,6 @@ main {
 
 /* Miscellaneous Styles */
 
-/* Enhanced Fire Info Summary Card Styles */
-#fireInfoSummaryCard .fire-info-compact {
-  padding: 0;
-}
-
-#fireInfoSummaryCard .fire-messages-banner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  font-size: 0.9rem;
-  padding: var(--space-sm) var(--space-md);
-  margin-bottom: var(--space-md);
-  background-color: var(--rfs-neutral-light);
-  border-left: 4px solid var(--ui-blue);
-  border-radius: var(--pico-border-radius);
-  font-weight: 500;
-}
-
-#fireInfoSummaryCard .fire-messages-banner i {
-  color: var(--ui-blue);
-  font-size: 1rem;
-}
-
-.fire-info-grid-enhanced {
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(360px, 2fr);
-  gap: var(--space-md);
-  margin-bottom: var(--space-md);
-}
-
-.fire-info-panel {
-  background-color: var(--rfs-neutral-light);
-  border-radius: var(--pico-border-radius);
-  padding: var(--space-md);
-  border: 1px solid var(--rfs-light-grey);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.fire-info-panel:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.fire-info-panel .panel-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-sm);
-}
-
-.fire-info-panel .panel-header i {
-  color: var(--rfs-core-red);
-  font-size: 1.1rem;
-}
-
-.fire-info-panel .panel-header h4 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-color-dark);
-}
-
-.fire-info-panel .panel-content {
-  text-align: center;
-}
-
-.fire-danger-panel .panel-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 180px;
-}
-
-.incident-map-panel .panel-content {
-  text-align: left;
-}
-
 .fire-info-map {
   position: relative;
   border-radius: var(--pico-border-radius);
@@ -2317,12 +1582,6 @@ main {
 
 .map-layout.panel-visible {
   grid-template-columns: minmax(0, 1fr) 280px;
-}
-
-#fireInfoSummaryCard #map {
-  height: 100%;
-  width: 100%;
-  margin-bottom: 0;
 }
 
 .map-detail-panel {
@@ -2522,128 +1781,8 @@ body.map-fullscreen-active {
   overflow: hidden;
 }
 
-.incident-summary {
-  position: absolute;
-  left: var(--space-sm);
-  bottom: var(--space-sm);
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--text-color-dark);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--pico-border-radius);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  min-width: 160px;
-  text-align: left;
-  z-index: 500;
-}
-
-.incident-summary .incident-count {
-  font-size: 1.2rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.incident-summary .incident-breakdown {
-  margin-top: var(--space-xs);
-}
-
-.incident-summary table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.incident-summary td {
-  padding: 0.15rem 0.2rem;
-  font-size: 0.95rem;
-  vertical-align: middle;
-}
-
-.incident-summary img {
-  width: 20px;
-  height: 20px;
-}
-
-.incident-summary .incident-label {
-  margin: var(--space-xs) 0 0;
-  font-size: 0.8rem;
-  color: var(--rfs-dark-grey);
-}
-
-.fire-info-panel .data-value {
-  font-size: 2rem;
-  font-weight: bold;
-  line-height: 1.1;
-  margin-bottom: var(--space-xs);
-  padding: var(--space-sm);
-  border-radius: var(--pico-border-radius);
-  display: inline-block;
-  min-width: 100px;
-}
-
-.fire-info-panel .data-value.primary-metric {
-  background-color: var(--rfs-white);
-  border: 2px solid var(--rfs-light-grey);
-}
-
-.fire-info-panel .data-value.secondary-metric {
-  background-color: var(--rfs-white);
-  border: 1px solid var(--rfs-light-grey);
-  color: var(--rfs-dark-grey);
-}
-
-.fire-info-panel .data-label {
-  font-size: 0.85rem;
-  color: var(--rfs-dark-grey);
-  margin: 0;
-  line-height: 1.3;
-}
-
-.fire-info-actions {
-  display: flex;
-  gap: var(--space-sm);
-  justify-content: center;
-  padding-top: var(--space-sm);
-  border-top: 1px solid var(--rfs-light-grey);
-}
-
-.quick-action-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
-  background-color: var(--rfs-core-red);
-  color: var(--rfs-white);
-  text-decoration: none;
-  border-radius: var(--pico-border-radius);
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition:
-    background-color 0.2s ease,
-    transform 0.1s ease;
-}
-
-.quick-action-btn:hover {
-  background-color: #c42216;
-  transform: translateY(-1px);
-  color: var(--rfs-white);
-  text-decoration: none;
-}
-
-.quick-action-btn i {
-  font-size: 0.9rem;
-}
-
 /* Responsive adjustments for Enhanced Fire Info Card */
 @media (max-width: 768px) {
-  .fire-info-grid-enhanced {
-    grid-template-columns: 1fr;
-    gap: var(--space-sm);
-  }
-
-  .fire-info-panel .data-value {
-    font-size: 1.8rem;
-    min-width: 80px;
-  }
-
   .map-layout,
   .map-layout.panel-visible {
     grid-template-columns: 1fr;
@@ -2658,27 +1797,6 @@ body.map-fullscreen-active {
     max-height: 180px;
   }
 
-  #fireInfoSummaryCard #map {
-    height: 220px;
-  }
-
-  .incident-summary {
-    position: static;
-    margin-top: var(--space-sm);
-    box-shadow: none;
-    background: var(--rfs-neutral-light);
-  }
-
-  .fire-info-actions {
-    flex-direction: column;
-    gap: var(--space-xs);
-  }
-
-  .quick-action-btn {
-    justify-content: center;
-    padding: var(--space-sm);
-  }
-
   .fire-info-map.map-expanded {
     top: 0;
     right: 0;
@@ -2690,70 +1808,6 @@ body.map-fullscreen-active {
   .fire-info-map.map-expanded .map-layout {
     grid-template-rows: minmax(280px, 52vh) 1fr;
     height: calc(100% - 48px);
-  }
-}
-
-@media (max-width: 480px) {
-  #fireInfoSummaryCard .fire-messages-banner {
-    flex-direction: column;
-    text-align: center;
-    gap: var(--space-xs);
-  }
-
-  .fire-info-panel .panel-header {
-    justify-content: center;
-  }
-
-  .fire-info-panel .data-value {
-    font-size: 1.6rem;
-    min-width: 70px;
-  }
-}
-
-#fireInfoSummaryCard .learn-more-link {
-  display: inline-block; /* Change from block to inline-block */
-  text-align: center;
-  margin-top: var(--space-md);
-  padding: var(--space-xs) var(--space-sm); /* Reduce padding */
-  font-size: 0.9rem; /* Smaller font size */
-  font-weight: 500; /* Less bold */
-  text-transform: none; /* Normal case */
-  letter-spacing: normal; /* Normal letter spacing */
-  border: 1px solid var(--ui-blue); /* Thinner border */
-  text-decoration: none;
-}
-
-#fireInfoSummaryCard .learn-more-link:hover,
-#fireInfoSummaryCard .learn-more-link:focus {
-  text-decoration: underline; /* Add underline on hover/focus for link affordance */
-}
-
-/* Responsive adjustments for Fire Info Summary Card */
-@media (min-width: 600px) {
-  .fire-info-grid {
-    grid-template-columns: 1fr 1fr; /* Two columns for wider screens */
-  }
-}
-
-/* Dark Mode for Fire Info Summary Card */
-@media (prefers-color-scheme: dark) {
-  #fireInfoSummaryCard .fire-messages-banner,
-  #fireInfoSummaryCard.status-panel .fire-messages-banner {
-    background-color: var(--rfs-neutral-dark);
-    color: var(--text-color-dark);
-  }
-
-  #fireInfoSummaryCard .fire-messages-banner {
-    border-left-color: var(--ui-amber-dark);
-  }
-
-  #fireInfoSummaryCard.status-panel .fire-messages-banner {
-    border-left-color: var(--ui-blue-dark);
-  }
-
-  #fireInfoSummaryCard.status-panel .fire-info-panel h4,
-  #incidentCountCell.data-value {
-    color: var(--text-color-dark);
   }
 }
 
@@ -2853,30 +1907,7 @@ details > *:not(summary) {
   }
 }
 
-/* Responsive Styles */
-@media (max-width: 1500px) {
-  .summary-grid,
-  #pageFoot .container.grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  }
-}
-
-@media (max-width: 600px) {
-  .header-container {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .button-container {
-    flex-wrap: wrap;
-  }
-}
-
 @media (max-width: 500px) {
-  .nav-logo {
-    display: block !important;
-  }
-
   h1 {
     font-size: 2rem;
   }
@@ -2950,8 +1981,8 @@ details > *:not(summary) {
     z-index: auto; /* Reset z-index */
   }
 
-  /* Hide only the specific summary card(s) - but keep fire info card visible */
-  .summaryCard:not(#fireInfoSummaryCard) {
+  /* Hide summary cards on narrow viewports */
+  .summaryCard {
     display: none !important;
   }
 
@@ -3052,61 +2083,6 @@ details > *:not(summary) {
   }
 }
 
-/* Fix summary card spacing and prevent overlap */
-.summaryCard {
-  min-width: 0;
-  word-break: break-word;
-}
-
-/* Fire Info Summary Card - Dynamic Data Styling */
-#fireInfoSummaryCard .two-column-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive columns */
-  gap: var(--spacing-md, 1rem); /* Gap between columns */
-  align-items: start; /* Align items to the start of the grid area */
-  padding-top: var(--spacing-sm, 0.5rem);
-  padding-bottom: var(--spacing-sm, 0.5rem);
-}
-
-#fireInfoSummaryCard .data-point {
-  text-align: center; /* Center text within each data point */
-  padding: var(--spacing-xs, 0.25rem);
-}
-
-#fireInfoSummaryCard .data-value {
-  font-size: var(--font-size-xxl, 2.5rem); /* Larger font for the data itself */
-  font-weight: bold;
-  margin-bottom: var(--spacing-xxs, 0.25rem); /* Small space between value and label */
-  line-height: 1.1;
-}
-
-#fireInfoSummaryCard .data-label small {
-  font-size: var(--font-size-sm, 0.875rem);
-  color: var(--secondary-text, #555);
-}
-
-#fireInfoSummaryCard .learn-more-link {
-  display: inline-block; /* Make it a block to take full width if needed or for margin auto */
-  text-align: right; /* Align to the right */
-  margin-top: var(--spacing-md, 1rem);
-}
-
-/* Fire Information Card Styles */
-.two-column-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive columns */
-  gap: 0.5rem; /* Compact gap */
-  padding: 0.5rem 0; /* Compact padding */
-  align-items: center; /* Vertically align items if they have different heights */
-}
-
-.data-point {
-  padding: 0.5rem;
-  background-color: #f9f9f9; /* Light background for each data point */
-  border-radius: 4px;
-  text-align: center; /* Center text within the data point */
-}
-
 .data-label {
   display: block; /* Make label take full width */
   font-size: 0.8rem; /* Smaller font for label */
@@ -3114,15 +2090,7 @@ details > *:not(summary) {
   margin-bottom: 0.25rem; /* Small space between label and value */
 }
 
-.data-value {
-  font-size: 1.2rem; /* Prominent font size for value */
-  font-weight: bold;
-  color: #333;
-  margin: 0; /* Remove default margins from h4 */
-}
-
 /* Compact styling for buttons within cards, including the "Learn More" button */
-.summaryCard .btn,
 .highlight-box .btn {
   /* Target buttons within summary cards and highlight boxes */
   padding: 0.4rem 0.8rem; /* Smaller padding */

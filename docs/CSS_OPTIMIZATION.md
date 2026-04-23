@@ -4,30 +4,57 @@
 
 This document describes the CSS optimization changes made to improve maintainability, reduce complexity, and eliminate redundancy in the Bungendore RFS website styles.
 
+## Phase 6 Dead-CSS Removal (April 2026)
+
+As part of Phase 6 (Asset dedupe and performance cleanup), the following dead CSS blocks were removed. Each block was confirmed unused by cross-checking against `public/index.html`, all files under `public/js/`, and `public/Content/`.
+
+### Blocks removed
+
+| Block | What it styled | Approx. lines |
+|-------|---------------|--------------|
+| Old emergency overlay (`.emergency-status-bar`, `.emergency-dashboard`, `.mobile-emergency-*`, etc.) | Replaced by the Phase 3 Live Status Strip | ~340 |
+| Old fire-danger level colour-coding (`.danger-level-display[data-level=*]`, `.fire-danger-panel[data-level=*]`, `.mobile-danger-level[data-level=*]`, `@keyframes pulse`) | Dashboard overlay elements no longer in the DOM | ~95 |
+| Old responsive show/hide for emergency components (`@media (min-width: 769px)` / `@media (max-width: 768px)` blocks) | Same as above | ~25 |
+| `#fireInfoSummaryCard.status-panel` and its sub-rules | Card removed in Phase 3 | ~30 |
+| Dark-mode overrides for `#fireInfoSummaryCard` (`fire-messages-banner`, `fire-info-panel`, etc.) | Card removed in Phase 3 | ~40 |
+| `.fire-info-grid-enhanced`, `.fire-info-panel`, `.fire-danger-panel .panel-content`, `.incident-map-panel .panel-content` | Card removed in Phase 3 | ~60 |
+| `#fireInfoSummaryCard #map` | Replaced by `.fire-info-map` layout | ~5 |
+| `.incident-summary`, `.fire-info-panel .data-value`, `.fire-info-actions`, `.quick-action-btn` | Card removed in Phase 3 | ~110 |
+| Responsive rules for the above in `@media (max-width: 768px)` and `@media (max-width: 480px)` | Dead responsive code | ~80 |
+| `#fireInfoSummaryCard .learn-more-link`, `@media (min-width: 600px) .fire-info-grid` | Card removed; grid class unused | ~25 |
+| `#fireInfoSummaryCard .two-column-grid / .data-point / .data-value / .data-label small` | Card removed in Phase 3 | ~35 |
+| `.two-column-grid`, `.data-point`, `.data-value` (global) | Not present in HTML or JS | ~30 |
+| `article.summaryCard > header.*` variants (deduplicated into `article > header.*`) | `.summaryCard` class never applied | ~35 |
+| `.summaryCard` standalone rules (standalone block + selector in accordion) | Class never applied | ~10 |
+| `.header-container`, `.button-container` (and their responsive rules) | Not present in HTML or JS | ~15 |
+| `.prepare-section`, `.incidents-section`, `.info-section`, `.membership-section`, `.events-section` | Section classes not in HTML | ~30 |
+| `.feature-card.compact .cardIcon` (removed from grouped icon selector) | Class not in HTML | ~1 |
+| `.dashboard-action-btn::after`, `.mobile-action-btn::after`, `.quick-action-btn::after` (removed from `a::after` group) | Classes removed | ~3 |
+| `.learn-more-link` (global, and `#fireInfoSummaryCard .learn-more-link:focus`) | Class not in HTML or JS | ~30 |
+| `@media (max-width: 1500px) .summary-grid, #pageFoot .container.grid` | Neither selector matches the DOM | ~6 |
+| `.nav-logo` in `@media (max-width: 500px)` | Element uses id `navLogo`, not this class | ~3 |
+| Dead CSS custom properties: `--prepare-bg-light`, `--info-bg-light`, `--membership-bg-light`, `--events-bg-light`, `--prepare-bg`, `--info-bg`, `--membership-bg`, `--events-bg` | Variables declared but never referenced | ~8 |
+| Leaflet marker/control CSS (`.leaflet-marker-icon`, `.leaflet-control`) | Leaflet removed from the project | ~9 |
+
+### File size impact
+
+| Metric | Before | After |
+|--------|--------|-------|
+| File size | ~78.6 KB | ~54.3 KB |
+| Reduction | – | **30.9 %** |
+
+---
+
 ## CSS Structure
 
 ### File Organization
 
 The main CSS file (`/public/css/main.css`) is organized into logical sections:
 
-1. **CSS Variables** (lines 1-133)
-   - Root variables for colors, spacing, fonts
-   - Dark mode variable overrides
-   - Semantic color definitions
-
-2. **General Styles** (lines 134-179)
-   - Body, HTML, and base element styling
-   - Global typography settings
-
-3. **Typography** (lines 180-250)
-   - Header styles (h1-h6)
-   - Text styling and hierarchy
-
-4. **Component Styling** (lines 251+)
-   - Section headers and banners
-   - Cards and containers
-   - Navigation and footer
-   - Interactive elements
+1. **CSS Variables** – Root variables for colors, spacing, fonts; dark mode overrides
+2. **General Styles** – Body, HTML, and base element styling
+3. **Typography** – Header styles (h1–h6), text hierarchy
+4. **Component Styling** – Section headers, cards, navigation, footer, interactive elements, map, live-status strip, tabs/accordion
 
 ### CSS Variables
 
@@ -68,162 +95,6 @@ The main CSS file (`/public/css/main.css`) is organized into logical sections:
 --pico-border-radius: 8px;
 ```
 
-### Utility Classes
-
-#### Background Color Classes
-
-```css
-.bg-rfs-core-red {
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-}
-.bg-rfs-lime {
-  background-color: var(--rfs-lime);
-  color: var(--text-color-dark);
-}
-.bg-ui-amber {
-  background-color: var(--ui-amber);
-  color: var(--text-color-light);
-}
-.bg-ui-blue {
-  background-color: var(--ui-blue);
-  color: var(--text-color-light);
-}
-.bg-ui-green {
-  background-color: var(--ui-green);
-  color: var(--text-color-light);
-}
-```
-
-#### Text Color Classes
-
-```css
-.whiteText {
-  color: var(--text-color-light) !important;
-}
-```
-
-## Optimizations Made
-
-### 1. Removed Unused CSS Rules
-
-**Files affected**: `/public/css/main.css`
-
-Removed the following unused selectors:
-
-- `.elementToProof` - Not referenced in HTML/JS
-- `.invisible-cell` - Not referenced in HTML/JS
-- `.icon-category-cell` - Not referenced in HTML/JS
-- `.summary-card` - Inconsistent with `.summaryCard` (standardized on `.summaryCard`)
-
-**Impact**: Reduced CSS file size by 28 lines, improved maintainability
-
-### 2. Consolidated Duplicate Styles
-
-**Files affected**: `/public/css/main.css`
-
-#### Header Style Consolidation
-
-**Before**:
-
-```css
-article > header.green,
-article.summaryCard > header.green {
-  padding: var(--space-md);
-  margin-bottom: var(--space-lg);
-  border-bottom: none;
-  border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
-  /* ... repeated styles ... */
-}
-```
-
-**After**:
-
-```css
-/* Shared styles for all colored headers */
-article > header.red,
-article.summaryCard > header.red,
-article > header.amber,
-article.summaryCard > header.amber,
-article > header.blue,
-article.summaryCard > header.blue,
-article > header.green,
-article.summaryCard > header.green {
-  /* Common styles */
-}
-
-/* Specific styles for green headers only */
-article > header.green,
-article.summaryCard > header.green {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-```
-
-#### Dark Mode Consolidation
-
-**Before**:
-
-```css
-#fireInfoSummaryCard .fire-messages-banner {
-  background-color: var(--rfs-neutral-dark);
-  color: var(--text-color-dark);
-}
-#fireInfoSummaryCard.status-panel .fire-messages-banner {
-  background-color: var(--rfs-neutral-dark);
-  color: var(--text-color-dark);
-}
-```
-
-**After**:
-
-```css
-#fireInfoSummaryCard .fire-messages-banner,
-#fireInfoSummaryCard.status-panel .fire-messages-banner {
-  background-color: var(--rfs-neutral-dark);
-  color: var(--text-color-dark);
-}
-```
-
-### 3. Standardized Class Names
-
-**Files affected**: `/public/css/main.css`
-
-- Unified `.summary-card` references to `.summaryCard` for consistency
-- Maintained existing HTML class usage patterns
-- Improved selector specificity and maintainability
-
-### 4. Optimized !important Usage
-
-**Current Count**: 7 instances (reduced from 10)
-
-Remaining `!important` declarations are justified:
-
-- `padding-block: 0 !important;` - Override Pico CSS defaults
-- `color: var(--text-color-light) !important;` - Utility class overrides
-- `border: none !important;` - Component-specific overrides
-- `display: block/none !important;` - Responsive visibility controls
-
-## Performance Impact
-
-### File Size Reduction
-
-- **Before**: 1629 lines
-- **After**: 1592 lines
-- **Reduction**: 37 lines (2.3% smaller)
-
-### Maintainability Improvements
-
-- Eliminated duplicate style blocks
-- Standardized naming conventions
-- Improved CSS selector organization
-- Better use of CSS variables for consistency
-
-### No Visual Changes
-
-All optimizations maintain the existing visual design and functionality while improving code quality.
-
 ## Best Practices
 
 ### 1. CSS Variable Usage
@@ -238,45 +109,18 @@ All optimizations maintain the existing visual design and functionality while im
 - Use shared base styles with specific overrides
 - Avoid deep nesting and overly specific selectors
 
-### 3. Utility Classes
-
-- Use utility classes for common patterns
-- Maintain consistent naming conventions
-- Document utility class purposes
-
-### 4. !important Usage
+### 3. `!important` Usage
 
 - Use sparingly and only when necessary
-- Document the reason for each !important
-- Prefer specificity over !important when possible
-
-## Future Optimization Opportunities
-
-1. **Responsive Consolidation**: Group mobile-specific styles together
-2. **Component Splitting**: Consider splitting into multiple CSS files by component
-3. **Unused Style Audit**: Regular audits of unused styles as HTML changes
-4. **CSS Custom Properties**: Expand usage of CSS custom properties for theming
+- Prefer specificity over `!important` when possible
 
 ## Maintenance Guidelines
 
-### Adding New Styles
-
-1. Use existing CSS variables where possible
-2. Follow established naming conventions
-3. Group related styles in logical sections
-4. Document any new utility classes
-
 ### Removing Styles
 
-1. Verify styles are not used in HTML/JS before removing
+1. Verify styles are not used in HTML/JS/Content before removing
 2. Check for dependencies in other CSS rules
-3. Update this documentation when removing significant sections
-
-### Refactoring
-
-1. Maintain visual consistency during refactoring
-2. Test across different browsers and devices
-3. Use version control for tracking changes
-4. Update documentation with significant changes
+3. Update this document when removing significant sections
 
 This optimization approach ensures the CSS remains maintainable while supporting the existing design system and functionality.
+
