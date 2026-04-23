@@ -32,10 +32,13 @@ Main images used throughout the site:
 
 #### Hero Images
 
-- `hero1.jpg` - Hero background image (dark mode)
-- `hero2.jpg` - Hero background image
-- `hero3.jpg` - Hero background image
-- `hero4.jpeg` - Hero background image (default light mode)
+Each hero is provided at two responsive breakpoints in WebP (preferred) and JPEG (fallback) formats.
+
+- `hero4-desktop.webp` / `hero4-desktop.jpg` - Light mode hero, desktop (1600×900)
+- `hero4-mobile.webp` / `hero4-mobile.jpg` - Light mode hero, mobile (768×500)
+- `hero1-desktop.webp` - Dark mode hero, desktop (1600×900)
+- `hero1-mobile.webp` - Dark mode hero, mobile (768×432)
+- `hero1.jpg` - Dark mode hero, JPEG fallback (original)
 
 #### Alert/Status Icons
 
@@ -48,7 +51,6 @@ Main images used throughout the site:
 
 - `prepare.jpeg` - Prepare for bushfires section image
 - `communityEvent.jpeg` - Community events section image
-- `truck.jpeg` - Fire truck image
 - `linkPreview.png` - Social media link preview image
 
 #### Footer Icons
@@ -64,7 +66,10 @@ Main images used throughout the site:
 Images are referenced in CSS using relative paths:
 
 ```css
---hero-bg: url("/Images/hero4.jpeg");
+--hero-bg: image-set(
+  url("/Images/hero4-desktop.webp") type("image/webp"),
+  url("/Images/hero4-desktop.jpg") type("image/jpeg")
+);
 --rfs-logo: url("/Images/logo-dark.png");
 ```
 
@@ -137,9 +142,11 @@ function getIconUrl(category) {
 
 ### Hero Images
 
-- Format: JPEG for photographic content
-- Recommended size: 1920x1080 or larger for responsive design
-- Aspect ratio: 16:9 preferred
+- Format: WebP (primary) with JPEG fallback
+- Desktop: 1600×900px; mobile: 768×(430–500)px
+- CSS `image-set()` selects WebP where supported; `@media (max-width: 768px)` selects the mobile asset
+- Preloaded via `<link rel="preload">` in `index.html` for LCP improvement
+- To replace the hero: generate both desktop and mobile variants in WebP + JPEG and update the `--hero-bg` CSS variable
 
 ### Icons
 

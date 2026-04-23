@@ -25,7 +25,9 @@
     />
 
     <!-- Preload the hero image to improve LCP -->
-    <link rel="preload" as="image" href="/Images/hero4.jpeg" fetchpriority="high" />
+    <!-- Desktop: WebP preferred, JPEG fallback; mobile gets its own asset via CSS -->
+    <link rel="preload" as="image" href="/Images/hero4-desktop.webp" type="image/webp" fetchpriority="high" media="(min-width: 769px)" />
+    <link rel="preload" as="image" href="/Images/hero4-mobile.webp" type="image/webp" fetchpriority="high" media="(max-width: 768px)" />
 
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

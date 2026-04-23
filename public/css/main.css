@@ -4,7 +4,10 @@
   --hero-height: 38vh; /* Phase 2: compact adaptive hero */
   --hero-min-height: 340px; /* Minimum height for readability */
   --hero-max-height: 480px; /* Maximum height to fit above-the-fold */
-  --hero-bg: url("/Images/hero4.jpeg");
+  --hero-bg: image-set(
+    url("/Images/hero4-desktop.webp") type("image/webp"),
+    url("/Images/hero4-desktop.jpg") type("image/jpeg")
+  );
 
   /* NSW RFS Brand Colors (from Style Guide Sept 2024) */
   --rfs-core-red: #e5281b;
@@ -162,7 +165,10 @@ button::after,
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --hero-bg: url("/Images/hero1.jpg");
+    --hero-bg: image-set(
+      url("/Images/hero1-desktop.webp") type("image/webp"),
+      url("/Images/hero1.jpg") type("image/jpeg")
+    );
     --rfs-logo: url("/Images/logo.png");
 
     /* Dark Theme Semantic UI Colors - Adjust if style guide provides specific dark versions */
@@ -203,6 +209,24 @@ button::after,
 
   .hero .logo {
     background: var(--rfs-logo) no-repeat center center/contain; /* Ensure dark mode logo is used */
+  }
+}
+
+/* Responsive hero image: swap to smaller asset on narrow viewports */
+@media (max-width: 768px) {
+  :root {
+    --hero-bg: image-set(
+      url("/Images/hero4-mobile.webp") type("image/webp"),
+      url("/Images/hero4-mobile.jpg") type("image/jpeg")
+    );
+  }
+}
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+  :root {
+    --hero-bg: image-set(
+      url("/Images/hero1-mobile.webp") type("image/webp"),
+      url("/Images/hero1.jpg") type("image/jpeg")
+    );
   }
 }
 
