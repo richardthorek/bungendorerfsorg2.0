@@ -201,15 +201,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
               }
 
-              const styleString = `
-              font-weight: bold;
-              ${ratingInfo.color ? `color: ${ratingInfo.color};` : ""}
-              ${ratingInfo["background-color"] ? `background-color: ${ratingInfo["background-color"]};` : ""}
-            `;
-
               fireDangerRatingCell.textContent = dangerLevelToday;
               fireDangerRatingCell.setAttribute("data-level", dangerLevelToday);
-              fireDangerRatingCell.setAttribute("style", styleString);
+              fireDangerRatingCell.removeAttribute("style"); // CSS data-level rules handle all colour; no inline override
               fireDangerMessage.textContent = ratingInfo.FireBehaviour; // Populate the new message element
 
               if (fireDangerTableContainer) {

@@ -23,6 +23,8 @@
   --ui-blue: #215e9e; /* Blue (Advice / Hyperlink Blue from guide) */
   --ui-green: #008550; /* Green (DGR from guide, can be used for Membership/Events if suitable) */
   --ui-yellow: #f5c13d; /* Yellow (High fire danger) */
+  --rfs-danger-extreme: #fd9e1d; /* Orange — Extreme fire danger rating */
+  --rfs-danger-high-text: #8a6d00; /* Dark amber — readable on white for High rating text */
   /* Emergency Red is --rfs-core-red */
 
   /* General UI & Text Colors */
@@ -1263,38 +1265,75 @@ a:focus {
   color: var(--text-color-light);
 }
 
-/* Danger-level colour bands on Cell 1 */
-#fireDangerRatingCell[data-level="MODERATE"] {
-  color: #ffffff;
-  background-color: var(--ui-green);
-  padding: 0.1rem var(--space-sm);
-  border-radius: 999px;
+/* ── Fire Danger strip cell colour bands (Cell 1) ────────────────────────────
+ *
+ * Lower-risk levels (No Rating, Moderate, High): a coloured top strip on the
+ * cell article conveys the rating without overwhelming the layout.
+ *
+ * High-risk levels (Extreme, Catastrophic): the entire cell is filled with the
+ * rating colour to communicate urgency immediately.
+ *
+ * The value div (#fireDangerRatingCell) receives no pill/badge styling — it
+ * displays as plain text and inherits its colour from the cell context.
+ * CSS :has() targets the parent article from the child's data-level attribute.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* Clear any pill/badge residue from the value element across all states */
+#fireDangerRatingCell {
+  padding: 0;
+  border-radius: 0;
+  background-color: transparent;
 }
 
-#fireDangerRatingCell[data-level="HIGH"] {
-  color: #000000;
-  background-color: var(--ui-yellow);
-  padding: 0.1rem var(--space-sm);
-  border-radius: 999px;
+/* No Rating / fallback: subtle grey top strip, muted text */
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="NO RATING"]) {
+  border-top: 5px solid var(--rfs-neutral-medium);
 }
-
-#fireDangerRatingCell[data-level="EXTREME"] {
-  color: #000000;
-  background-color: #ff6b00;
-  padding: 0.1rem var(--space-sm);
-  border-radius: 999px;
-}
-
-#fireDangerRatingCell[data-level="CATASTROPHIC"] {
-  color: #ffffff;
-  background-color: var(--rfs-core-red);
-  padding: 0.1rem var(--space-sm);
-  border-radius: 999px;
-}
-
 #fireDangerRatingCell[data-level="NO RATING"] {
   color: var(--rfs-dark-grey);
   font-size: 1rem;
+}
+
+/* Moderate: green top strip, value text matches strip colour */
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="MODERATE"]) {
+  border-top: 5px solid var(--ui-green);
+}
+#fireDangerRatingCell[data-level="MODERATE"] {
+  color: var(--ui-green);
+}
+
+/* High: amber top strip, value text dark amber for contrast on white */
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="HIGH"]) {
+  border-top: 5px solid var(--ui-yellow);
+}
+#fireDangerRatingCell[data-level="HIGH"] {
+  color: var(--rfs-danger-high-text);
+}
+
+/* Extreme: full orange cell, dark text throughout */
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="EXTREME"]) {
+  background-color: var(--rfs-danger-extreme);
+}
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="EXTREME"]):hover {
+  background-color: #e88c10;
+}
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="EXTREME"]) .strip-cell__label,
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="EXTREME"]) #fireDangerRatingCell,
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="EXTREME"]) #fireDangerMessage {
+  color: var(--rfs-black);
+}
+
+/* Catastrophic: full red cell, white text throughout */
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="CATASTROPHIC"]) {
+  background-color: var(--rfs-core-red);
+}
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="CATASTROPHIC"]):hover {
+  background-color: #c42216;
+}
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="CATASTROPHIC"]) .strip-cell__label,
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="CATASTROPHIC"]) #fireDangerRatingCell,
+.strip-cell--danger:has(#fireDangerRatingCell[data-level="CATASTROPHIC"]) #fireDangerMessage {
+  color: var(--rfs-white);
 }
 
 /* Incident-active state: strip cell 5 shows context message */
