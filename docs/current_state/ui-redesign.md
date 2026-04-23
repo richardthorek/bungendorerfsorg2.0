@@ -15,12 +15,13 @@ This document is the **definition of done** for the redesign. Each section maps 
 │ Nav (56 px)          logo  ·  Fire Info · Prepare · Membership · …  │
 ├──────────────────────────────────────────────────────────────────────┤
 │ HERO (38vh, 340–480 px)                                              │
-│   H1 + tagline + ONE primary CTA ("Get Fire Updates")                │ ← phase 2
+│   Calm state: photo/text hero + ONE primary CTA                      │ ← phase 2
+│   Incident state: map-led hero + deconflicted heading panel          │ ← phase 2
 ├──────────────────────────────────────────────────────────────────────┤
 │ LIVE STATUS STRIP — flush, full-width, 1 row × 5 cells @ ≥ 900 px    │
 │ ┌──────┬──────────┬─────────┬─────────┬────────────────────────┐     │
-│ │Danger│Incidents │Warning  │TOBAN    │ Mini-map (200×120)     │     │ ← phase 3
-│ │Rating│ count + d│ level   │ Y / N   │  click → full map      │     │
+│ │Danger│Incidents │Warning  │TOBAN    │ Map context / CTA      │     │ ← phase 3
+│ │Rating│ count + d│ level   │ Y / N   │  hero sync / full map  │     │
 │ └──────┴──────────┴─────────┴─────────┴────────────────────────┘     │
 ├──────────────────────────────────────────────────────────────────────┤
 │ TAB NAVIGATION  ·  Fire Info | Prepare | Membership | Events         │ ← phase 1 keeps
@@ -33,7 +34,7 @@ This document is the **definition of done** for the redesign. Each section maps 
 
 **Above-the-fold @ 1280×800:** Utility (40) + Nav (56) + Hero (340–480) + Status strip (160) ≈ 600–730 px → **all of it visible without scrolling**, status data first-paint.
 
-**Below 600 px viewport:** strip becomes a 2 × 2 grid + mini-map collapses to a "View Map" button in cell 5; hero shrinks to ~260 px; utility bar collapses into a hamburger overflow.
+**Below 600 px viewport:** strip becomes a 2 × 2 grid + map cell collapses to a "View Map" button in cell 5; hero shrinks to ~260 px; utility bar collapses into a hamburger overflow. In incident state, the hero remains map-led but the heading panel becomes an inset card anchored to the top or bottom edge.
 
 ---
 
@@ -54,7 +55,7 @@ This document is the **definition of done** for the redesign. Each section maps 
 - Clicking a top-nav link selects the corresponding tab and scrolls the tab nav into view.
 - Visual diff @ 1280: home page is ~220 px shorter (the 3-up row removed).
 
-### Phase 2 — Compact hero + utility bar for secondary CTAs
+### Phase 2 — Adaptive hero + utility bar for secondary CTAs
 **Files:** `public/index.html`, `public/css/main.css`
 **Changes:**
 - Token diff (in `:root`):
@@ -70,14 +71,20 @@ This document is the **definition of done** for the redesign. Each section maps 
 - Hero contains: logo, H1, hero-cta paragraph, **one** primary CTA. Remove `.button-container` from hero entirely.
 - Move the four secondary buttons (RFS Website, Permits, Donate, Contact) and two social icons into a new `<div id="utilityBar">` placed **above** `<nav id="mainNav">`. On `< 768 px`, the utility bar collapses into an overflow menu.
 - Remove `.hero::after` bounce indicator, OR gate it behind a JS check that only shows it when `window.scrollY === 0 && document.documentElement.scrollHeight > window.innerHeight + 200`.
+- Make the hero **stateful**:
+  - **Calm / no-incident state:** current redesign direction holds — photo or branded visual, heading copy, one primary CTA.
+  - **Incident-active state:** if one or more incidents exist, the hero background becomes a live map surface (or a static preview derived from the current incident map) with a compact content panel overlaid in a reserved safe zone. The content panel contains brigade name, incident count, nearest-incident distance, and the primary CTA.
+- Deconflict heading content from the map by reserving a fixed overlay zone (`top-left` on desktop, full-width inset card on mobile) and limiting the overlay width so incident markers remain visible.
 
 **Acceptance:**
 - `--hero-height` value in `main.css` is `38vh`.
 - Hero contains exactly 1 `<a>` or `<button>` with `class~="custom-button"` (the primary CTA).
 - Utility bar exists at top of `<header>` and contains the four secondary CTAs + two social icons.
-- Above-the-fold @ 1280×800 includes hero + the empty space where the strip will land in Phase 3.
+- When there are **0 incidents**, hero renders the compact branded/photo state.
+- When there is **≥ 1 incident**, hero renders the map-led incident state with a deconflicted content panel.
+- Above-the-fold @ 1280×800 includes nav + adaptive hero + reserved strip area without scrolling.
 
-### Phase 3 — Live status strip (replaces fire-info card + header status bar + emergency overlay)
+### Phase 3 — Live status strip + map continuity (replaces fire-info card + header status bar + emergency overlay)
 **Files:** `public/index.html`, `public/css/main.css`, `public/js/emergency-dashboard.js`, `public/js/main.js`, `public/js/dynamicContent.js`, `public/js/map.js`
 **Changes:**
 - Insert `<section id="liveStatusStrip" class="live-status-strip" aria-label="Current fire status for our area">` **immediately after** the hero, flush (no top margin, no negative margin hack).
@@ -86,12 +93,13 @@ This document is the **definition of done** for the redesign. Each section maps 
   2. **Active Incidents** — count + nearest distance (km).
   3. **Current Warning Level** — Advice / Watch & Act / Emergency / None; colour-coded.
   4. **Total Fire Ban** — Y/N badge; date range when active.
-  5. **Mini-map** — 200 × 120 thumbnail (Leaflet static or Mapbox static image API); click expands to the full map in the Fire Info tab panel.
+  5. **Map context cell** — in calm state this can be a compact map thumbnail or "View Map" CTA; in incident-active state it becomes a continuity cell that explains the hero map extent, selected incident, or "Open full incident map" action.
 - Remove `#emergencyStatusBar`, `#emergencyDashboard`, `#mobileEmergencyPanel`, `#mobileEmergencyBadge` markup from `<header>`.
 - Remove `#fireInfoSummaryCard` (the in-page card from L228–307).
 - Remove `#fireInfoSummaryCard.status-panel { margin-top: -8rem }` rule from CSS.
 - **ID-alias compatibility shim** (single release window): inside the strip, include visually-hidden `<span hidden>` elements for the legacy IDs listed in [ui-baseline.md §5](ui-baseline.md#5-id-inventory--what-the-new-status-strip-must-preserve-or-alias). JS files continue to write to those IDs unchanged. Phase 7 removes the aliases after JS migration.
-- Below 600 px: strip collapses to 2 × 2 grid; cell 5 (mini-map) becomes a single "View Map →" button.
+- Keep the hero map and strip in sync: selecting an incident from the strip or map context cell updates the hero-map focus state and the Fire Info tab map state.
+- Below 600 px: strip collapses to 2 × 2 grid; cell 5 becomes a single "View Map →" button.
 
 **Acceptance:**
 - `<section id="liveStatusStrip">` exists, sits between hero and tab nav.
@@ -99,6 +107,7 @@ This document is the **definition of done** for the redesign. Each section maps 
 - `#fireInfoSummaryCard` removed from `index.html`.
 - All legacy DOM IDs from [ui-baseline.md §5](ui-baseline.md#5-id-inventory--what-the-new-status-strip-must-preserve-or-alias) still resolvable via `document.getElementById(...)` (alias shim).
 - No `margin-top: -8rem` (or any negative margin > 1 rem) anywhere in `main.css`.
+- In incident-active state, the hero visibly uses the incident map as the dominant visual surface instead of a static photo.
 - @ 1280×800 the strip is fully visible without scrolling.
 
 ### Phase 4 — Spacing + typography token reductions
