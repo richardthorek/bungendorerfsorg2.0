@@ -55,6 +55,53 @@
 
   <body>
     <header id="siteHeader">
+      <!-- Utility Bar (Phase 2): secondary CTAs and social links -->
+      <div id="utilityBar" class="utility-bar" aria-label="Utility links">
+        <a
+          target="_blank"
+          rel="noopener"
+          href="https://www.rfs.nsw.gov.au"
+          class="utility-link"
+          ><i class="fas fa-external-link-alt" aria-hidden="true"></i>
+          <span class="utility-label">RFS Website</span></a
+        >
+        <a
+          target="_blank"
+          rel="noopener"
+          href="https://nswrfsprod.service-now.com/guardian_csp?id=guardian_index"
+          class="utility-link"
+          ><i class="fas fa-file-alt" aria-hidden="true"></i>
+          <span class="utility-label">Permits</span></a
+        >
+        <a
+          target="_blank"
+          rel="noopener"
+          href="https://shoutforgood.com/fundraisers/bungendoreruralfirebrigade"
+          class="utility-link"
+          ><i class="fas fa-donate" aria-hidden="true"></i>
+          <span class="utility-label">Donate</span></a
+        >
+        <button id="contactUsBtn" class="utility-link utility-link--btn">
+          <i class="fas fa-envelope" aria-hidden="true"></i>
+          <span class="utility-label">Contact</span>
+        </button>
+        <a
+          href="https://facebook.com/BungendoreRFS"
+          target="_blank"
+          rel="noopener"
+          aria-label="Bungendore RFS Facebook Page"
+          class="utility-link utility-link--social"
+          ><i class="fab fa-facebook" aria-hidden="true"></i
+        ></a>
+        <a
+          href="https://instagram.com/BungendoreRFS"
+          target="_blank"
+          rel="noopener"
+          aria-label="Bungendore RFS Instagram Page"
+          class="utility-link utility-link--social"
+          ><i class="fab fa-instagram" aria-hidden="true"></i
+        ></a>
+      </div>
       <nav id="mainNav">
         <img src="/Images/logo.png" alt="Bungendore Rural Fire Brigade Logo" id="navLogo" />
         <!-- Updated alt text -->
@@ -169,56 +216,23 @@
       <!-- Header section with navigation -->
 
       <!-- Hero section with main heading -->
-      <div class="hero">
+      <div class="hero" id="heroSection">
+        <!-- Incident-active state: live map fills the hero background -->
+        <div id="heroMap" class="hero-map" aria-label="Live incident map" aria-hidden="true"></div>
+        <!-- Content panel: repositioned in incident state to deconflict from map markers -->
         <hgroup class="heading-background">
           <div id="heroLogo" class="logo"></div>
           <div>
             <h1>Bungendore Volunteer Rural Fire Brigade</h1>
             <p class="hero-cta">Stay Safe. Stay Informed.</p>
+            <!-- Incident count — shown only in incident-active state -->
+            <p class="hero-incident-summary" id="heroIncidentCountPanel" hidden>
+              <i class="fas fa-fire" aria-hidden="true"></i>
+              <span id="heroIncidentCount">0</span> active incident(s) in our area
+            </p>
             <a href="#info" class="custom-button prominent-cta-button" role="button"
               >Get Fire Updates</a
             >
-            <div class="button-container">
-              <a
-                target="_blank"
-                rel="noopener"
-                href="https://www.rfs.nsw.gov.au"
-                class="custom-button"
-                >RFS Website</a
-              >
-              <!-- Ensured consistency -->
-              <button id="contactUsBtn" target="_blank" href="#" class="custom-button">
-                Contact Us
-              </button>
-              <a
-                target="_blank"
-                rel="noopener"
-                href="https://nswrfsprod.service-now.com/guardian_csp?id=guardian_index"
-                class="custom-button"
-                >Permits - Apply, Enquire, Notify</a
-              >
-              <a
-                target="_blank"
-                rel="noopener"
-                href="https://shoutforgood.com/fundraisers/bungendoreruralfirebrigade"
-                class="custom-button"
-                >Donate</a
-              >
-              <a
-                href="https://facebook.com/BungendoreRFS"
-                target="_blank"
-                rel="noopener"
-                aria-label="Bungendore RFS Facebook Page"
-                ><i class="fab fa-facebook social-icon"></i
-              ></a>
-              <a
-                href="https://instagram.com/BungendoreRFS"
-                target="_blank"
-                rel="noopener"
-                aria-label="Bungendore RFS Instagram Page"
-                ><i class="fab fa-instagram social-icon"></i
-              ></a>
-            </div>
           </div>
         </hgroup>
       </div>

@@ -1,9 +1,9 @@
 :root {
   --margin: 0;
   --padding: 0;
-  --hero-height: 60vh; /* Reduced from calc(100vh - 55px) for better content visibility */
-  --hero-min-height: 500px; /* Minimum height to ensure content is always readable */
-  --hero-max-height: 700px; /* Maximum height to prevent excessive hero on large screens */
+  --hero-height: 38vh; /* Phase 2: compact adaptive hero */
+  --hero-min-height: 340px; /* Minimum height for readability */
+  --hero-max-height: 480px; /* Maximum height to fit above-the-fold */
   --hero-bg: url("/Images/hero4.jpeg");
   --prepare-bg-light: url("https://bungendorerfs.org/images/prepare.jpg");
   --info-bg-light: url("https://bungendorerfs.org/images/info.jpg");
@@ -619,48 +619,18 @@ a:focus {
   align-items: center; /* Vertically center the hgroup */
   justify-content: flex-start; /* Horizontally align hgroup to the left */
   text-align: left; /* Left align text within hgroup */
-  padding: var(--space-lg) var(--space-xxl); /* Add more horizontal padding */
-}
-
-.hero::after {
-  content: "";
-  position: absolute;
-  bottom: var(--space-lg);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: bounce 2s infinite;
-  pointer-events: none;
-}
-
-@keyframes bounce {
-  0%,
-  20%,
-  50%,
-  80%,
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-  40% {
-    transform: translateX(-50%) translateY(-10px);
-  }
-  60% {
-    transform: translateX(-50%) translateY(-5px);
-  }
+  padding: var(--space-md) var(--space-xxl); /* Phase 2: reduced padding */
+  overflow: hidden; /* Contain the hero map */
 }
 
 .hero hgroup.heading-background {
   background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent light background */
-  padding: var(--space-xl);
+  padding: var(--space-md); /* Phase 2: reduced from space-xl */
   border-radius: var(--pico-border-radius);
   width: 100%; /* Control the width of the banner */
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .hero .logo {
@@ -695,7 +665,7 @@ a:focus {
   font-size: 1.2rem;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: var(--space-lg); /* Space before other buttons */
+  margin-bottom: 0; /* Phase 2: button-container removed */
   display: inline-block; /* Ensure it behaves as a block for margin/padding */
 }
 
@@ -704,9 +674,42 @@ a:focus {
   transform: translateY(-2px);
 }
 
-.hero .button-container {
-  justify-content: flex-start; /* Align buttons to the left */
-  flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+/* ── Hero incident-active state ───────────────────────────────────────────── */
+
+/* Live map that fills the hero in incident-active state */
+.hero-map {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Incident summary shown inside the heading panel in incident-active state */
+.hero-incident-summary {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--rfs-core-red);
+  margin-bottom: var(--space-md);
+  padding: 0;
+}
+
+/* When the hero is in incident-active state */
+.hero.hero--incident {
+  background: none; /* Map replaces the photo background */
+}
+
+.hero.hero--incident .hero-map {
+  display: block;
+}
+
+.hero.hero--incident hgroup.heading-background {
+  max-width: 420px; /* Deconflict: limit width so map markers stay visible */
+  width: auto;
+  align-self: flex-start;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .hero + .container-fluid.content-container {
@@ -1527,6 +1530,77 @@ a:focus {
   padding: 0; /* Even more compact when scrolled */
 }
 
+/* ── Utility Bar (Phase 2) ───────────────────────────────────────────────── */
+#utilityBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding: 0 var(--space-lg);
+  height: 40px;
+  background-color: rgba(0, 0, 0, 0.15); /* Slightly darker band above the nav */
+  font-size: 0.8rem;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.utility-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: var(--text-color-light);
+  text-decoration: none;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--pico-border-radius);
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.utility-link:hover,
+.utility-link:focus {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--rfs-lime);
+}
+
+.utility-link--btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.utility-link--social {
+  font-size: 1rem;
+  padding: var(--space-xs);
+}
+
+/* Utility bar collapses to icon-only on small screens */
+@media (max-width: 768px) {
+  #utilityBar {
+    justify-content: center;
+    padding: 0 var(--space-sm);
+    gap: var(--space-xs);
+    height: 36px;
+  }
+
+  .utility-link:not(.utility-link--social) .utility-label {
+    display: none; /* Hide text labels on small screens */
+  }
+}
+
+/* Hide utility bar entirely on very small screens — use hamburger overflow */
+@media (max-width: 420px) {
+  #utilityBar {
+    display: none;
+  }
+
+  main {
+    margin-top: 40px; /* Utility bar hidden; only nav height remains */
+  }
+}
+
 /* Main Navigation - Inside the header */
 #mainNav {
   display: flex;
@@ -1735,7 +1809,7 @@ a:focus {
 
 /* Main Content Styles */
 main {
-  margin-top: 55px; /* Reduced to match smaller header height */
+  margin-top: 96px; /* Accounts for utility bar (40px) + nav (56px) */
   padding-top: 20px; /* Significantly reduced top padding */
   padding-right: 0; /* Retain original horizontal padding (was 0) */
   padding-bottom: var(--space-lg); /* Retain original bottom padding */
@@ -2632,18 +2706,10 @@ details > *:not(summary) {
   .hero .prominent-cta-button {
     font-size: 1rem;
     padding: var(--space-md) var(--space-lg); /* Slightly more padding */
-    margin-bottom: var(--space-md);
+    margin-bottom: 0;
     width: 100%;
     max-width: 300px; /* Max width for the main CTA button */
     box-sizing: border-box;
-  }
-  .hero .button-container {
-    display: flex; /* Added for consistency, though already likely */
-    flex-direction: column;
-    align-items: center; /* Center buttons in the column */
-    gap: var(--space-sm);
-    width: 100%;
-    margin-bottom: var(--space-lg); /* Add bottom margin to separate from content below */
   }
   .custom-button {
     /* This targets all custom buttons, including those in hero */
@@ -2701,7 +2767,7 @@ details > *:not(summary) {
     }
 
     main {
-      margin-top: 45px; /* Reduced for mobile header height */
+      margin-top: 81px; /* Reduced for mobile header height (36px utility bar + nav) */
       padding-top: 10px; /* Minimal top padding on mobile */
     }
   }
@@ -2736,7 +2802,7 @@ details > *:not(summary) {
     }
 
     main {
-      margin-top: 40px; /* Reduced for very small mobile header */
+      margin-top: 76px; /* Reduced for very small mobile header (36px utility bar + nav) */
       padding-top: 5px; /* Minimal top padding */
     }
   }
@@ -2766,16 +2832,6 @@ details > *:not(summary) {
     font-size: 0.85rem;
     padding: var(--space-xs) var(--space-sm);
   }
-}
-
-/* Prevent button/icon overlap in hero */
-.hero .button-container a,
-.hero .button-container button {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Fix summary card spacing and prevent overlap */

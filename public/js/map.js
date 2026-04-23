@@ -261,6 +261,85 @@ function getIconUrlForFeature(feature, categoryCounts) {
 
 // ─── Incident loading ─────────────────────────────────────────────────────────
 
+// ─── Hero state management (Phase 2) ─────────────────────────────────────────
+
+/** Stores the Mapbox token so the hero map can be initialised lazily */
+let _heroMapToken = null;
+/** Tracks whether the hero map instance has been created */
+let _heroMapInitialised = false;
+
+/**
+ * Toggle the hero between calm (photo) and incident-active (map-led) states.
+ * @param {number} total - Total number of active incidents.
+ * @param {mapboxgl.LngLatBounds} [bounds] - Bounds of active incidents (used to fit the hero map).
+ */
+function updateHeroState(total, bounds) {
+  const hero = document.getElementById("heroSection");
+  const heroIncidentPanel = document.getElementById("heroIncidentCountPanel");
+  const heroIncidentCount = document.getElementById("heroIncidentCount");
+
+  if (!hero) return;
+
+  if (total > 0) {
+    hero.classList.add("hero--incident");
+    if (heroIncidentCount) heroIncidentCount.textContent = total;
+    if (heroIncidentPanel) heroIncidentPanel.removeAttribute("hidden");
+
+    // Initialise the hero map on first incident load
+    if (!_heroMapInitialised && _heroMapToken) {
+      _heroMapInitialised = true;
+      initHeroMap(_heroMapToken, bounds);
+    } else if (_heroMapInitialised && bounds && !bounds.isEmpty()) {
+      // Fit existing hero map to updated incident bounds
+      const existingHeroMap = window._heroMapInstance;
+      if (existingHeroMap) {
+        existingHeroMap.fitBounds(bounds, { padding: 60, maxZoom: 12 });
+      }
+    }
+  } else {
+    hero.classList.remove("hero--incident");
+    if (heroIncidentPanel) heroIncidentPanel.setAttribute("hidden", "");
+  }
+}
+
+/**
+ * Create a lightweight Mapbox GL map in #heroMap that mirrors the incident view.
+ * @param {string} token - Mapbox access token.
+ * @param {mapboxgl.LngLatBounds} [bounds] - Incident bounds to fit on load.
+ */
+function initHeroMap(token, bounds) {
+  const heroMapEl = document.getElementById("heroMap");
+  if (!heroMapEl) return;
+
+  mapboxgl.accessToken = token;
+
+  const heroMap = new mapboxgl.Map({
+    container: "heroMap",
+    style: "mapbox://styles/mapbox/standard",
+    center: [149.4431761913284, -35.25870948687002],
+    zoom: 10,
+    interactive: false, /* decorative surface; full interaction is in the Fire Info map */
+    attributionControl: false,
+  });
+
+  window._heroMapInstance = heroMap;
+
+  heroMap.on("load", function() {
+    /* Apply same light preset as the main map */
+    const hour = new Date().getHours();
+    let preset = hour < 5 ? "night" : hour < 7 ? "dawn" : hour < 17 ? "day" : hour < 19 ? "dusk" : "night";
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches && preset === "day") preset = "dusk";
+    if (typeof heroMap.setConfigProperty === "function") {
+      heroMap.setConfigProperty("basemap", "lightPreset", preset);
+      heroMap.setConfigProperty("basemap", "show3dObjects", false);
+    }
+
+    if (bounds && !bounds.isEmpty()) {
+      heroMap.fitBounds(bounds, { padding: 60, maxZoom: 12 });
+    }
+  });
+}
+
 function loadIncidentData(map) {
   fetch(getApiBaseUrl() + "/api/fire-incidents", {
     method: "GET",
@@ -343,6 +422,13 @@ function loadIncidentData(map) {
       addStationMarker(map, bounds);
       updateIncidentSummary(categoryCounts);
       updateEmergencyWidget(incidentsList, categoryCounts);
+
+      const total =
+        categoryCounts["Emergency Warning"] +
+        categoryCounts["Watch and Act"] +
+        categoryCounts.Advice +
+        categoryCounts.Other;
+      updateHeroState(total, bounds);
 
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
@@ -509,6 +595,8 @@ function showMapError(error) {
 
 function createStandardMap(accessToken) {
   mapboxgl.accessToken = accessToken;
+  /* Store token so the hero map can be initialised once incidents are known */
+  _heroMapToken = accessToken;
 
   const map = new mapboxgl.Map({
     container: "map",
