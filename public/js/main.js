@@ -147,12 +147,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fire Danger Rating and Incidents
   const fireDangerTableContainer = document.getElementById("fireDangerTableContainer");
   const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
-  const fireDangerMessage = document.getElementById("fireDangerMessage"); // New element for the message
-  // const incidentCountCell = document.getElementById("incidentCountCell"); // This variable is declared but not used.
-  const fireMessagesDiv = document.getElementById("fireMessages");
+  const fireDangerMessage = document.getElementById("fireDangerMessage");
 
-  if (fireDangerRatingCell && fireDangerMessage && fireMessagesDiv) {
-    // Check if all necessary elements exist
+  if (fireDangerRatingCell && fireDangerMessage) {
+    // Check if necessary strip elements exist
     fetch("/Content/AFDRSMessages.json")
       .then((response) => response.json())
       .then((fireDangerRatings) => {
@@ -193,26 +191,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
               if (!ratingInfo || !dangerLevelToday) {
                 console.error(`No rating information found for danger level: ${dangerLevelToday}`);
-                // Display a default message if ratingInfo is not found
                 fireDangerRatingCell.textContent = "No Rating";
                 fireDangerRatingCell.setAttribute("data-level", "NO RATING");
                 fireDangerMessage.textContent = "Rating information currently unavailable.";
-                fireMessagesDiv.textContent = "Fire danger information is currently unavailable.";
                 return;
               }
 
               fireDangerRatingCell.textContent = dangerLevelToday;
               fireDangerRatingCell.setAttribute("data-level", dangerLevelToday);
               fireDangerRatingCell.removeAttribute("style"); // CSS data-level rules handle all colour; no inline override
-              fireDangerMessage.textContent = ratingInfo.FireBehaviour; // Populate the new message element
+              fireDangerMessage.textContent = ratingInfo.FireBehaviour;
 
               if (fireDangerTableContainer) {
                 fireDangerTableContainer.innerHTML = ""; // Clear out old table if it exists
-              }
-
-              const keyMessage = ratingInfo.KeyMessage;
-              if (keyMessage) {
-                fireMessagesDiv.textContent = keyMessage;
               }
 
               // Update emergency dashboard with fire danger data
@@ -229,7 +220,6 @@ document.addEventListener("DOMContentLoaded", () => {
                   dangerLevel: dangerLevelToday,
                   message: ratingInfo.FireBehaviour || ratingInfo.KeyMessage,
                   incidentCount: incidentCount,
-                  incidents: [], // Will be populated from map data
                 });
               }
             } else {
@@ -237,37 +227,29 @@ document.addEventListener("DOMContentLoaded", () => {
               fireDangerRatingCell.textContent = "No Rating";
               fireDangerRatingCell.setAttribute("data-level", "NO RATING");
               fireDangerMessage.textContent = "Rating information currently unavailable.";
-              fireMessagesDiv.textContent = "Fire danger information is currently unavailable.";
             }
           })
           .catch((error) => {
             console.error("Error fetching the XML data:", error);
-            // Display error messages in the UI
             if (fireDangerRatingCell) {
               fireDangerRatingCell.textContent = "No Rating";
               fireDangerRatingCell.setAttribute("data-level", "NO RATING");
             }
             if (fireDangerMessage) fireDangerMessage.textContent = "Could not load rating message.";
-            if (fireMessagesDiv)
-              fireMessagesDiv.textContent = "Could not load fire danger information.";
 
             if (typeof window.updateEmergencyDashboard === "function") {
               window.updateEmergencyDashboard({
                 dangerLevel: "NO RATING",
                 message: "Rating information currently unavailable.",
                 incidentCount: 0,
-                incidents: [],
               });
             }
           });
       })
       .catch((error) => {
         console.error("Error fetching the JSON data:", error);
-        // Display error messages in the UI
         if (fireDangerRatingCell) fireDangerRatingCell.textContent = "Error";
         if (fireDangerMessage) fireDangerMessage.textContent = "Could not load rating message.";
-        if (fireMessagesDiv)
-          fireMessagesDiv.textContent = "Could not load fire danger information.";
       });
   }
 });
