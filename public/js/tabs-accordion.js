@@ -233,12 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
       case "Enter":
       case " ":
         e.preventDefault();
-        {
-          const tabId = button.getAttribute("data-tab");
-          if (tabId) {
-            switchTab(tabId, { updateUrl: true, scroll: false });
-          }
-        }
+        switchTab(button.getAttribute("data-tab") || "", { updateUrl: true, scroll: false });
         break;
       default:
         break;
