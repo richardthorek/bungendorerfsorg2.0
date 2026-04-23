@@ -36,7 +36,7 @@ Surface the four high-stakes facts (fire danger rating, active local incidents, 
 | 1 | IA cleanup — remove duplicate summary cards | **Done** | copilot/redesign-phase-1-ia-cleanup | Copilot | #57 |
 | 2 | Adaptive hero + utility-bar move for secondary CTAs | **Done** | copilot/redesign-phase-2-adaptive-hero | Copilot | #56 |
 | 3 | Live status strip + map continuity — replaces fire-info card + header status bar + emergency overlay | In progress | copilot/redesign-phase-3-live-status-strip | Copilot | #56 |
-| 4 | Spacing + typography token reductions | Not started | — | worker agent | TBD |
+| 4 | Spacing + typography token reductions | **Done** | copilot/redesign-phase-4-spacing-typography | Copilot | #56 |
 | 5 | Footer flattening + scoped hover-lift + header polish | Not started | — | worker agent | TBD |
 | 6 | Asset dedupe (Pico, FA), lazy map, CSS dead-code removal | Not started | — | worker agent | TBD |
 | 7 | Accessibility pass + final Lighthouse + after-screenshots | Not started | — | worker agent | TBD |

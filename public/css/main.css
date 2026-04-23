@@ -46,23 +46,23 @@
   /* Style Guide specifies "Public Sans". Ensure this font is available via @import or local files. */
   --pico-font-family: "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --pico-font-size: 1rem; /* 16px base */
-  --pico-line-height: 1.6;
+  --pico-line-height: 1.5;
   --pico-border-radius: 8px;
 
-  /* Enhanced Spacing System (Phase 3) */
+  /* Enhanced Spacing System (Phase 3; tightened in Phase 4) */
   --space-xs: 0.25rem; /* 4px */
   --space-sm: 0.5rem; /* 8px */
-  --space-md: 1rem; /* 16px - Standard */
-  --space-lg: 1.5rem; /* 24px */
-  --space-xl: 2rem; /* 32px */
-  --space-xxl: 3rem; /* 48px */
-  --space-xxxl: 4rem; /* 64px - Section spacing */
+  --space-md: 0.75rem; /* 12px - Standard */
+  --space-lg: 1rem; /* 16px */
+  --space-xl: 1.5rem; /* 24px */
+  --space-xxl: 2rem; /* 32px */
+  --space-xxxl: 2.5rem; /* 40px - Section spacing */
 
-  /* Typography Scale (Phase 3) */
-  --font-size-h1: 3rem; /* 48px - Page titles */
-  --font-size-h2: 2.25rem; /* 36px - Section titles */
-  --font-size-h3: 1.5rem; /* 24px - Card titles */
-  --font-size-h4: 1.25rem; /* 20px - Subsection titles */
+  /* Typography Scale (Phase 3; tightened in Phase 4) */
+  --font-size-h1: 2.25rem; /* 36px - Page titles (hero only) */
+  --font-size-h2: 1.5rem; /* 24px - Section titles */
+  --font-size-h3: 1.125rem; /* 18px - Card titles */
+  --font-size-h4: 1rem; /* 16px - Subsection titles (font-weight 600) */
   --font-size-body: 1rem; /* 16px - Body text */
   --font-size-small: 0.875rem; /* 14px - Small text */
 
@@ -71,7 +71,7 @@
     --rfs-white
   ); /* Default to white, light grey was too dark with new greys */
   --pico-card-border-color: var(--rfs-light-grey); /* Use RFS Light Grey for borders */
-  --pico-card-padding: var(--space-lg);
+  --pico-card-padding: var(--space-md);
   --pico-card-border-radius: var(--pico-border-radius);
 }
 
@@ -249,7 +249,7 @@ article,
 .content-section {
   scroll-margin-top: 90px;
   padding: var(--pico-card-padding); /* Use the card padding variable */
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
   background-color: var(--pico-card-background-color); /* Should be white */
   border: 1px solid var(--pico-card-border-color);
   border-radius: var(--pico-border-radius);
@@ -271,7 +271,7 @@ h4,
 h5,
 h6 {
   font-family: var(--pico-font-family);
-  margin-top: var(--space-lg);
+  margin-top: var(--space-md);
   margin-bottom: var(--space-md);
   font-weight: 700;
   color: var(--text-color-dark);
@@ -279,14 +279,14 @@ h6 {
 }
 
 h1 {
-  font-size: var(--font-size-h1); /* 3rem / 48px */
+  font-size: var(--font-size-h1); /* 2.25rem / 36px — hero only */
   color: var(--text-color-dark); /* Default H1 color to text-color-dark */
 }
 
 /* General h2, for those not acting as section banners */
 h2 {
-  font-size: var(--font-size-h2); /* 2.25rem / 36px */
-  margin-top: var(--space-lg); /* Retain top margin for standalone h2s */
+  font-size: var(--font-size-h2); /* 1.5rem / 24px */
+  margin-top: var(--space-md); /* Retain top margin for standalone h2s */
   margin-bottom: var(--space-lg);
   color: var(--text-color-dark);
   padding-bottom: var(--space-sm); /* Optional: if some h2s still need a text-only style */
@@ -338,7 +338,7 @@ h2 {
 }
 
 h3 {
-  font-size: var(--font-size-h3); /* 1.5rem / 24px */
+  font-size: var(--font-size-h3); /* 1.125rem / 18px */
   color: var(--text-color-dark); /* Changed from --rfs-dark-grey */
 }
 
@@ -433,7 +433,8 @@ article.summaryCard > header.green h3 {
 }
 
 h4 {
-  font-size: var(--font-size-h4); /* 1.25rem / 20px */
+  font-size: var(--font-size-h4); /* 1rem / 16px */
+  font-weight: 600;
   color: var(--text-color-dark); /* Changed from --rfs-dark-grey */
 }
 
