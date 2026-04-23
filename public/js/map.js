@@ -9,6 +9,32 @@ const ICONS = {
   station: "/Images/station.png",
 };
 
+// ─── Map constants ────────────────────────────────────────────────────────────
+const DEFAULT_MAP_CENTER = [149.4431761913284, -35.25870948687002];
+const HERO_MAP_PADDING = 60;
+const HERO_MAP_MAX_ZOOM = 12;
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+/**
+ * Resolve the Mapbox light preset based on time-of-day and the OS dark-mode preference.
+ * @returns {"day"|"dusk"|"dawn"|"night"}
+ */
+function calculateLightPreset() {
+  const hour = new Date().getHours();
+  let preset;
+  if (hour < 5) preset = "night";
+  else if (hour < 7) preset = "dawn";
+  else if (hour < 17) preset = "day";
+  else if (hour < 19) preset = "dusk";
+  else preset = "night";
+
+  if (window.matchMedia("(prefers-color-scheme: dark)").matches && preset === "day") {
+    preset = "dusk";
+  }
+  return preset;
+}
+
 // ─── Category helpers ─────────────────────────────────────────────────────────
 function getCategoryKey(category) {
   if (category.includes("Emergency Warning")) return "emergencyWarning";
@@ -293,7 +319,7 @@ function updateHeroState(total, bounds) {
       // Fit existing hero map to updated incident bounds
       const existingHeroMap = window._heroMapInstance;
       if (existingHeroMap) {
-        existingHeroMap.fitBounds(bounds, { padding: 60, maxZoom: 12 });
+        existingHeroMap.fitBounds(bounds, { padding: HERO_MAP_PADDING, maxZoom: HERO_MAP_MAX_ZOOM });
       }
     }
   } else {
@@ -316,7 +342,7 @@ function initHeroMap(token, bounds) {
   const heroMap = new mapboxgl.Map({
     container: "heroMap",
     style: "mapbox://styles/mapbox/standard",
-    center: [149.4431761913284, -35.25870948687002],
+    center: DEFAULT_MAP_CENTER,
     zoom: 10,
     interactive: false, /* decorative surface; full interaction is in the Fire Info map */
     attributionControl: false,
@@ -325,17 +351,14 @@ function initHeroMap(token, bounds) {
   window._heroMapInstance = heroMap;
 
   heroMap.on("load", function() {
-    /* Apply same light preset as the main map */
-    const hour = new Date().getHours();
-    let preset = hour < 5 ? "night" : hour < 7 ? "dawn" : hour < 17 ? "day" : hour < 19 ? "dusk" : "night";
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches && preset === "day") preset = "dusk";
+    const preset = calculateLightPreset();
     if (typeof heroMap.setConfigProperty === "function") {
       heroMap.setConfigProperty("basemap", "lightPreset", preset);
       heroMap.setConfigProperty("basemap", "show3dObjects", false);
     }
 
     if (bounds && !bounds.isEmpty()) {
-      heroMap.fitBounds(bounds, { padding: 60, maxZoom: 12 });
+      heroMap.fitBounds(bounds, { padding: HERO_MAP_PADDING, maxZoom: HERO_MAP_MAX_ZOOM });
     }
   });
 }
@@ -601,7 +624,7 @@ function createStandardMap(accessToken) {
   const map = new mapboxgl.Map({
     container: "map",
     style: "mapbox://styles/mapbox/standard",
-    center: [149.4431761913284, -35.25870948687002],
+    center: DEFAULT_MAP_CENTER,
     zoom: 10,
     pitch: 55,
     bearing: -12,
@@ -614,23 +637,8 @@ function createStandardMap(accessToken) {
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
   let currentLightPreset = "";
 
-  const getTimeOfDayPreset = function() {
-    const hour = new Date().getHours();
-    if (hour < 5) return "night";
-    if (hour < 7) return "dawn";
-    if (hour < 17) return "day";
-    if (hour < 19) return "dusk";
-    return "night";
-  };
-
-  const resolveStyledLightPreset = function() {
-    const timePreset = getTimeOfDayPreset();
-    if (!prefersDark.matches) return timePreset;
-    return timePreset === "day" ? "dusk" : timePreset;
-  };
-
   const updateLightPreset = function() {
-    const lightPreset = resolveStyledLightPreset();
+    const lightPreset = calculateLightPreset();
     if (lightPreset === currentLightPreset) return;
     if (typeof map.setConfigProperty === "function") {
       map.setConfigProperty("basemap", "lightPreset", lightPreset);
