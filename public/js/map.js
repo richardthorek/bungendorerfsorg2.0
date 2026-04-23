@@ -11,10 +11,25 @@ const ICONS = {
 
 // ─── Map constants ────────────────────────────────────────────────────────────
 const DEFAULT_MAP_CENTER = [149.4431761913284, -35.25870948687002];
-// Asymmetric padding: generous left padding pushes incident markers to the right
-// side of the viewport, keeping them clear of the title panel (~400 px wide).
-const HERO_MAP_PADDING = { top: 60, bottom: 60, left: 460, right: 60 };
+// fitBounds padding for the hero map: left is computed dynamically (45% of the
+// container width) to align with the CSS max-width on the hgroup, so incident
+// markers are positioned in the right portion of the viewport.  The other sides
+// use a fixed small offset.
+const HERO_MAP_PADDING_SIDE = 40;
 const HERO_MAP_MAX_ZOOM = 12;
+
+/**
+ * Build the asymmetric padding object for hero-map fitBounds.
+ * Left padding covers 45% of the container width so markers land in the
+ * right portion of the viewport, clear of the title panel.
+ */
+function heroMapFitPadding() {
+  const el = document.getElementById("heroMap");
+  // Fallback 200px ≈ 45% of a minimal 450px hero width; used only if the element
+  // is unexpectedly absent from the DOM.
+  const leftPad = el ? Math.round(el.clientWidth * 0.45) : 200;
+  return { top: HERO_MAP_PADDING_SIDE, bottom: HERO_MAP_PADDING_SIDE, left: leftPad, right: HERO_MAP_PADDING_SIDE };
+}
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -356,7 +371,7 @@ function updateHeroState(total, bounds, markerData) {
       if (heroIncidentPanel) heroIncidentPanel.removeAttribute("hidden");
       const existingHeroMap = window._heroMapInstance;
       if (existingHeroMap && bounds && !bounds.isEmpty()) {
-        existingHeroMap.fitBounds(bounds, { padding: HERO_MAP_PADDING, maxZoom: HERO_MAP_MAX_ZOOM });
+        existingHeroMap.fitBounds(bounds, { padding: heroMapFitPadding(), maxZoom: HERO_MAP_MAX_ZOOM });
       }
     }
   } else {
@@ -403,8 +418,13 @@ function initHeroMap(token, bounds, markerData, heroEl, heroIncidentPanel) {
 
     addMarkersToHeroMap(heroMap, markerData || []);
 
+    // Ensure the Mapbox canvas is sized to match the container.
+    // This is necessary in case the canvas was created before the browser had
+    // fully laid out the container (e.g. during a hidden/opacity-0 init).
+    heroMap.resize();
+
     if (bounds && !bounds.isEmpty()) {
-      heroMap.fitBounds(bounds, { padding: HERO_MAP_PADDING, maxZoom: HERO_MAP_MAX_ZOOM });
+      heroMap.fitBounds(bounds, { padding: heroMapFitPadding(), maxZoom: HERO_MAP_MAX_ZOOM });
     }
 
     // Trigger the CSS transition now that tiles + markers are ready.

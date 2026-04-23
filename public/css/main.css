@@ -698,14 +698,15 @@ a:focus {
 
 /* Live map that fills the hero in incident-active state.
    Sits above the ::before photo pseudo-element (z-index 0) so it fully covers
-   it when fully opaque. Opacity transitions from 0 to 1 to fade in cleanly. */
+   it when fully opaque. Opacity transitions from 0 to 1 to fade in cleanly.
+   inset: 0 covers all four edges; explicit width/height are intentionally
+   omitted to avoid an over-constrained layout with the inset shorthand. */
 .hero-map {
   position: absolute;
   inset: 0;
   z-index: 1; /* Above ::before photo, below hgroup (z-index 2) */
-  width: 100%;
-  height: 100%;
   opacity: 0;
+  pointer-events: none; /* map is decorative; interaction happens in the Fire Info tab */
   transition: opacity 0.9s ease;
 }
 
@@ -728,10 +729,12 @@ a:focus {
 }
 
 /* Narrow the content panel so map markers on the right are fully visible.
-   No transition — this snaps immediately when the class is applied (after the
-   map tiles are already loaded), so it coincides cleanly with the crossfade. */
+   No transition — snaps at the moment the crossfade begins, masked by the
+   more dominant opacity transition on the map.
+   min() picks the smaller value: capped at 460px on wide screens, but never
+   more than 45% of the hero width on smaller viewports. */
 .hero.hero--incident hgroup.heading-background {
-  max-width: 400px;
+  max-width: min(460px, 45%);
 }
 
 .hero + .container-fluid.content-container {
