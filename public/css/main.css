@@ -87,6 +87,11 @@
   }
 }
 
+/* Utility: tabular (monospaced) numerals for KPI cells */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 article,
 .content-section,
 .summaryCard {
@@ -481,12 +486,11 @@ a:focus {
   }
 }
 
-/* Styles for the new Fire Info Status Panel */
+/* Styles for the new Fire Info Status Panel (kept for reference; card removed in Phase 3) */
 #fireInfoSummaryCard.status-panel {
   width: 100%; /* Make panel full width */
   margin-left: 0;
   margin-right: 0;
-  margin-top: -8rem; /* Adjusted to position correctly */
   margin-bottom: var(--space-xl); /* Ensure space before next content */
   padding: var(--space-md);
   background-color: rgba(255, 255, 255, 0.95); /* Slightly more opaque */
@@ -1120,6 +1124,213 @@ a:focus {
 
 .mobile-action-btn.secondary:hover {
   background-color: #1565c0;
+}
+
+/* ─── Live Status Strip (Phase 3) ──────────────────────────────────────────── */
+
+.live-status-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px; /* thin dividers via gap + background colour on parent */
+  background-color: var(--rfs-light-grey);
+  border-top: 2px solid var(--rfs-core-red);
+  border-bottom: 1px solid var(--rfs-light-grey);
+  margin: 0;
+  padding: 0;
+}
+
+.strip-cell {
+  background-color: var(--rfs-white);
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-xs);
+  cursor: default;
+  transition: background-color 0.15s ease;
+  /* override Pico article defaults */
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.strip-cell:focus {
+  outline: 3px solid var(--rfs-core-red);
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+.strip-cell:hover {
+  background-color: var(--rfs-neutral-light);
+}
+
+.strip-cell__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rfs-dark-grey);
+  margin: 0;
+}
+
+.strip-cell__label i {
+  margin-right: 0.25rem;
+}
+
+.strip-cell__value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--rfs-black);
+  margin: 0;
+}
+
+.strip-cell__sub {
+  font-size: 0.72rem;
+  color: var(--rfs-dark-grey);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.strip-cell__breakdown {
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.strip-cell__breakdown table {
+  width: auto;
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+.strip-cell__breakdown td {
+  padding: 0.1rem 0.25rem;
+  vertical-align: middle;
+}
+
+.strip-cell__breakdown img {
+  width: 16px;
+  height: 16px;
+}
+
+/* Cell 5 map CTA */
+.strip-cell__map-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.strip-map-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background-color: var(--rfs-core-red);
+  color: var(--text-color-light);
+  text-decoration: none;
+  border-radius: var(--pico-border-radius);
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+
+.strip-map-cta-btn:hover {
+  background-color: #c42216;
+  text-decoration: none;
+  color: var(--text-color-light);
+}
+
+/* Danger-level colour bands on Cell 1 */
+#fireDangerRatingCell[data-level="MODERATE"] {
+  color: #ffffff;
+  background-color: var(--ui-green);
+  padding: 0.1rem var(--space-sm);
+  border-radius: 999px;
+}
+
+#fireDangerRatingCell[data-level="HIGH"] {
+  color: #000000;
+  background-color: var(--ui-yellow);
+  padding: 0.1rem var(--space-sm);
+  border-radius: 999px;
+}
+
+#fireDangerRatingCell[data-level="EXTREME"] {
+  color: #000000;
+  background-color: #ff6b00;
+  padding: 0.1rem var(--space-sm);
+  border-radius: 999px;
+}
+
+#fireDangerRatingCell[data-level="CATASTROPHIC"] {
+  color: #ffffff;
+  background-color: var(--rfs-core-red);
+  padding: 0.1rem var(--space-sm);
+  border-radius: 999px;
+}
+
+#fireDangerRatingCell[data-level="NO RATING"] {
+  color: var(--rfs-dark-grey);
+  font-size: 1rem;
+}
+
+/* Incident-active state: strip cell 5 shows context message */
+.hero--incident ~ .live-status-strip .strip-cell--map .strip-cell__sub {
+  color: var(--rfs-core-red);
+  font-weight: 600;
+}
+
+/* Responsive: ≥ 900 px → full 5-column row */
+@media (min-width: 900px) {
+  .live-status-strip {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Responsive: 600 – 899 px → 3 + 2 layout */
+@media (max-width: 899px) and (min-width: 600px) {
+  .live-status-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Responsive: < 600 px → 2 × 2 + map full-width */
+@media (max-width: 599px) {
+  .live-status-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .strip-cell--map {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Dark mode for strip */
+@media (prefers-color-scheme: dark) {
+  .live-status-strip {
+    background-color: var(--rfs-dark-grey);
+    border-top-color: var(--rfs-core-red);
+  }
+
+  .strip-cell {
+    background-color: var(--rfs-neutral-dark);
+    color: var(--text-color-light);
+  }
+
+  .strip-cell:hover {
+    background-color: #3a3a3a;
+  }
+
+  .strip-cell__value {
+    color: var(--rfs-white);
+  }
+
+  .strip-cell__label,
+  .strip-cell__sub {
+    color: var(--rfs-light-grey);
+  }
 }
 
 /* Show/hide emergency components based on screen size */
