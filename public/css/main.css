@@ -101,9 +101,9 @@ article,
     box-shadow 0.3s ease;
 }
 
-article:hover,
-.content-section:hover,
-.summaryCard:hover {
+.summaryCard:hover,
+.tab-panel article:hover,
+.live-status-strip article:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
 }
@@ -400,7 +400,7 @@ article.summaryCard > header.green {
 
 article > header.lime,
 article.summaryCard > header.lime {
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-md);
   margin: calc(-1 * var(--pico-card-padding)) calc(-1 * var(--pico-card-padding)) var(--space-lg);
   border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
   position: relative;
@@ -1931,43 +1931,33 @@ a:focus {
   gap: var(--space-lg); /* Spacing for grid items */
 }
 
-#pageFoot article {
-  background-color: var(
-    --pico-card-background-color
-  ); /* Give footer articles a card background for visibility */
-  border: none !important; /* Remove borders from footer cards */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add subtle shadow for depth */
-  padding: var(--space-md); /* Add padding for better spacing */
-  margin-bottom: 0; /* Remove margin since grid gap handles spacing */
-  color: var(--text-color-dark); /* Use dark text color for better contrast */
-  border-radius: var(--pico-border-radius); /* Add rounded corners */
-  width: 100%; /* Ensure cards fill available grid space */
-  box-sizing: border-box; /* Include padding and border in width calculation */
+#pageFoot section {
+  padding: var(--space-md);
+  color: var(--rfs-light-grey);
+  background: none;
 }
 
-#pageFoot article header {
-  background-color: var(--rfs-core-red); /* Red background for footer headers */
-  color: var(--rfs-white); /* White text for contrast */
-  padding: var(--space-sm) var(--space-md); /* Add padding for better spacing */
-  margin: calc(-1 * var(--space-md)) calc(-1 * var(--space-md)) var(--space-md)
-    calc(-1 * var(--space-md)); /* Negative margins to align with card edges */
-  border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0; /* Rounded top corners */
-  font-size: 1.1rem;
+#pageFoot section header {
+  color: var(--rfs-white);
   font-weight: 600;
+  font-size: 1rem;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: var(--space-md);
   display: flex;
   align-items: center;
   gap: var(--space-sm);
 }
 
-#pageFoot article header strong {
+#pageFoot section header strong {
   font-weight: 600;
 }
 
-#pageFoot article p {
+#pageFoot section p {
   font-size: 0.9rem;
-  color: var(--text-color-dark); /* Use dark text for better contrast on light card background */
-  max-width: none; /* Allow footer text to fill its container */
-  margin-top: var(--space-sm); /* Add space after header */
+  color: var(--rfs-light-grey);
+  max-width: none;
+  margin-top: var(--space-sm);
 }
 
 #pageFoot .social-icon {
@@ -1978,23 +1968,21 @@ a:focus {
   justify-content: flex-start; /* Align icons to the left */
 }
 
-#pageFoot article img {
+#pageFoot section img {
   max-height: 24px; /* Control icon size in footer */
   margin-right: var(--space-sm);
   vertical-align: middle;
 }
 
 #pageFoot .social-icon a i {
-  color: var(
-    --rfs-core-red
-  ); /* Red social icons in footer for visibility on light card background */
+  color: var(--rfs-white); /* White icons on dark footer background */
   font-size: 1.5rem; /* Adjust size as needed */
   display: inline-block; /* Ensure proper spacing */
   margin-right: var(--space-sm); /* Add space between icons */
 }
 
 #pageFoot .social-icon a:hover i {
-  color: var(--ui-blue); /* Blue on hover for better contrast */
+  color: var(--rfs-lime); /* Lime on hover for contrast */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -2003,19 +1991,17 @@ a:focus {
     color: var(--rfs-light-grey);
   }
 
-  #pageFoot article {
-    background-color: var(--pico-card-background-color); /* Dark mode card background */
-    border: none; /* Remove borders from footer cards in dark mode */
-    color: var(--pico-card-text-color); /* Dark mode text */
+  #pageFoot section {
+    color: var(--rfs-light-grey);
   }
 
-  #pageFoot article header {
-    background-color: var(--rfs-core-red); /* Keep red header in dark mode */
+  #pageFoot section header {
     color: var(--rfs-white);
+    border-bottom-color: rgba(255, 255, 255, 0.15);
   }
 
-  #pageFoot article p {
-    color: var(--pico-card-text-color); /* Dark mode text for paragraphs */
+  #pageFoot section p {
+    color: var(--rfs-light-grey);
   }
 
   #pageFoot .social-icon a i {
