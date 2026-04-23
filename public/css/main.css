@@ -701,14 +701,15 @@ a:focus {
 /* Live map that fills the hero in incident-active state.
    Sits above the ::before photo pseudo-element (z-index 0) so it fully covers
    it when fully opaque. Opacity transitions from 0 to 1 to fade in cleanly.
-   inset: 0 covers all four edges; explicit width/height are intentionally
-   omitted to avoid an over-constrained layout with the inset shorthand. */
+   Explicit width/height combined with inset: 0 ensures Mapbox reads correct
+   clientWidth/clientHeight at initialisation time for proper canvas sizing. */
 .hero-map {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1; /* Above ::before photo, below hgroup (z-index 2) */
   opacity: 0;
-  pointer-events: none; /* map is decorative; interaction happens in the Fire Info tab */
   transition: opacity 0.9s ease;
 }
 
