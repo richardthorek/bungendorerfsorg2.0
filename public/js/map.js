@@ -320,6 +320,13 @@ function addMarkersToHeroMap(heroMap, markerData) {
 
 /**
  * Toggle the hero between calm (photo) and incident-active (map-led) states.
+ *
+ * When there are active incidents and the hero map hasn't been initialised yet,
+ * the incident count is pre-set in the DOM but the `hero--incident` class is
+ * NOT added here — it is deferred to the heroMap `load` event so the CSS
+ * transition (map fade-in + hgroup narrowing) only fires once the tiles are
+ * actually rendered, producing a smooth crossfade over the background photo.
+ *
  * @param {number} total - Total number of active incidents.
  * @param {mapboxgl.LngLatBounds} [bounds] - Bounds of active incidents (used to fit the hero map).
  * @param {Array} [markerData] - Marker data to render on the hero map.
@@ -332,18 +339,21 @@ function updateHeroState(total, bounds, markerData) {
   if (!hero) return;
 
   if (total > 0) {
-    hero.classList.add("hero--incident");
+    // Pre-populate the count text so it is ready when the transition fires
     if (heroIncidentCount) heroIncidentCount.textContent = total;
-    if (heroIncidentPanel) heroIncidentPanel.removeAttribute("hidden");
 
-    // Initialise the hero map on first incident load
+    // Initialise the hero map on first incident load.
+    // The hero--incident class (and panel reveal) is deferred to the map load
+    // event so the transition fires only once tiles are ready.
     if (!_heroMapInitialised && _heroMapToken) {
       _heroMapInitialised = true;
-      initHeroMap(_heroMapToken, bounds, markerData || []);
-    } else if (_heroMapInitialised && bounds && !bounds.isEmpty()) {
-      // Fit existing hero map to updated incident bounds
+      initHeroMap(_heroMapToken, bounds, markerData || [], hero, heroIncidentPanel);
+    } else if (_heroMapInitialised) {
+      // Map already loaded — apply class immediately and fit to new bounds
+      hero.classList.add("hero--incident");
+      if (heroIncidentPanel) heroIncidentPanel.removeAttribute("hidden");
       const existingHeroMap = window._heroMapInstance;
-      if (existingHeroMap) {
+      if (existingHeroMap && bounds && !bounds.isEmpty()) {
         existingHeroMap.fitBounds(bounds, { padding: HERO_MAP_PADDING, maxZoom: HERO_MAP_MAX_ZOOM });
       }
     }
@@ -355,11 +365,17 @@ function updateHeroState(total, bounds, markerData) {
 
 /**
  * Create a lightweight Mapbox GL map in #heroMap that mirrors the incident view.
+ * Once the map tiles are loaded and markers placed, `hero--incident` is added to
+ * the hero element to trigger the CSS crossfade transition (map opacity 0→1 and
+ * hgroup max-width narrowing) so the change is smooth rather than abrupt.
+ *
  * @param {string} token - Mapbox access token.
  * @param {mapboxgl.LngLatBounds} [bounds] - Incident bounds to fit on load.
  * @param {Array} [markerData] - Marker data to render on the hero map.
+ * @param {HTMLElement} [heroEl] - The hero section element.
+ * @param {HTMLElement} [heroIncidentPanel] - The incident count panel element.
  */
-function initHeroMap(token, bounds, markerData) {
+function initHeroMap(token, bounds, markerData, heroEl, heroIncidentPanel) {
   const heroMapEl = document.getElementById("heroMap");
   if (!heroMapEl) return;
 
@@ -388,6 +404,11 @@ function initHeroMap(token, bounds, markerData) {
     if (bounds && !bounds.isEmpty()) {
       heroMap.fitBounds(bounds, { padding: HERO_MAP_PADDING, maxZoom: HERO_MAP_MAX_ZOOM });
     }
+
+    // Trigger the CSS transition now that tiles + markers are ready.
+    // The map fades in over the background photo; the hgroup narrows smoothly.
+    if (heroEl) heroEl.classList.add("hero--incident");
+    if (heroIncidentPanel) heroIncidentPanel.removeAttribute("hidden");
   });
 }
 

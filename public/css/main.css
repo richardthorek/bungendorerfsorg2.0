@@ -633,9 +633,11 @@ a:focus {
   padding: var(--space-md); /* Phase 2: reduced from space-xl */
   border-radius: var(--pico-border-radius);
   width: 100%; /* Control the width of the banner */
+  max-width: 100%; /* Animated to 420px in incident state */
   box-sizing: border-box;
   position: relative;
   z-index: 1;
+  transition: max-width 0.6s ease 0.4s; /* Delay so the map starts fading in first */
 }
 
 .hero .logo {
@@ -681,14 +683,17 @@ a:focus {
 
 /* ── Hero incident-active state ───────────────────────────────────────────── */
 
-/* Live map that fills the hero in incident-active state */
+/* Live map that fills the hero in incident-active state.
+   Uses opacity (not display) so the element stays in flow for Mapbox GL to
+   initialise, and so the CSS transition produces a smooth fade-in. */
 .hero-map {
-  display: none;
   position: absolute;
   inset: 0;
   z-index: 0;
   width: 100%;
   height: 100%;
+  opacity: 0;
+  transition: opacity 0.9s ease;
 }
 
 /* Incident summary shown inside the heading panel in incident-active state */
@@ -702,16 +707,16 @@ a:focus {
 
 /* When the hero is in incident-active state */
 .hero.hero--incident {
-  background: none; /* Map replaces the photo background */
+  /* background is intentionally kept — the map fades in over the photo,
+     producing a natural cross-fade between the two states. */
 }
 
 .hero.hero--incident .hero-map {
-  display: block;
+  opacity: 1; /* Triggered by the JS adding hero--incident after map load */
 }
 
 .hero.hero--incident hgroup.heading-background {
   max-width: 420px; /* Deconflict: limit width so map markers stay visible */
-  width: auto;
   align-self: flex-start;
   margin-top: auto;
   margin-bottom: auto;
