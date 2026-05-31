@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(./node_modules/**)",
+      "Read(./coverage/**)",
+      "Read(./.nyc_output/**)",
+      "Read(./package-lock.json)",
+      "Read(./public/js/vendor/**)",
+      "Read(./**/*.min.js)",
+      "Read(./**/*.min.css)",
+      "Read(./**/*.png)",
+      "Read(./**/*.jpg)",
+      "Read(./**/*.jpeg)",
+      "Read(./**/*.webp)",
+      "Read(./**/*.ico)",
+      "Read(./**/*.woff)",
+      "Read(./**/*.woff2)",
+      "Read(./.env)",
+      "Read(./api/local.settings.json)",
+      "Glob(./node_modules/**)",
+      "Glob(./coverage/**)",
+      "Glob(./public/js/vendor/**)"
+    ]
+  }
+}

@@ -11,6 +11,9 @@ coverage/
 .vscode/
 .idea/
 
+# Claude Code personal/machine-specific overrides (shared .claude/settings.json is tracked)
+.claude/settings.local.json
+
 # macOS artifacts
 .DS_Store
 __MACOSX/
