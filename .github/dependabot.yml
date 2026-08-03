@@ -1,12 +1,39 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot configuration.
+# See: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# NOTE: `package-ecosystem` was previously left as the empty placeholder `""`,
+# which is invalid — version updates never ran. Only Dependabot *security*
+# updates (which do not read this file) were opening PRs.
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # Root project: Express dev server, Jest/ESLint tooling, vendored front-end libs.
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
       interval: "weekly"
-      
+    open-pull-requests-limit: 5
+    groups:
+      # Keep routine bumps to a couple of PRs a week rather than one per package.
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Workflow actions — without this, pinned actions silently rot (this repo was
+  # still on actions/checkout@v3 and hitting Node 20 runtime deprecation warnings).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"

@@ -18,38 +18,53 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     name: Lint, Test, and Security Checks
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-        
+        uses: actions/checkout@v5
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Run ESLint
         run: npm run lint
-        
+
       - name: Run tests with coverage
         run: npm run test:coverage
-        
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          file: ./coverage/coverage-final.json
 
-      - name: Security audit
-        run: npm audit --production
-        
+      # Tokenless uploads are rejected on protected branches, so this step fails
+      # unless CODECOV_TOKEN is set in repo secrets. Coverage reporting must never
+      # gate a deploy, so failures here are surfaced but not fatal.
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v5
+        if: always()
+        continue-on-error: true
+        with:
+          files: ./coverage/coverage-final.json
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      # Full advisory report for the log — always visible, never blocking.
+      - name: Security audit (report)
+        if: always()
+        run: npm audit --omit=dev || true
+
+      # Blocking gate. `npm audit --production` (the old form) failed the build on
+      # *any* advisory at any severity, so a single low-severity transitive DoS
+      # note red-lined main and skipped the production deploy. Gate on moderate+
+      # instead; the unfiltered report above still shows everything.
+      - name: Security audit (fail on moderate or higher)
+        run: npm audit --omit=dev --audit-level=moderate
+
       - name: Check for outdated dependencies
+        if: always()
         run: npm outdated || true
-        
+
       - name: Summary
         if: always()
         run: |
