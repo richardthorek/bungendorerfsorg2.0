@@ -104,19 +104,25 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleNavLogo(); // Initial check
   }
 
-  // Helper function for bushfire danger period check.
+  // Bush Fire Danger Period (BFDP) check.
   //
-  // This is the statewide statutory default (1 Oct – 31 Mar) only. The NSW
-  // RFS Commissioner can vary the actual start/end date per district, and
+  // The RFS Commissioner can vary the BFDP start/end date per district, and
   // publishes the authoritative, currently-in-force dates as a live table
-  // at https://www.rfs.nsw.gov.au/fire-information/BFDP — this calendar
-  // check is a best-effort fallback for the strip cell's live/loading
-  // state, not a substitute for that page. It's why every Controlled Burn
-  // cell state links out to an official RFS tool (Guardian notify/permit
-  // portal or the BFDP page itself) rather than asserting a requirement
-  // outright: the RFS tools make the authoritative, address-specific call.
+  // at https://www.rfs.nsw.gov.au/fire-information/BFDP. That page has no
+  // public data feed, so instead of guessing or scraping it, the actual
+  // dates for our district live in Content/bfdpDates.json — a small file a
+  // brigade member updates by hand (checking that RFS page) whenever the
+  // Commissioner varies them. bfdpPeriod is populated from it below; if the
+  // file is missing or hasn't loaded yet, this falls back to the statewide
+  // statutory default (1 Oct – 31 Mar) so the strip cell still shows a
+  // reasonable state immediately on page load.
+  let bfdpPeriod = null; // { start: Date, end: Date }, set once bfdpDates.json loads (see below)
+
   function isBushfireDangerPeriod() {
     const now = new Date();
+    if (bfdpPeriod) {
+      return now >= bfdpPeriod.start && now <= bfdpPeriod.end;
+    }
     const month = now.getMonth() + 1; // getMonth() is zero-based
     return month >= 10 || month <= 3;
   }
@@ -189,9 +195,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (fireDangerRatingCell && fireDangerMessage) {
     // Check if necessary strip elements exist
-    fetch("/Content/AFDRSMessages.json")
-      .then((response) => response.json())
-      .then((fireDangerRatings) => {
+    Promise.all([
+      fetch("/Content/AFDRSMessages.json").then((response) => response.json()),
+      fetch("/Content/bfdpDates.json")
+        .then((response) => response.json())
+        .catch(() => null), // isBushfireDangerPeriod() falls back to the statutory default
+    ])
+      .then(([fireDangerRatings, bfdpDates]) => {
+        if (bfdpDates) {
+          bfdpPeriod = { start: new Date(bfdpDates.start), end: new Date(bfdpDates.end) };
+        }
         fetch(`${getApiBaseUrl()}/api/fire-danger`)
           .then((response) => {
             if (!response.ok) {
