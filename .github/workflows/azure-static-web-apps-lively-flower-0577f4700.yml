@@ -17,12 +17,22 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Preview deployments need the Azure deployment token, and GitHub withholds
+  # secrets from Dependabot-actor runs and from fork PRs. Those runs previously
+  # reached the deploy action with an empty token and failed with
+  # "deployment_token was not provided". Skip them instead — a genuinely missing
+  # token on a real branch deploy still fails loudly, which is what we want.
   build_and_deploy_job:
-    if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'pull_request' &&
+       github.event.action != 'closed' &&
+       github.actor != 'dependabot[bot]' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
         with:
           submodules: true
           lfs: false
@@ -39,10 +49,13 @@ jobs:
           api_location: "./api" # Api source code path - Azure Functions
           output_location: "." # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
-          production_branch: "main"
 
   close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'closed' &&
+      github.actor != 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
