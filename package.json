@@ -26,9 +26,11 @@
     "marked": "^18.0.7"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^7.0.0",
     "eslint": "^10.8.0",
+    "globals": "^17.0.0",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "prettier": "^3.9.6"
