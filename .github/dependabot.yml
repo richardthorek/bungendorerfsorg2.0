@@ -1,9 +1,25 @@
 # Dependabot configuration.
 # See: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 #
-# NOTE: `package-ecosystem` was previously left as the empty placeholder `""`,
-# which is invalid — version updates never ran. Only Dependabot *security*
-# updates (which do not read this file) were opening PRs.
+# Tuned for minimum PR volume: everything for an ecosystem — majors, minors,
+# patches, prod and dev deps — lands in ONE catch-all group. Security
+# advisories land in a second, separate catch-all group (security-update
+# groups are independent of version-update groups by design). With
+# `open-pull-requests-limit: 1`, Dependabot updates that one open PR in
+# place as further compatible bumps become available, instead of opening a
+# new PR per package. This is the fewest PRs the tool supports — it can't be
+# reduced to a single PR *ever*, since a merged PR closes and the next
+# scheduled run (or the next disclosed advisory) opens a new one.
+#
+# Trade-off: bundling major versions in with routine patches means a single
+# PR can occasionally carry a breaking change alongside safe bumps, which is
+# harder to review or revert piecemeal than a standalone major-version PR.
+# If that's ever unwelcome, drop `major` from the ignored update-types list
+# below to split majors back out.
+#
+# The monthly schedule only throttles routine version-update checks — it
+# does NOT delay security advisories. Security-update groups trigger as soon
+# as GitHub discloses a vulnerability, independent of `schedule.interval`.
 
 version: 2
 updates:
@@ -11,29 +27,31 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 1
     groups:
-      # Keep routine bumps to a couple of PRs a week rather than one per package.
-      production-dependencies:
-        dependency-type: "production"
-        update-types:
-          - "minor"
-          - "patch"
-      development-dependencies:
-        dependency-type: "development"
-        update-types:
-          - "minor"
-          - "patch"
+      npm-all:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   # Workflow actions — without this, pinned actions silently rot (this repo was
   # still on actions/checkout@v3 and hitting Node 20 runtime deprecation warnings).
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
+      interval: "monthly"
+    open-pull-requests-limit: 1
     groups:
-      github-actions:
+      github-actions-all:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      github-actions-security:
+        applies-to: security-updates
         patterns:
           - "*"
