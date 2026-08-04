@@ -26,8 +26,22 @@
 
     <!-- Preload the hero image to improve LCP -->
     <!-- Desktop: WebP preferred, JPEG fallback; mobile gets its own asset via CSS -->
-    <link rel="preload" as="image" href="/Images/hero4-desktop.webp" type="image/webp" fetchpriority="high" media="(min-width: 769px)" />
-    <link rel="preload" as="image" href="/Images/hero4-mobile.webp" type="image/webp" fetchpriority="high" media="(max-width: 768px)" />
+    <link
+      rel="preload"
+      as="image"
+      href="/Images/hero4-desktop.webp"
+      type="image/webp"
+      fetchpriority="high"
+      media="(min-width: 769px)"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="/Images/hero4-mobile.webp"
+      type="image/webp"
+      fetchpriority="high"
+      media="(max-width: 768px)"
+    />
 
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -60,7 +74,10 @@
         class="utility-link"
         ><i class="fas fa-hand-holding-heart" aria-hidden="true"></i>Donate</a
       >
-      <button id="contactUsBtn" class="contact-trigger utility-link utility-link--btn utility-link--emphasis">
+      <button
+        id="contactUsBtn"
+        class="contact-trigger utility-link utility-link--btn utility-link--emphasis"
+      >
         <i class="fas fa-envelope" aria-hidden="true"></i>Contact
       </button>
       <span class="utility-bar__social">
@@ -125,39 +142,91 @@
       </div>
 
       <!-- Live Status Strip (Phase 3): replaces header status bar, dashboard overlay, mobile panel, and fire-info summary card -->
-      <section id="liveStatusStrip" class="live-status-strip" aria-label="Current fire status for our area">
+      <section
+        id="liveStatusStrip"
+        class="live-status-strip"
+        aria-label="Current fire status for our area"
+      >
         <!-- Cell 1: Fire Danger Rating -->
-        <article class="strip-cell strip-cell--danger" role="group" aria-label="Fire Danger Rating" tabindex="0">
-          <p class="strip-cell__label"><i class="fas fa-thermometer-half" aria-hidden="true"></i> Fire Danger</p>
+        <article
+          class="strip-cell strip-cell--danger"
+          role="group"
+          aria-label="Fire Danger Rating"
+          tabindex="0"
+        >
+          <p class="strip-cell__label">
+            <i class="fas fa-thermometer-half" aria-hidden="true"></i> Fire Danger
+          </p>
           <div id="fireDangerRatingCell" class="strip-cell__value tabular-nums">Loading…</div>
           <p id="fireDangerMessage" class="strip-cell__sub">Fetching latest data…</p>
         </article>
 
         <!-- Cell 2: Active Incidents -->
-        <article class="strip-cell strip-cell--incidents" role="group" aria-label="Active Incidents" tabindex="0">
-          <p class="strip-cell__label"><i class="fas fa-fire-alt" aria-hidden="true"></i> Incidents</p>
+        <article
+          class="strip-cell strip-cell--incidents"
+          role="group"
+          aria-label="Active Incidents"
+          tabindex="0"
+        >
+          <p class="strip-cell__label">
+            <i class="fas fa-fire-alt" aria-hidden="true"></i> Incidents
+          </p>
           <div class="strip-cell__value tabular-nums"><span id="incidentTotalCount">0</span></div>
           <div id="incidentCountCell" class="strip-cell__breakdown"></div>
           <p id="incidentCountLabel" class="strip-cell__sub">No active incidents in our area</p>
         </article>
 
         <!-- Cell 3: Warning Level -->
-        <article class="strip-cell strip-cell--warning" role="group" aria-label="Current Warning Level" tabindex="0">
-          <p class="strip-cell__label"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Warning Level</p>
+        <article
+          class="strip-cell strip-cell--warning"
+          role="group"
+          aria-label="Current Warning Level"
+          tabindex="0"
+        >
+          <p class="strip-cell__label">
+            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Warning Level
+          </p>
           <div id="stripWarningLevel" class="strip-cell__value">None</div>
           <p class="strip-cell__sub">No current warning</p>
         </article>
 
-        <!-- Cell 4: Total Fire Ban -->
-        <article class="strip-cell strip-cell--toban" role="group" aria-label="Total Fire Ban" tabindex="0">
-          <p class="strip-cell__label"><i class="fas fa-ban" aria-hidden="true"></i> Total Fire Ban</p>
-          <div id="stripTotalFireBan" class="strip-cell__value">No</div>
-          <p class="strip-cell__sub">No total fire ban today</p>
+        <!-- Cell 4: Controlled Burn requirements — dynamic: escalates from
+             "notify/permit" guidance to a High-danger caution to a full
+             Total Fire Ban alert, driven by the same district feed as the
+             Fire Danger cell (see updateControlledBurnCell in main.js). -->
+        <article
+          class="strip-cell strip-cell--burn"
+          role="group"
+          aria-label="Controlled burn requirements"
+          tabindex="0"
+        >
+          <p class="strip-cell__label">
+            <i class="fas fa-fire" aria-hidden="true"></i> Controlled Burn
+          </p>
+          <div id="stripBurnStatus" class="strip-cell__value tabular-nums">Loading&hellip;</div>
+          <p id="stripBurnSub" class="strip-cell__sub">
+            Checking today&rsquo;s requirements&hellip;
+          </p>
+          <a
+            id="stripBurnLink"
+            href="https://www.rfs.nsw.gov.au/notify"
+            target="_blank"
+            rel="noopener"
+            class="strip-cell__cta"
+            >Notify RFS &rarr;</a
+          >
         </article>
 
         <!-- Cell 5: Map context / full-map CTA -->
-        <article class="strip-cell strip-cell--map" role="group" aria-label="Incident Map" tabindex="0">
-          <p class="strip-cell__label"><i class="fas fa-map-marked-alt" aria-hidden="true"></i> Incident Map</p>
+        <article
+          class="strip-cell strip-cell--map"
+          role="group"
+          aria-label="Incident Map"
+          tabindex="0"
+        >
+          <p class="strip-cell__label">
+            <i class="fas fa-map-marked-alt" aria-hidden="true"></i> Incident Map
+          </p>
           <a href="#info" class="strip-map-cta-btn">View Full Map &rarr;</a>
           <p class="strip-cell__sub">Open fire incident map</p>
         </article>
@@ -243,20 +312,36 @@
                       <!-- Incident map (moved from summary card in Phase 3) -->
                       <div class="fire-info-map" id="fireInfoMapContainer">
                         <div class="map-toolbar">
-                          <button id="mapExpandBtn" class="map-expand-btn" type="button" aria-expanded="false">
+                          <button
+                            id="mapExpandBtn"
+                            class="map-expand-btn"
+                            type="button"
+                            aria-expanded="false"
+                          >
                             <i class="fas fa-expand"></i>
                             <span>Expand</span>
                           </button>
                         </div>
                         <div class="map-layout">
                           <div id="map" aria-label="Local incident map"></div>
-                          <aside id="mapDetailPanel" class="map-detail-panel" aria-live="polite" hidden></aside>
+                          <aside
+                            id="mapDetailPanel"
+                            class="map-detail-panel"
+                            aria-live="polite"
+                            hidden
+                          ></aside>
                         </div>
                       </div>
                       <ul class="map-legend">
-                        <li><img src="/Images/advice.png" alt="" class="map-legend__icon" />Advice</li>
                         <li>
-                          <img src="/Images/watch-and-act.png" alt="" class="map-legend__icon" />Watch &amp; Act
+                          <img src="/Images/advice.png" alt="" class="map-legend__icon" />Advice
+                        </li>
+                        <li>
+                          <img
+                            src="/Images/watch-and-act.png"
+                            alt=""
+                            class="map-legend__icon"
+                          />Watch &amp; Act
                         </li>
                         <li>
                           <img
@@ -265,24 +350,40 @@
                             class="map-legend__icon"
                           />Emergency Warning
                         </li>
-                        <li><span class="map-legend__dot map-legend__dot--station"></span>Station</li>
+                        <li>
+                          <span class="map-legend__dot map-legend__dot--station"></span>Station
+                        </li>
                       </ul>
                       <a href="#info" class="map-legend-link">View full incident map &rarr;</a>
                       <div id="fireInfoTableContainer" class="grid-container"></div>
                     </div>
                     <aside class="quick-links">
                       <p class="quick-links__kicker">Quick Links</p>
-                      <a href="https://www.rfs.nsw.gov.au" target="_blank" rel="noopener" class="quick-links__row"
+                      <a
+                        href="https://www.rfs.nsw.gov.au"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
                         ><i class="fas fa-globe" aria-hidden="true"></i>NSW RFS Website</a
                       >
-                      <a href="https://www.rfs.nsw.gov.au" target="_blank" rel="noopener" class="quick-links__row"
-                        ><i class="fas fa-mobile-alt" aria-hidden="true"></i>Fires Near Me App</a
+                      <a
+                        href="https://www.nsw.gov.au/emergency/hazards-near-me-app"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
+                        ><i class="fas fa-mobile-alt" aria-hidden="true"></i>Hazards Near Me NSW
+                        App</a
                       >
-                      <a href="https://www.rfs.nsw.gov.au" target="_blank" rel="noopener" class="quick-links__row"
+                      <a
+                        href="https://www.rfs.nsw.gov.au/fire-information/BFDP"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
                         ><i class="fas fa-ban" aria-hidden="true"></i>Total Fire Ban Info</a
                       >
                       <div class="quick-links__row quick-links__row--emphasis">
-                        <i class="fas fa-phone" aria-hidden="true"></i>Emergency &mdash; always call 000
+                        <i class="fas fa-phone" aria-hidden="true"></i>Emergency &mdash; always call
+                        000
                       </div>
                     </aside>
                   </div>
@@ -302,9 +403,12 @@
                   <h2>Prepare for Bushfires</h2>
                   <div class="tab-layout">
                     <div class="tab-layout__main">
-                      <img src="/Images/prepare.jpeg" alt="Prepare for Bushfires" class="tab-layout__image" />
+                      <img
+                        src="/Images/prepare.jpeg"
+                        alt="Prepare for Bushfires"
+                        class="tab-layout__image"
+                      />
                       <div id="prepareContent"></div>
-                      <div id="BFDPContent"></div>
                     </div>
                     <aside class="quick-links">
                       <p class="quick-links__kicker">Quick Links</p>
@@ -321,15 +425,16 @@
                         target="_blank"
                         rel="noopener"
                         class="quick-links__row"
-                        ><i class="fas fa-file-pdf" aria-hidden="true"></i>Download Survival Plan PDF</a
+                        ><i class="fas fa-file-pdf" aria-hidden="true"></i>Download Survival Plan
+                        PDF</a
                       >
                       <a
-                        href="https://nswrfsprod.service-now.com/guardian_csp?id=guardian_index"
+                        href="https://www.rfs.nsw.gov.au/notify"
                         target="_blank"
                         rel="noopener"
                         class="quick-links__row"
-                        ><i class="fas fa-file-signature" aria-hidden="true"></i>Apply for a Fire Permit
-                        / Report a Burn</a
+                        ><i class="fas fa-file-signature" aria-hidden="true"></i>Notify a Burn /
+                        Apply for a Fire Permit</a
                       >
                     </aside>
                   </div>
@@ -338,7 +443,12 @@
             </div>
 
             <!-- Membership Tab -->
-            <div class="tab-panel" role="tabpanel" id="membership-tab" aria-labelledby="tab-membership">
+            <div
+              class="tab-panel"
+              role="tabpanel"
+              id="membership-tab"
+              aria-labelledby="tab-membership"
+            >
               <div class="accordion-header mobile-only" data-accordion="membership">
                 <i class="fas fa-users"></i>
                 <span>Membership</span>
@@ -362,8 +472,8 @@
                         target="_blank"
                         rel="noopener"
                         class="quick-links__row"
-                        ><i class="fas fa-user-plus" aria-hidden="true"></i>Explore Roles &amp; Apply for
-                        Membership</a
+                        ><i class="fas fa-user-plus" aria-hidden="true"></i>Explore Roles &amp;
+                        Apply for Membership</a
                       >
                       <a
                         href="https://www.rfs.nsw.gov.au"
@@ -374,7 +484,8 @@
                         Volunteering</a
                       >
                       <div class="quick-links__row">
-                        <i class="fas fa-clock" aria-hidden="true"></i>Visit us Friday nights from 7pm
+                        <i class="fas fa-clock" aria-hidden="true"></i>Visit us Friday nights from
+                        7pm
                       </div>
                     </aside>
                   </div>
@@ -401,7 +512,9 @@
                           alt="The brigade at the donation of the Black Summer Bungendore Fridge"
                           class="tab-layout__image"
                         />
-                        <figcaption>The brigade at the donation of the Black Summer Bungendore Fridge</figcaption>
+                        <figcaption>
+                          The brigade at the donation of the Black Summer Bungendore Fridge
+                        </figcaption>
                       </figure>
                       <div id="communityEventsSection">
                         <h4>Community Events</h4>
@@ -410,7 +523,11 @@
                     </div>
                     <aside class="quick-links">
                       <p class="quick-links__kicker">Quick Links</p>
-                      <button type="button" id="eventsContactBtn" class="contact-trigger quick-links__row quick-links__row--btn">
+                      <button
+                        type="button"
+                        id="eventsContactBtn"
+                        class="contact-trigger quick-links__row quick-links__row--btn"
+                      >
                         <i class="fas fa-envelope" aria-hidden="true"></i>Contact Us
                       </button>
                       <a
@@ -425,7 +542,8 @@
                         target="_blank"
                         rel="noopener"
                         class="quick-links__row"
-                        ><i class="fab fa-instagram" aria-hidden="true"></i>Follow us on Instagram</a
+                        ><i class="fab fa-instagram" aria-hidden="true"></i>Follow us on
+                        Instagram</a
                       >
                     </aside>
                   </div>

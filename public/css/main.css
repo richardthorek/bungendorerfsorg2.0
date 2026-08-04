@@ -415,11 +415,24 @@ h3 {
   margin-top: 0;
 }
 
+/* Fixed crop ratio + object-fit so source photos of any orientation fill a
+   consistent, compact banner instead of stretching the column to their
+   full natural height (was ~1:1 for portrait-ish source photos). Ratio
+   widens on tablet+ where there's more horizontal room to work with. */
 .tab-layout__image {
+  display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
   border-radius: 10px;
   margin-bottom: var(--space-lg);
+}
+
+@media (min-width: 769px) {
+  .tab-layout__image {
+    aspect-ratio: 2.6 / 1;
+  }
 }
 
 .tab-layout__figure {
@@ -430,6 +443,62 @@ h3 {
   font-size: 0.8rem;
   color: var(--clear-text-secondary);
   margin-top: var(--space-xs);
+}
+
+/* "Prepare" tab action-plan steps — numbered red circle badges at the same
+   compact scale as the rest of the Clear Skies page (.quick-links,
+   .strip-cell), replacing the browser's default blockquote/list styling.
+   Scoped to #prepareContent since that's the only markdown-rendered block
+   using this ol/li pattern. */
+#prepareContent h3 {
+  font-size: var(--font-size-h3);
+  font-weight: 800;
+  color: var(--clear-body-text);
+  margin: var(--space-lg) 0 var(--space-sm);
+}
+
+#prepareContent ol {
+  list-style: none;
+  counter-reset: step;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin: 0 0 var(--space-lg);
+  padding: 0;
+}
+
+/* Badge is an absolutely-positioned ::before rather than a flex sibling —
+   a block-level heading followed by plain text inside a flex item gets
+   blockified into two separate side-by-side flex items instead of
+   stacking, so plain block flow (with padding to clear the badge) is used
+   here instead. */
+#prepareContent ol li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 40px;
+  min-height: 28px;
+}
+
+#prepareContent ol li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--rfs-core-red);
+  color: var(--text-color-light);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 28px;
+  text-align: center;
+}
+
+#prepareContent ol li strong:first-child {
+  display: block;
+  color: var(--clear-body-text);
+  margin-bottom: 2px;
 }
 
 .quick-links {
@@ -929,6 +998,22 @@ a:focus {
   font-weight: 700;
 }
 
+/* Cell 4's own CTA link (see .strip-cell--burn below) — same treatment as
+   the map cell's link but its own class since the two cells vary
+   independently. */
+.strip-cell__cta {
+  color: var(--rfs-core-red);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.strip-cell__cta:hover,
+.strip-cell__cta:focus {
+  text-decoration: underline;
+}
+
 /* ── Fire Danger strip cell colour bands (Cell 1) ────────────────────────────
  *
  * Lower-risk levels (No Rating, Moderate, High): a coloured top strip on the
@@ -1000,16 +1085,50 @@ a:focus {
   color: var(--rfs-white);
 }
 
-/* Warning Level / Total Fire Ban cells: neutral calm-state tint. Cell 2
-   (Incidents) intentionally stays untinted per the design spec. */
+/* Warning Level / Controlled Burn cells: neutral calm-state tint by default.
+   Cell 2 (Incidents) intentionally stays untinted per the design spec. */
 .strip-cell--warning,
-.strip-cell--toban {
+.strip-cell--burn {
   background-color: var(--clear-neutral-cell-bg);
 }
 
 #stripWarningLevel,
-#stripTotalFireBan {
+#stripBurnStatus {
   color: var(--clear-neutral-cell-fg);
+}
+
+/* Cell 4 (Controlled Burn) escalation — same colour language as the Fire
+   Danger cell: amber once fire danger reaches High (permits may be
+   suspended), full alert red when a Total Fire Ban is actually in effect
+   (no burning permitted at all, notification is moot). Driven by
+   updateControlledBurnCell() in main.js from the same district feed
+   already used for the Fire Danger cell. */
+.strip-cell--burn:has(#stripBurnStatus[data-state="high"]) {
+  background-color: var(--clear-incident-bg);
+}
+.strip-cell--burn:has(#stripBurnStatus[data-state="high"]) #stripBurnStatus,
+.strip-cell--burn:has(#stripBurnStatus[data-state="high"]) #stripBurnSub {
+  color: var(--clear-incident-fg);
+}
+.strip-cell--burn:has(#stripBurnStatus[data-state="high"]) .strip-cell__cta {
+  color: var(--clear-incident-fg);
+  text-decoration: underline;
+}
+
+.strip-cell--burn:has(#stripBurnStatus[data-state="toban"]) {
+  background-color: var(--rfs-core-red);
+}
+.strip-cell--burn:has(#stripBurnStatus[data-state="toban"]):hover {
+  background-color: #c42216;
+}
+.strip-cell--burn:has(#stripBurnStatus[data-state="toban"]) .strip-cell__label,
+.strip-cell--burn:has(#stripBurnStatus[data-state="toban"]) #stripBurnStatus,
+.strip-cell--burn:has(#stripBurnStatus[data-state="toban"]) #stripBurnSub {
+  color: var(--rfs-white);
+}
+.strip-cell--burn:has(#stripBurnStatus[data-state="toban"]) .strip-cell__cta {
+  color: var(--rfs-white);
+  text-decoration: underline;
 }
 
 /* Incident-active state: strip cell 5 shows context message */
