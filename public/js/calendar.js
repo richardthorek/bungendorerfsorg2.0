@@ -1,122 +1,181 @@
 document.addEventListener("DOMContentLoaded", () => {
   const membershipCalendar = document.getElementById("membershipCalendar");
   const communityEventsCalendar = document.getElementById("communityEventsCalendar");
-  const modal = document.getElementById("eventModal");
-  const closeButton = document.getElementById("eventModalClose");
 
-  // Show loading state
   if (membershipCalendar) {
-    showLoadingMessage("membershipCalendar", "Loading training events...");
+    renderTrainingSchedule("membershipCalendar");
   }
   if (communityEventsCalendar) {
-    showLoadingMessage("communityEventsCalendar", "Loading community events...");
+    renderCommunityEvents("communityEventsCalendar");
   }
-
-  // Fetch events data from the URL
-  fetch(`${getApiBaseUrl()}/api/calendar-events`)
-    .then((response) => response.json())
-    .then((data) => {
-      const events = Array.isArray(data?.value) ? data.value : [];
-
-      // Keep only upcoming events (start of today in local timezone or later).
-      const todayStart = luxon.DateTime.now().setZone("Australia/Sydney").startOf("day");
-      const futureEvents = events
-        .filter((event) => {
-          const startDateTime = luxon.DateTime.fromISO(event.start?.dateTime || event.start, {
-            zone: "utc",
-          }).setZone("Australia/Sydney");
-          return startDateTime >= todayStart;
-        })
-        .sort((a, b) => {
-          const aStart = luxon.DateTime.fromISO(a.start?.dateTime || a.start, { zone: "utc" });
-          const bStart = luxon.DateTime.fromISO(b.start?.dateTime || b.start, { zone: "utc" });
-          return aStart - bStart;
-        });
-
-      // Filter and display Membership events
-      const membershipEvents = futureEvents.filter(
-        (event) => Array.isArray(event.categories) && event.categories.includes("Public - Training")
-      );
-      displayEvents(membershipEvents, membershipCalendar);
-
-      // Filter and display Community Events
-      const communityEvents = futureEvents.filter(
-        (event) =>
-          Array.isArray(event.categories) &&
-          event.categories.includes("Public - Community Engagement")
-      );
-      displayEvents(communityEvents, communityEventsCalendar);
-    })
-    .catch((error) => {
-      console.error("Error fetching events:", error);
-      const errorMessage = getUserFriendlyErrorMessage(error);
-      // Show error in both calendars
-      if (membershipCalendar) {
-        showErrorMessage("membershipCalendar", errorMessage, true);
-      }
-      if (communityEventsCalendar) {
-        showErrorMessage("communityEventsCalendar", errorMessage, true);
-      }
-    });
-
-  // When the user clicks on the close button, close the modal
-  closeButton.onclick = () => modal.removeAttribute("open");
-
-  // When the user clicks anywhere outside of the modal, close it
-  window.onclick = (event) => {
-    if (event.target === modal) {
-      modal.removeAttribute("open");
-    }
-  };
 });
 
-function displayEvents(events, container) {
-  container.innerHTML = ""; // Clear any existing content
+const WEEKDAYS = {
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+  sunday: 7,
+};
 
-  if (events.length === 0) {
-    const emptyEl = document.createElement("p");
-    emptyEl.className = "events-empty";
-    emptyEl.textContent = "No upcoming events scheduled at this time.";
-    container.appendChild(emptyEl);
-    return;
+const ORDINALS = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, last: -1 };
+
+// Parses recurrence strings like "second-saturday" or "every-friday".
+function parseRecurrence(rule) {
+  const parts = String(rule).split("-");
+  const weekday = WEEKDAYS[parts[parts.length - 1]];
+  if (!weekday) return null;
+
+  if (parts[0] === "every") {
+    return { ordinal: null, weekday };
+  }
+  const ordinal = ORDINALS[parts[0]];
+  return ordinal ? { ordinal, weekday } : null;
+}
+
+function nthWeekdayOfMonth(year, month, weekday, ordinal) {
+  if (ordinal === -1) {
+    let date = luxon.DateTime.local(year, month, 1).endOf("month").startOf("day");
+    while (date.weekday !== weekday) {
+      date = date.minus({ days: 1 });
+    }
+    return date;
   }
 
-  events.forEach((event) => {
-    const eventElement = document.createElement("div");
-    eventElement.className = "event";
-
-    const titleElement = document.createElement("div");
-    titleElement.className = "event-title";
-    titleElement.textContent = event.subject;
-    titleElement.style.cursor = "pointer";
-
-    // Convert start and end times to Bungendore, NSW, Australia time zone
-    const startDate = luxon.DateTime.fromISO(event.start.dateTime || event.start, {
-      zone: "utc",
-    }).setZone("Australia/Sydney");
-    const endDate = luxon.DateTime.fromISO(event.end.dateTime || event.end, {
-      zone: "utc",
-    }).setZone("Australia/Sydney");
-
-    const dateTimeElement = document.createElement("div");
-    dateTimeElement.className = "event-date-time";
-    dateTimeElement.textContent = event.isAllDay
-      ? `Date: ${startDate.toLocaleString(luxon.DateTime.DATE_MED)}`
-      : `Date: ${startDate.toLocaleString(luxon.DateTime.DATETIME_MED)} - ${endDate.toLocaleString(luxon.DateTime.DATETIME_MED)}`;
-
-    eventElement.appendChild(titleElement);
-    eventElement.appendChild(dateTimeElement);
-
-    if (event.location) {
-      const locationElement = document.createElement("div");
-      locationElement.className = "event-location";
-      locationElement.textContent = `Location: ${event.location.displayName}`;
-      eventElement.appendChild(locationElement);
+  let date = luxon.DateTime.local(year, month, 1).startOf("day");
+  let count = 0;
+  while (date.month === month) {
+    if (date.weekday === weekday) {
+      count += 1;
+      if (count === ordinal) return date;
     }
+    date = date.plus({ days: 1 });
+  }
+  return null;
+}
 
-    // Add click event to title to show modal with event details
-    titleElement.addEventListener("click", () => showModal(event));
+function nextWeeklyOccurrence(today, weekday) {
+  let date = today;
+  while (date.weekday !== weekday) {
+    date = date.plus({ days: 1 });
+  }
+  return date;
+}
 
-    container.appendChild(eventElement);
-  });
+function nextOccurrence(recurrence, today) {
+  const { ordinal, weekday } = recurrence;
+  if (ordinal === null) {
+    return nextWeeklyOccurrence(today, weekday);
+  }
+
+  let candidate = nthWeekdayOfMonth(today.year, today.month, weekday, ordinal);
+  if (!candidate || candidate < today) {
+    const nextMonth = today.plus({ months: 1 });
+    candidate = nthWeekdayOfMonth(nextMonth.year, nextMonth.month, weekday, ordinal);
+  }
+  return candidate;
+}
+
+function buildEventCard(title, dateLabel, location) {
+  const eventElement = document.createElement("div");
+  eventElement.className = "event";
+
+  const titleElement = document.createElement("div");
+  titleElement.className = "event-title";
+  titleElement.textContent = title;
+  eventElement.appendChild(titleElement);
+
+  const dateTimeElement = document.createElement("div");
+  dateTimeElement.className = "event-date-time";
+  dateTimeElement.textContent = dateLabel;
+  eventElement.appendChild(dateTimeElement);
+
+  if (location) {
+    const locationElement = document.createElement("div");
+    locationElement.className = "event-location";
+    locationElement.textContent = location;
+    eventElement.appendChild(locationElement);
+  }
+
+  return eventElement;
+}
+
+function renderEmpty(containerId, message) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+  const emptyEl = document.createElement("p");
+  emptyEl.className = "events-empty";
+  emptyEl.textContent = message;
+  container.appendChild(emptyEl);
+}
+
+function renderTrainingSchedule(containerId) {
+  showLoadingMessage(containerId, "Loading training schedule...");
+
+  fetch("/Content/trainingSchedule.json")
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    })
+    .then((items) => {
+      const today = luxon.DateTime.now().setZone("Australia/Sydney").startOf("day");
+      const schedule = (Array.isArray(items) ? items : [])
+        .map((item) => {
+          const recurrence = parseRecurrence(item.recurrence);
+          const nextDate = recurrence ? nextOccurrence(recurrence, today) : null;
+          return nextDate ? { ...item, nextDate } : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.nextDate - b.nextDate);
+
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (schedule.length === 0) {
+        renderEmpty(containerId, "No training sessions scheduled at this time.");
+        return;
+      }
+
+      schedule.forEach((item) => {
+        const dateLabel = `Next: ${item.nextDate.toLocaleString(luxon.DateTime.DATE_MED_WITH_WEEKDAY)}${item.time ? `, ${item.time}` : ""}`;
+        container.appendChild(buildEventCard(item.title, dateLabel, item.location));
+      });
+    })
+    .catch((error) => {
+      console.error("Error loading training schedule:", error);
+      showErrorMessage(containerId, getUserFriendlyErrorMessage(error), true);
+    });
+}
+
+function renderCommunityEvents(containerId) {
+  showLoadingMessage(containerId, "Loading community events...");
+
+  fetch("/Content/communityEvents.json")
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    })
+    .then((items) => {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = "";
+
+      const events = Array.isArray(items) ? items : [];
+      if (events.length === 0) {
+        renderEmpty(containerId, "No community events listed at this time.");
+        return;
+      }
+
+      events.forEach((item) => {
+        container.appendChild(buildEventCard(item.name, item.timing, item.description));
+      });
+    })
+    .catch((error) => {
+      console.error("Error loading community events:", error);
+      showErrorMessage(containerId, getUserFriendlyErrorMessage(error), true);
+    });
 }

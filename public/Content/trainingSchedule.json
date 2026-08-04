@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Training Night",
+    "recurrence": "second-saturday",
+    "time": "9:00 AM – 12:00 PM",
+    "location": "Bungendore RFS Station"
+  },
+  {
+    "title": "Training Night",
+    "recurrence": "fourth-tuesday",
+    "time": "6:30 PM – 8:30 PM",
+    "location": "Bungendore RFS Station"
+  },
+  {
+    "title": "Truck & Equipment Maintenance",
+    "recurrence": "every-friday",
+    "time": "7:00 PM",
+    "location": "Bungendore RFS Station"
+  }
+]
