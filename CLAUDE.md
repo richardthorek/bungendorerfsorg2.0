@@ -79,7 +79,7 @@ Topic branch off `liveDev` → PR into `liveDev` → owner promotes to `main`.
 - Conventions & quirks → [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
 - Documentation index → [`docs/README.md`](docs/README.md)
 - API/integration → `docs/API_INTEGRATION.md`
-- UI/UX intent → `docs/UI_UX_IMPROVEMENTS_PROPOSAL.md`, `docs/UI_UX_IMPLEMENTATION_SUMMARY.md`
+- UI/UX intent → `docs/current_state/ui-redesign.md` (current target-state spec), `docs/current_state/ui-baseline.md`
 - CSS architecture → `docs/CSS_OPTIMIZATION.md`
 - Testing → `docs/TESTING.md`
 - Security trail → `SECURITY_FIXES.md`

@@ -20,23 +20,18 @@ If the request is a one-off (typo, doc tweak, dependency bump), skip the plan; o
 ```
 master_plan.md                  # Single source of truth for in-flight work
 docs/                           # All project documentation (consolidated; was Documentation/)
-├── current_state/              # Live state for active programmes
-│   ├── ui-baseline.md          # Quantified pre-change baseline
-│   ├── ui-redesign.md          # Target spec + per-PR acceptance criteria
+├── current_state/              # Current UI/UX spec + redesign-programme evidence
+│   ├── ui-baseline.md          # Quantified pre-change baseline + DOM-ID contract
+│   ├── ui-redesign.md          # Authoritative target spec + per-PR acceptance criteria
 │   ├── wireframe/index.html    # Self-contained interactive previews
 │   └── images/                 # Screenshots (baseline + after)
-├── REVIEW_SUMMARY.md           # Codebase review — exec summary
-├── CODEBASE_REVIEW.md          # Codebase review — full
-├── QUICK_FIXES.md              # Codebase review — checklist
 ├── API_INTEGRATION.md          # Azure Functions / Logic Apps integration
 ├── TESTING.md                  # Jest + Testing-Library guide
 ├── ASSET_ORGANIZATION.md       # Images & icons
 ├── CSS_OPTIMIZATION.md         # CSS architecture
-├── IMPLEMENTATION_SUMMARY.md   # Historical change log (do not modify)
-├── UI_UX_IMPROVEMENTS_PROPOSAL.md
-└── UI_UX_IMPLEMENTATION_SUMMARY.md
+└── IMPLEMENTATION_SUMMARY.md   # Historical change log (do not modify)
 SECURITY_FIXES.md               # Security remediation log (root, kept for visibility)
-README.md                       # Project overview + setup
+README.md                       # Project overview + setup + content-editing guide
 ```
 
 > The legacy capital-D `Documentation/` directory has been consolidated into lowercase `docs/`. Do not recreate `Documentation/`.
@@ -96,11 +91,9 @@ npm run build        # lint + test:coverage (CI-style gate)
 
 ### CI/CD
 
-- Workflow: `.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`.
-- Triggers: push to `main` / `liveDev`, PRs into `main`.
-- Deploys static site (`public/`) **and** the integrated API (`api/`) to Azure Static Web Apps.
+- Deploy workflow: `.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`. Triggers on push to `main` / `liveDev`, PRs into `main`. Deploys static site (`public/`) **and** the integrated API (`api/`) to Azure Static Web Apps.
+- Lint/test/audit gate: `.github/workflows/ci.yml`. Triggers on push to `main` / `liveDev` / `copilot/**`, PRs into `main` / `liveDev`. Runs ESLint, `test:coverage`, and a moderate+ `npm audit` gate.
 - Dependabot: `.github/dependabot.yml`.
-- **Gap:** the SWA workflow doesn't yet run `npm run build` (lint + tests). Adding that gate is on the roadmap; until then run it locally.
 
 ### Environment variables
 
@@ -199,11 +192,16 @@ jest.config.js
 
 - `replace-token.js` runs as `prestart` and substitutes `MAP_TOKEN_PLACEHOLDER` in `public/js/main.js` for local dev.
 - In production the token is fetched at runtime from the SWA `mapbox-token` function (with origin validation).
-- **Do not log the token** anywhere — past regression (CODEBASE_REVIEW Issue #3).
+- **Do not log the token** anywhere — see [`SECURITY_FIXES.md`](../SECURITY_FIXES.md) for the past regression this fixed.
 
-### Two emergency / status surfaces (transitional)
+### Live status strip
 
-The home page currently has duplicated emergency surfaces (header bar, expanded overlay, mobile panel, in-page card). The UI Redesign programme (issue #56) consolidates these into a single live status strip. **While that programme is in flight, treat the IDs listed in [`docs/current_state/ui-baseline.md` §5](../docs/current_state/ui-baseline.md) as a stable contract** — JS that reads/writes those IDs must keep working.
+The UI Redesign programme (issue #56) consolidated the home page's previously
+duplicated emergency surfaces (header bar, expanded overlay, mobile panel, in-page
+card) into a single live status strip (`#liveStatusStrip`), managed by
+`public/js/emergency-dashboard.js`. The legacy ID-alias shim was removed in Phase 7.
+Treat the canonical IDs in [`docs/current_state/ui-baseline.md` §5](../docs/current_state/ui-baseline.md)
+as the current contract for any JS reading/writing status-strip state.
 
 ### Favicons
 
@@ -262,5 +260,5 @@ The CRITICAL items from earlier reviews have been addressed: Logic Apps URLs are
 
 ---
 
-**Document version:** 2.0  
-**Last updated:** 2026-04-23 (consolidated `Documentation/` → `docs/`; reflected current Azure Functions, test infra, lint/format tooling; established `master_plan.md` as the planning anchor)
+Update this file in the same PR whenever a convention changes (tokens, scripts,
+branch policy, doc layout) — see §1.

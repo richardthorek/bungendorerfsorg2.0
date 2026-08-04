@@ -1,133 +1,205 @@
 # Bungendore Volunteer Rural Fire Brigade Website
 
-## Overview
+The public website for the Bungendore Volunteer Rural Fire Brigade (NSW RFS Southern
+Ranges district). It surfaces fire danger ratings, a live incident map, bushfire
+preparation guidance, membership information, and brigade/community events.
 
-This project is a website for the Bungendore Volunteer Rural Fire Brigade. It provides information about fire preparation, fire information, membership, and events. The website includes interactive features such as a map with markers indicating fire warnings, a contact form, and a calendar of community events.
+Plain **ES6+ JavaScript** loaded with `<script defer>` — no bundler, no framework, one
+stylesheet, markdown content rendered client-side.
 
 ## Features
 
-- **Responsive Design**: Works well on various screen sizes
-- **Interactive Map**: Displays real-time fire incidents with markers and alerts
-- **Dynamic Content**: Updates based on bushfire danger period and current conditions
-- **Dark Mode Support**: Supports user's `prefers-color-scheme` setting
-- **Contact Form**: Secure form with spam prevention and comprehensive validation
-- **Events Calendar**: Displays upcoming training and community events
-- **Optimized Assets**: Consolidated and optimized image assets and CSS
-- **Security**: Integrated API proxies, XSS protection, input validation, and spam prevention
+- **Emergency-first home page** — fire danger rating, active incident count, and a
+  live map surface above the fold, backed by a "Command Centre" layout (see
+  [`docs/current_state/ui-redesign.md`](docs/current_state/ui-redesign.md)).
+- **Interactive map** — real-time NSW RFS fire incidents filtered to local council
+  areas, colour-coded by alert level.
+- **Bushfire Danger Period indicator** — driven by an editable content file, see
+  [Editing site content](#editing-site-content-no-code-required) below.
+- **Events & training schedule** — community events and recurring brigade training
+  sessions, sourced from static content files (no external calendar dependency).
+- **Contact form** — server-validated, with honeypot spam prevention.
+- **Dark mode** — via `prefers-color-scheme`.
+- **Accessibility** — semantic HTML5, ARIA roles on tab/dialog widgets, keyboard
+  navigation, visible focus states.
 
-## Technologies Used
+## Technologies used
 
-- **HTML5**: Semantic structure with accessibility features
-- **CSS3**: Modern styling with CSS variables and responsive design
-- **JavaScript (ES6+)**: Interactive features and API integrations
-- **Azure Functions (SWA Integrated API)**: HTTP-trigger backend endpoints deployed with the static app
-- **Leaflet**: Interactive map with Mapbox tiles
-- **Azure Logic Apps**: Backend workflow integration
-- **DOMPurify**: XSS protection for dynamic content
-- **Luxon**: Timezone-aware date handling
-- **Marked**: Markdown parsing for dynamic content
+- **HTML5 / CSS3** — semantic markup, one stylesheet (`public/css/main.css`) with
+  design tokens in `:root`, dark mode via CSS custom properties.
+- **JavaScript (ES6+)** — no transpile step, runs directly in evergreen browsers.
+- **Leaflet + Mapbox** — interactive map with day/night tile sets.
+- **Marked + DOMPurify** — client-side Markdown rendering, sanitised before insertion.
+- **Luxon** — timezone-aware date handling (`Australia/Sydney`).
+- **Azure Static Web Apps** (integrated HTTP-trigger Functions) — production proxy
+  layer between the site and upstream data sources.
+- **Azure Logic Apps** — backend workflows for the contact form and live fire data.
 
-## Project Structure
+## Project structure
 
 ```
 /
 ├── public/
-│   ├── Images/           # All website images and icons
-│   ├── css/
-│   │   └── main.css      # Main stylesheet (optimized)
-│   ├── js/               # JavaScript files
-│   │   ├── main.js           # Main logic and fire danger
-│   │   ├── map.js            # Interactive map
-│   │   ├── contact.js        # Contact form
-│   │   ├── calendar.js       # Events calendar
-│   │   ├── error-handler.js  # Error handling utilities
-│   │   ├── modal-utils.js    # Shared modal functions
-│   │   └── dynamicContent.js # Dynamic content loading
-│   ├── Content/          # Markdown content files
-│   └── index.html        # Main HTML file
-├── docs/        # Project documentation
-│   ├── API_INTEGRATION.md    # API and integration guide
-│   ├── TESTING.md            # Testing guide and best practices
-│   ├── ASSET_ORGANIZATION.md # Asset structure
-│   ├── CSS_OPTIMIZATION.md   # CSS architecture
-│   └── CODEBASE_REVIEW.md    # Technical review
-├── __tests__/           # Jest unit tests
-├── .github/workflows/   # CI/CD workflows
-├── api/                 # Integrated SWA Functions API
-├── infra/               # Bicep IaC for SWA + app settings
-├── server.js            # Local Express fallback for non-SWA development
-├── replace-token.js     # Build-time token replacement
-├── jest.config.js       # Jest configuration
-├── .eslintrc.json       # ESLint configuration
-├── .prettierrc.json     # Prettier configuration
-└── package.json         # Dependencies and scripts
+│   ├── index.html            # Single page. Script load order matters (end of <body>).
+│   ├── css/main.css          # One stylesheet; design tokens in :root
+│   ├── js/
+│   │   ├── main.js               # Fire danger fetch/render, orchestration
+│   │   ├── map.js                # Interactive map (lazy-loaded on scroll into view)
+│   │   ├── contact.js            # Contact form
+│   │   ├── calendar.js           # Events + training schedule rendering
+│   │   ├── tabs-accordion.js     # Tab/accordion widget (roving tabindex)
+│   │   ├── emergency-dashboard.js# Live status strip state
+│   │   ├── dynamicContent.js     # Markdown content loader
+│   │   ├── error-handler.js      # Shared error/loading UI helpers
+│   │   ├── modal-utils.js        # Shared modal helpers
+│   │   └── vendor/                # Luxon, Marked, DOMPurify (minified — don't edit)
+│   └── Content/               # Editable content — see below
+├── api/                       # Azure Functions — production proxy layer
+├── server.js                  # Local Express mirror of api/ for local dev
+├── infra/                     # Bicep IaC for the Static Web App
+├── __tests__/                 # Jest unit tests
+├── docs/                      # Documentation (see docs/README.md)
+├── master_plan.md             # In-flight work tracker
+└── CLAUDE.md / .github/copilot-instructions.md   # AI-agent conventions
 ```
 
-## Installation and Setup
+## Getting started
 
 ### Prerequisites
 
 - Node.js >= 18.0.0
-- npm (comes with Node.js)
+- npm
 
-### Quick Start
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/richardthorek/bungendorerfsorg2.0.git
-   cd bungendorerfsorg2.0
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**:
-
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your credentials (see Environment Configuration below)
-   ```
-
-4. **Start the server**:
-
-   ```bash
-   npm start
-   ```
-
-5. **Open in browser**: Navigate to `http://localhost:3000`
-
-### Environment Configuration
-
-Create a `.env` file in the root directory (see `.env.example` for template):
+### Setup
 
 ```bash
-# Mapbox Configuration
+git clone https://github.com/richardthorek/bungendorerfsorg2.0.git
+cd bungendorerfsorg2.0
+npm install
+cp .env.example .env
+# edit .env — see Environment configuration below
+npm start
+```
+
+Open `http://localhost:3000`.
+
+### Environment configuration
+
+Create `.env` from `.env.example`:
+
+```bash
 MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
 
-# Azure Logic Apps Webhook URLs
 AZURE_CONTACT_WEBHOOK_URL=https://prod-...
-AZURE_CALENDAR_WEBHOOK_URL=https://prod-...
 AZURE_INCIDENTS_WEBHOOK_URL=https://prod-...
 AZURE_FIRE_DANGER_WEBHOOK_URL=https://prod-...
 
-# Server Configuration
 PORT=3000
-
-# Optional mapbox-token origin allow-list
 ALLOWED_ORIGINS=https://bungendorerfs.org,https://www.bungendorerfs.org,http://localhost:3000
 ```
 
-**Important:** Never commit the `.env` file to version control. It contains sensitive credentials.
+`AZURE_CALENDAR_WEBHOOK_URL` is also read by `server.js`/`api/calendar-events` but is
+no longer used by the front end — events and training now come from static content
+files (below), not a live calendar feed. It's safe to leave unset.
+
+**Never commit `.env`.** It holds live credentials.
+
+## Editing site content (no code required)
+
+Everything below lives in `public/Content/` as plain JSON or Markdown. Edit the file,
+commit, and open a PR — there's no build step and no code to touch.
+
+### Bush Fire Danger Period dates
+
+**File:** `public/Content/bfdpDates.json`
+
+```json
+{
+  "start": "2026-10-01",
+  "end": "2027-03-31"
+}
+```
+
+Dates are `YYYY-MM-DD`. The statutory default is 1 Oct – 31 Mar, but the NSW RFS
+Commissioner can vary it per district for a given year. Check the authoritative table
+at [rfs.nsw.gov.au/fire-information/BFDP](https://www.rfs.nsw.gov.au/fire-information/BFDP)
+and update `start`/`end` by hand when it changes. If this file is missing or fails to
+load, `isBushfireDangerPeriod()` in `main.js` falls back to the statutory default.
+
+### Fire danger rating messaging
+
+**File:** `public/Content/AFDRSMessages.json`
+
+The live rating (NONE/MODERATE/HIGH/EXTREME/CATASTROPHIC) is fetched from the NSW RFS
+feed at runtime — this file only supplies the copy and colours shown alongside it
+(`KeyMessage`, `FireBehaviour`, `SupportingMessages`, `color`/`background-color`). Edit
+an entry's text if the RFS updates its official messaging; don't add or rename
+`Rating` values unless the RFS feed's rating names change too.
+
+### Community events
+
+**File:** `public/Content/communityEvents.json`
+
+```json
+[
+  {
+    "name": "Bungendore Show",
+    "timing": "Date TBC",
+    "description": "The brigade attends with a truck and crew for community engagement and fire safety education."
+  }
+]
+```
+
+`timing` is free text — a firm date, a season, or "Date TBC". Add, remove, or edit
+entries directly; order in the file is the display order.
+
+### Training schedule
+
+**File:** `public/Content/trainingSchedule.json`
+
+```json
+[
+  {
+    "title": "Training Night",
+    "recurrence": "second-saturday",
+    "time": "9:00 AM – 12:00 PM",
+    "location": "Bungendore RFS Station"
+  }
+]
+```
+
+`recurrence` is `<ordinal>-<weekday>` (ordinals: `first`…`fifth`, `last`) or
+`every-<weekday>` for weekly sessions. `calendar.js` computes each session's next
+occurrence from this pattern automatically — you never date-stamp individual
+sessions, and the schedule never goes stale.
+
+### Page copy (Markdown)
+
+**Files:** `public/Content/prepareContent.md`, `fireInfoContent.md`,
+`membershipContent.md`, `eventsContent.md`
+
+Plain Markdown, rendered client-side (Marked, sanitised with DOMPurify) into the
+matching tab on the home page. Edit directly — headings, lists, links, and tables all
+work as standard Markdown.
 
 ## Development
 
-### Infrastructure (IaC)
+```bash
+npm start             # localhost:3000 (prestart runs replace-token.js, then server.js)
+npm run dev           # server only, skip token replacement
+npm test               # Jest
+npm run test:watch
+npm run test:coverage
+npm run lint           # ESLint over public/js, server.js, replace-token.js
+npm run lint:fix
+npm run format          # Prettier write
+npm run format:check
+npm run build           # lint + test:coverage — the local pre-merge gate
+```
 
-Provision/update infrastructure with Bicep:
+See [`docs/TESTING.md`](docs/TESTING.md) for testing patterns.
+
+### Infrastructure (IaC)
 
 ```bash
 az group create --name BungendoreRFS --location eastasia
@@ -138,301 +210,72 @@ az deployment group create \
    --parameters @infra/parameters.json
 ```
 
-See `infra/README.md` for full details.
+See `infra/README.md` for details.
 
-### Available Scripts
+## Architecture
 
-```bash
-# Start development server
-npm start
+Two backend targets share one contract:
 
-# Run tests
-npm test
+1. **Production (Azure Static Web Apps):** `api/<fn>/index.js` functions
+   (`mapbox-token`, `fire-danger`, `fire-incidents`, `calendar-events`, `contact`) act
+   as the proxy layer between the static site and Azure Logic Apps webhooks. This is
+   the security boundary — credentials never reach the browser.
+2. **Local dev:** `server.js` (Express) re-implements the same endpoints by reading
+   `.env`. When an `api/<fn>/index.js` endpoint's contract changes, mirror the change
+   in `server.js`.
 
-# Run tests in watch mode
-npm run test:watch
+All dynamic data (fire danger, incidents, contact form) flows through these proxy
+endpoints. Community events, training, and BFDP dates are static files (above) and
+need no backend call. See [`docs/API_INTEGRATION.md`](docs/API_INTEGRATION.md) for
+full endpoint documentation.
 
-# Run tests with coverage
-npm run test:coverage
+## Security
 
-# Lint code
-npm run lint
+- Every `innerHTML`/`insertAdjacentHTML` assignment is sanitised with DOMPurify.
+- All form/API inputs are validated server-side in `api/<fn>/index.js`; client-side
+  validation is UX only.
+- Azure Logic Apps webhook URLs and the Mapbox token never reach client code —
+  they're proxied server-side, and the Mapbox token endpoint validates origin.
+- `.env` and `api/local.settings.json` are gitignored; never commit them.
 
-# Auto-fix linting issues
-npm run lint:fix
+See [`SECURITY_FIXES.md`](SECURITY_FIXES.md) for the remediation audit trail and
+[`docs/API_INTEGRATION.md`](docs/API_INTEGRATION.md) for endpoint-level detail.
 
-# Format code
-npm run format
+## Branching & contributing
 
-# Check formatting
-npm run format:check
-```
+Topic branch off `liveDev` → PR into `liveDev` → owner promotes `liveDev` → `main`.
+Both `main` and `liveDev` are protected. Run `npm run build` locally before pushing.
 
-### Testing
-
-The project uses Jest for testing:
-
-- **Unit Tests**: Test individual functions and utilities
-- **Integration Tests**: Test API endpoints and data flows (planned)
-- **Current Coverage**: 29 tests passing, 92%+ coverage on utilities
-
-Run tests with:
-
-```bash
-npm test
-```
-
-See `docs/TESTING.md` for detailed testing guide.
-
-### Code Quality
-
-- **ESLint**: JavaScript linting with recommended rules
-- **Prettier**: Code formatting for consistent style
-- **CI/CD**: Automated testing and linting on every push/PR
-
-## Features in Detail
-
-### Bushfire Danger Period Indicator
-
-Displays whether the current date is within the bushfire danger period (October to March) and shows required actions for conducting burns.
-
-### Interactive Map
-
-- Real-time fire incidents from NSW RFS
-- Filtered by local council areas (Queanbeyan-Palerang, ACT)
-- Color-coded markers by alert level:
-  - 🔴 Emergency Warning
-  - 🟠 Watch and Act
-  - 🟡 Advice
-  - ⚪ Other/Not Applicable
-- Popup details for each incident
-- Station marker for Bungendore RFS
-
-### Contact Form
-
-- Comprehensive client and server-side validation
-- Australian phone number format support
-- Honeypot spam prevention
-- Real-time validation feedback
-- Secure submission via server proxy
-
-### Events Calendar
-
-- Displays upcoming training events
-- Shows community engagement events
-- Timezone-aware date/time handling
-- Modal details for each event
-
-### Fire Danger Rating
-
-- Displays current danger level for Southern Ranges district
-- Color-coded by severity
-- Fire behavior message
-- Key safety message
-
-## Security Features
-
-### Implemented Security Measures
-
-- ✅ **XSS Protection**: All dynamic content sanitized with DOMPurify
-- ✅ **Input Validation**: Client and server-side form validation
-- ✅ **Spam Prevention**: Honeypot field in contact form
-- ✅ **API Security**: Server-side proxy endpoints hide credentials
-- ✅ **Origin Validation**: Mapbox token endpoint validates origin
-- ✅ **Environment Variables**: All secrets in .env file
-- ✅ **No Vulnerabilities**: npm audit shows 0 vulnerabilities
-
-### Security Best Practices
-
-1. Never commit `.env` file or secrets
-2. Rotate API credentials if exposed
-3. Run `npm audit` regularly
-4. Keep dependencies updated
-5. Review server logs for suspicious activity
-
-See `docs/API_INTEGRATION.md` for security details.
-
-## API Integrations
-
-The website integrates with:
-
-- **Azure Logic Apps**: Backend workflows for forms and data
-- **NSW RFS Fire Danger API**: Real-time fire danger ratings
-- **NSW RFS Incidents Feed**: Current fire incidents (GeoJSON)
-- **Mapbox**: Map tiles for day/night mode
-- **Microsoft Graph API**: Calendar events (via Azure Logic Apps)
-
-All API calls go through server-side proxy endpoints for security.
-
-See `docs/API_INTEGRATION.md` for complete API documentation.
-
-## Dark Mode Support
-
-Automatically switches based on user's system preference:
-
-- Logo: `logo.png` ↔ `logo-dark.png`
-- Map tiles: Day mode ↔ Night mode
-- CSS variables: Light theme ↔ Dark theme
-
-## Recent Improvements (2026)
-
-### Security Fixes ✅
-
-- Removed token logging from server
-- Added XSS protection with DOMPurify sanitization
-- Moved Azure Logic Apps URLs to backend proxy
-- Added origin validation to token endpoint
-- Implemented honeypot spam prevention
-
-### Error Handling & Validation ✅
-
-- User-visible error messages for all API failures
-- Shared error handler utility
-- Comprehensive form validation (client & server)
-- Loading states for async operations
-
-### Testing & CI/CD ✅
-
-- Jest testing framework with 29 passing tests
-- ESLint and Prettier for code quality
-- Automated CI/CD with GitHub Actions
-- Security auditing in CI pipeline
-
-### Documentation ✅
-
-- API Integration guide (10KB)
-- Testing guide (11KB)
-- Environment configuration examples
-
-### Asset & CSS Optimization (2024)
-
-- Removed 45 duplicate/unused images
-- Reduced CSS by 37 lines
-- Consolidated favicon files
-- Improved .gitignore
-
-## CI/CD Pipeline
-
-Automated workflows run on every push and PR:
-
-- ✅ ESLint code linting
-- ✅ Prettier formatting checks
-- ✅ Jest test suite (29 tests)
-- ✅ Test coverage reporting
-- ✅ Security audit (npm audit)
-- ✅ Dependency checks
-
-See `.github/workflows/ci.yml` for configuration.
-
-## Contributing and Development Process
-
-### Branch Strategy
-
-- **main**: Protected branch, production deployment
-- **liveDev**: Integration branch with staging URL
-- **Feature branches**: Individual features/fixes with PR to liveDev
-
-### Development Workflow
-
-1. Create feature branch from `liveDev`
-2. Develop and test locally
-3. Run tests and linting: `npm test && npm run lint`
-4. Create PR to `liveDev`
-5. After review and testing on liveDev URL, owner merges to `main`
-
-### Code Review Requirements
-
-- All tests passing
-- No ESLint errors
-- No security vulnerabilities
-- Documentation updated if needed
-
-## Documentation
-
-Additional documentation in `/docs/`:
-
-- **API_INTEGRATION.md** - Complete API integration guide
-- **TESTING.md** - Testing guide and best practices
-- **ASSET_ORGANIZATION.md** - Image and icon asset guide
-- **CSS_OPTIMIZATION.md** - CSS architecture details
-- **CODEBASE_REVIEW.md** - Technical review and recommendations
-- **REVIEW_SUMMARY.md** - Executive summary of codebase review
+CI (`.github/workflows/ci.yml`) runs ESLint, Jest with coverage, and an `npm audit`
+gate on every push/PR into `main` or `liveDev`.
 
 ## Troubleshooting
 
-### Common Issues
+**Server won't start** — check `.env` exists with required variables; verify
+`node --version` >= 18; try `rm -rf node_modules && npm install`.
 
-**Server won't start:**
+**Map not loading** — verify `MAPBOX_ACCESS_TOKEN` in `.env` and that the token
+hasn't been revoked in your Mapbox account; check the browser console.
 
-- Check `.env` file exists and has all required variables
-- Verify Node.js version >= 18.0.0: `node --version`
-- Try: `rm -rf node_modules && npm install`
+**Form submission fails** — check `AZURE_CONTACT_WEBHOOK_URL` in `.env` and that the
+Azure Logic App is running; check server logs.
 
-**Map not loading:**
+**Events/training not showing** — validate the JSON in `public/Content/*.json`; a
+malformed file will fail to parse and the section will show its empty-state message.
 
-- Verify `MAPBOX_ACCESS_TOKEN` in `.env`
-- Check browser console for errors
-- Verify token hasn't been revoked in Mapbox account
+See [`docs/API_INTEGRATION.md`](docs/API_INTEGRATION.md) for more.
 
-**Form submission fails:**
+## Documentation
 
-- Check `AZURE_CONTACT_WEBHOOK_URL` in `.env`
-- Verify Azure Logic App is running
-- Check server logs for errors
-
-**Tests failing:**
-
-- Clear Jest cache: `npm test -- --clearCache`
-- Reinstall dependencies: `rm -rf node_modules && npm install`
-
-See `docs/API_INTEGRATION.md` for more troubleshooting.
-
-## Performance
-
-### Optimizations Applied
-
-- Consolidated image assets
-- Optimized CSS (reduced file size)
-- Server-side caching for static assets
-- Efficient API proxy endpoints
-
-### Future Improvements
-
-- Image lazy loading
-- Service worker for offline capability
-- Further CSS optimization
-- Lighthouse score optimization (target: 80+)
-
-## Accessibility
-
-### Current Features
-
-- Semantic HTML5 elements
-- ARIA labels and roles
-- Keyboard navigation support
-- Screen reader compatible
-- Form validation feedback
-
-### Future Improvements
-
-- Full accessibility audit
-- Enhanced keyboard navigation
-- Additional ARIA attributes
-- Alt text review
+Full index: [`docs/README.md`](docs/README.md). Conventions and quirks for anyone
+(human or AI agent) working in this repo: [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
+In-flight work tracker: [`master_plan.md`](master_plan.md).
 
 ## License
 
-This project is for the Bungendore Volunteer Rural Fire Brigade community use.
+For the Bungendore Volunteer Rural Fire Brigade community's use.
 
 ## Contact
 
-For issues or questions:
-
-- Open a GitHub issue
-- Contact repository owner: @richardthorek
-
----
-
-**Last Updated:** February 2026  
-**Version:** 1.0  
-**Maintained By:** Bungendore RFS Development Team
+- Open a GitHub issue for bugs/features.
+- Repository owner: [@richardthorek](https://github.com/richardthorek).

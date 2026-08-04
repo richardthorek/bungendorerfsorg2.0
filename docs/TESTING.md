@@ -513,6 +513,5 @@ test("should open modal on button click", () => {
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** February 2026  
-**Maintained By:** Bungendore RFS Development Team
+Update this doc when the testing stack or conventions change (new libraries,
+`jest.config.js` changes, new `__tests__/` conventions).

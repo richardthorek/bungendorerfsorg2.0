@@ -89,42 +89,24 @@ All API calls from the frontend go through server-side proxy endpoints to protec
 
 ---
 
-### 2. Calendar Events
+### 2. Community events & training schedule (static content, not a live endpoint)
 
-**Endpoint:** `GET /api/calendar-events`
+**Not proxied through the API.** Community events and the recurring training
+schedule are read directly by `public/js/calendar.js` from static content files:
 
-**Purpose:** Fetch upcoming events from Azure Logic Apps / Microsoft Graph API
+- `GET /Content/communityEvents.json` — array of `{ name, timing, description }`.
+- `GET /Content/trainingSchedule.json` — array of `{ title, recurrence, time, location }`;
+  `calendar.js` computes each item's next occurrence client-side from `recurrence`
+  (e.g. `second-saturday`, `every-friday`) using Luxon, converted to
+  `Australia/Sydney`.
 
-**Response:**
+See the README's [Editing site content](../README.md#editing-site-content-no-code-required)
+section for the schema and edit workflow.
 
-```json
-{
-  "value": [
-    {
-      "subject": "Community Fire Safety Workshop",
-      "start": {
-        "dateTime": "2026-03-15T10:00:00Z"
-      },
-      "end": {
-        "dateTime": "2026-03-15T12:00:00Z"
-      },
-      "location": {
-        "displayName": "Bungendore RFS Station"
-      },
-      "categories": ["Public - Community Engagement"],
-      "isAllDay": false
-    }
-  ]
-}
-```
-
-**Frontend Processing:**
-
-- Filters events by category:
-  - "Public - Training" → Membership events
-  - "Public - Community Engagement" → Community events
-- Converts times to Australia/Sydney timezone using Luxon
-- Displays in calendar UI
+`GET /api/calendar-events` (backed by `AZURE_CALENDAR_WEBHOOK_URL`) still exists in
+`api/` and `server.js` for backward compatibility, but nothing in the current
+frontend calls it — the site no longer depends on a live Microsoft Graph calendar
+feed for events or training.
 
 ---
 
@@ -233,9 +215,12 @@ Allowed origins:
 Azure Logic Apps provides the serverless backend for:
 
 1. Contact form email notifications
-2. Calendar events from Microsoft Graph API
-3. Fire incident data aggregation
-4. Fire danger rating XML feed
+2. Fire incident data aggregation
+3. Fire danger rating XML feed
+
+(A calendar-events workflow still exists for backward compatibility — see
+[Community events & training schedule](#2-community-events--training-schedule-static-content-not-a-live-endpoint)
+above — but the site doesn't call it.)
 
 ### Configuration
 
@@ -256,9 +241,9 @@ https://prod-XX.australiaeast.logic.azure.com/workflows/[WORKFLOW_ID]/triggers/W
 See `.env.example` for complete list:
 
 - `AZURE_CONTACT_WEBHOOK_URL`
-- `AZURE_CALENDAR_WEBHOOK_URL`
 - `AZURE_INCIDENTS_WEBHOOK_URL`
 - `AZURE_FIRE_DANGER_WEBHOOK_URL`
+- `AZURE_CALENDAR_WEBHOOK_URL` — optional; kept for backward compatibility, unused by the current frontend
 
 ---
 
@@ -426,9 +411,6 @@ curl -X POST http://localhost:3000/api/contact \
     "message": "This is a test message"
   }'
 
-# Test calendar events
-curl http://localhost:3000/api/calendar-events
-
 # Test fire incidents
 curl http://localhost:3000/api/fire-incidents
 
@@ -520,6 +502,5 @@ For issues or questions:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** February 2026  
-**Maintained By:** Bungendore RFS Development Team
+Maintained alongside `api/*/index.js` and `server.js` — update this doc in the same
+PR that changes an endpoint's contract.

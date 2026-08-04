@@ -11,7 +11,7 @@ orientation for AI agents lives in [`../CLAUDE.md`](../CLAUDE.md).
 |-----|---------|
 | [`../master_plan.md`](../master_plan.md) | Single source of truth for in-flight work. Update for any non-trivial change. |
 | [`../.github/copilot-instructions.md`](../.github/copilot-instructions.md) | Conventions, branching, build/CI, coding standards, security rules. |
-| [`../README.md`](../README.md) | Project overview, setup, and feature summary. |
+| [`../README.md`](../README.md) | Project overview, setup, and — for content editors — how to change the BFDP dates, events, and training schedule without touching code. |
 
 ## Architecture & integration
 
@@ -22,24 +22,21 @@ orientation for AI agents lives in [`../CLAUDE.md`](../CLAUDE.md).
 | [`ASSET_ORGANIZATION.md`](ASSET_ORGANIZATION.md) | Image/icon/favicon organisation. |
 | [`TESTING.md`](TESTING.md) | Jest + Testing-Library patterns and guidance. |
 
-## UI / UX
+## UI / UX — current state
 
 | Doc | Purpose |
 |-----|---------|
-| [`UI_UX_IMPROVEMENTS_PROPOSAL.md`](UI_UX_IMPROVEMENTS_PROPOSAL.md) | The design vision: slick, modern, information-rich, emergency-first. |
-| [`UI_UX_IMPLEMENTATION_SUMMARY.md`](UI_UX_IMPLEMENTATION_SUMMARY.md) | What was built against that proposal. |
+| [`current_state/ui-baseline.md`](current_state/ui-baseline.md) | Quantified baseline the "Command Centre" redesign (issue [#56](https://github.com/richardthorek/bungendorerfsorg2.0/issues/56)) was measured against, plus the DOM-ID contract for JS reading the live status strip. |
+| [`current_state/ui-redesign.md`](current_state/ui-redesign.md) | Target-state spec and per-phase acceptance criteria for the redesign. This is the authoritative UI/UX intent doc — treat it as current, not historical. |
+| [`current_state/wireframe/index.html`](current_state/wireframe/index.html) | Self-contained interactive wireframe (open directly in a browser). |
 
-## Reviews (historical — context, not current state)
+## Historical (audit trail — do not treat as current state)
 
 | Doc | Purpose |
 |-----|---------|
-| [`REVIEW_SUMMARY.md`](REVIEW_SUMMARY.md) | Codebase review — executive summary. |
-| [`CODEBASE_REVIEW.md`](CODEBASE_REVIEW.md) | Codebase review — full detail. |
-| [`QUICK_FIXES.md`](QUICK_FIXES.md) | Codebase review — actionable checklist. |
-| [`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md) | Historical change log — **do not modify.** |
+| [`../SECURITY_FIXES.md`](../SECURITY_FIXES.md) | Security remediation log for the critical/high findings closed out early 2026. Kept at root for visibility. |
+| [`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md) | Change log for the same remediation pass (error handling, testing, CI/CD, docs). Do not modify — it's a record of what shipped, not a live doc. |
 
 ## Security
 
-| Doc | Purpose |
-|-----|---------|
-| [`../SECURITY_FIXES.md`](../SECURITY_FIXES.md) | Security remediation audit trail (kept at root for visibility). |
+See [`../SECURITY_FIXES.md`](../SECURITY_FIXES.md) above.

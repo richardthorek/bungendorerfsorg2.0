@@ -158,8 +158,7 @@ Before deploying these changes to production, you MUST:
 
 ## References
 
-- [CODEBASE_REVIEW.md](./docs/CODEBASE_REVIEW.md) - Full codebase review
-- [QUICK_FIXES.md](./docs/QUICK_FIXES.md) - Quick fixes checklist
+- [docs/IMPLEMENTATION_SUMMARY.md](./docs/IMPLEMENTATION_SUMMARY.md) - Change log for the same remediation pass
 - [DOMPurify Documentation](https://github.com/cure53/DOMPurify)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Express Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html)
