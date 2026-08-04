@@ -63,11 +63,15 @@ function getCategoryClass(category) {
   return getCategoryKey(category).replace(/([A-Z])/g, (m) => "-" + m.toLowerCase());
 }
 
-/** Area fill colour per alert level for polygon overlays */
+/** Area fill colour per alert level for polygon overlays. Matches the
+ *  official Australian Warning System (AWS) colours used by the
+ *  advice/watch-and-act/emergency-warning marker icons — sampled directly
+ *  from those PNG assets so the polygon fill always agrees with the marker:
+ *  Advice yellow, Watch and Act orange, Emergency Warning red. */
 const AREA_FILL_COLOUR = {
-  emergencyWarning: "#d7261e",
-  watchAndAct: "#f5a623",
-  advice: "#215e9e",
+  emergencyWarning: "#d6001c",
+  watchAndAct: "#ff7900",
+  advice: "#fbe032",
   other: "#5f6368",
 };
 

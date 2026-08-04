@@ -512,23 +512,22 @@ button.quick-links__row:focus {
   gap: 6px;
 }
 
+/* Advice / Watch and Act / Emergency Warning use the real triangle icon
+   assets (same PNGs as the map markers) rather than a plain colour swatch,
+   so the legend always matches the official Australian Warning System
+   shape and colour exactly. Station keeps a simple dot since it isn't part
+   of the AWS threat-level system — it's the brigade's own fixed location. */
+.map-legend__icon {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+}
+
 .map-legend__dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   display: inline-block;
-}
-
-.map-legend__dot--advice {
-  background-color: #215e9e;
-}
-
-.map-legend__dot--watch {
-  background-color: #f59f00;
-}
-
-.map-legend__dot--emergency {
-  background-color: var(--rfs-core-red);
 }
 
 .map-legend__dot--station {
@@ -1739,17 +1738,23 @@ main {
   margin-bottom: var(--space-xs);
 }
 
+/* Colours match the official Australian Warning System (AWS) triangle icons
+   used for the map markers (advice.png / watch-and-act.png /
+   emergency-warning.png) — sampled directly from those assets so the badge
+   always matches the marker: Advice is yellow, Watch and Act is orange,
+   Emergency Warning is red. */
 .map-detail-badge.advice {
-  background-color: #215e9e;
+  background-color: #fbe032;
+  color: var(--rfs-black);
 }
 
 .map-detail-badge.watch-and-act {
-  background-color: #f59f00;
-  color: #3a2a00;
+  background-color: #ff7900;
+  color: var(--rfs-black);
 }
 
 .map-detail-badge.emergency-warning {
-  background-color: #d00000;
+  background-color: #d6001c;
 }
 
 .map-detail-badge.other {
@@ -1835,8 +1840,18 @@ main {
   border-bottom: 1px solid var(--rfs-light-grey);
 }
 
+/* Used for both the incident-category <img> (advice/watch-and-act/
+   emergency-warning PNG triangles) and the Font Awesome station <i> icon —
+   the .fas variant below overrides sizing for the icon-font case. */
 .map-detail-icon {
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
+}
+
+.map-detail-icon.fas {
+  width: auto;
+  height: auto;
   font-size: 28px;
   color: var(--clear-danger-calm-fg);
   line-height: 1;
