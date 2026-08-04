@@ -1280,13 +1280,17 @@ a:focus {
   }
 
   @media (max-width: 768px) {
+    /* Fixed: --rfs-neutral-dark and --text-color-dark both resolve to the
+       same light grey in dark mode, which made these bars render as
+       invisible light-on-light text. Use the dark-mode-aware Clear Skies
+       tokens instead so background and text always contrast. */
     .accordion-header.mobile-only {
-      background-color: var(--rfs-neutral-dark);
-      color: var(--text-color-dark);
+      background-color: var(--clear-card-fill);
+      color: var(--clear-body-text);
     }
 
     .accordion-header.mobile-only:hover {
-      background-color: var(--rfs-neutral-light);
+      background-color: var(--clear-hairline);
     }
 
     .accordion-header.mobile-only.active {
@@ -1296,7 +1300,7 @@ a:focus {
 
     .tab-panel {
       background-color: var(--pico-card-background-color);
-      border-color: #4a4a4a;
+      border-color: var(--clear-hairline);
     }
   }
 }
@@ -1802,11 +1806,22 @@ main {
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
 }
 
-/* Station icon is slightly larger so it stands out */
-.aws-marker--station .aws-marker__img,
-.aws-marker__img--station {
-  width: 40px;
-  height: 40px;
+/* Station marker: solid colour circle + white warehouse icon (matches the
+   footer's Station entry) instead of the old black line-art PNG, which was
+   unreadable against the map basemap — especially in dark mode. */
+.aws-marker__badge--station {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: var(--clear-danger-calm-fg);
+  border: 2px solid var(--rfs-white);
+  color: var(--rfs-white);
+  font-size: 15px;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
 }
 
 /* ── Map detail panel header ───────────────────────────────────────────────── */
@@ -1821,9 +1836,10 @@ main {
 }
 
 .map-detail-icon {
-  width: 36px;
-  height: 36px;
   flex-shrink: 0;
+  font-size: 28px;
+  color: var(--clear-danger-calm-fg);
+  line-height: 1;
 }
 
 .map-detail-dl {

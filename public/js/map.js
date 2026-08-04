@@ -6,7 +6,6 @@ const ICONS = {
   watchAndAct: "/Images/watch-and-act.png",
   emergencyWarning: "/Images/emergency-warning.png",
   other: "/Images/other.png",
-  station: "/Images/station.png",
 };
 
 // ─── Map constants ────────────────────────────────────────────────────────────
@@ -101,13 +100,17 @@ function createStationMarkerElement() {
   wrapper.setAttribute("tabindex", "0");
   wrapper.setAttribute("aria-label", "Bungendore RFS Station");
 
-  const img = document.createElement("img");
-  img.src = ICONS.station;
-  img.alt = "Bungendore RFS Station";
-  img.draggable = false;
-  img.className = "aws-marker__img aws-marker__img--station";
+  // Same warehouse icon as the footer's Station entry, in a solid colour
+  // badge — the old black-line-art station.png was unreadable against the
+  // map basemap (especially in dark mode).
+  const badge = document.createElement("span");
+  badge.className = "aws-marker__badge aws-marker__badge--station";
+  const icon = document.createElement("i");
+  icon.className = "fas fa-warehouse";
+  icon.setAttribute("aria-hidden", "true");
+  badge.appendChild(icon);
 
-  wrapper.appendChild(img);
+  wrapper.appendChild(badge);
   return wrapper;
 }
 
@@ -168,7 +171,7 @@ function buildStationDetailHTML() {
   const raw = stationCard ? stationCard.innerHTML : "<p>Bungendore RFS Station</p>";
   return (
     "<div class=\"map-detail-header\">" +
-    "<img src=\"" + ICONS.station + "\" alt=\"Station\" class=\"map-detail-icon\" />" +
+    "<i class=\"fas fa-warehouse map-detail-icon\" aria-hidden=\"true\"></i>" +
     "<p class=\"map-detail-title\">Bungendore RFS Station</p></div>" +
     "<div class=\"map-detail-station-body\">" + raw + "</div>"
   );

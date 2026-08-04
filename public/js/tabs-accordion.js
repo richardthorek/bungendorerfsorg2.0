@@ -120,8 +120,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (scrollTarget) {
-        const headerHeight = document.getElementById("siteHeader")?.offsetHeight || 60;
-        const scrollOffset = headerHeight + 40;
+        // The header is in normal document flow (not fixed), so it doesn't
+        // overlay content — no need to offset the scroll target by its height,
+        // just leave a little breathing room above it.
+        const scrollOffset = 16;
         const elementTop = scrollTarget.getBoundingClientRect().top + window.scrollY;
         const targetPosition = elementTop - scrollOffset;
         setTimeout(() => {
@@ -164,9 +166,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const tabId = tabPanel?.id?.replace("-tab", "") || "fire-info";
       localStorage.setItem("activeTab", tabId);
 
-      // Scroll to accordion
-      const headerHeight = document.getElementById("siteHeader")?.offsetHeight || 60;
-      const targetPosition = header.offsetTop - headerHeight - 10;
+      // Scroll to accordion. The header is in normal document flow (not
+      // fixed), so it doesn't overlay content — no need to offset the
+      // scroll target by its height, just leave a little breathing room.
+      const targetPosition = header.getBoundingClientRect().top + window.scrollY - 16;
       setTimeout(() => {
         window.scrollTo({
           top: targetPosition,
