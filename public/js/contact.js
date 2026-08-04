@@ -1,12 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   const modal = document.getElementById("contactModal");
-  const btn = document.getElementById("contactUsBtn");
+  const triggers = document.querySelectorAll(".contact-trigger");
   const span = document.getElementsByClassName("close")[0];
   const form = document.getElementById("contactForm");
   const submitButton = document.getElementById("submitButton"); // Select the submit button
 
-  // When the user clicks the button, open the modal
-  btn.onclick = () => modal.setAttribute("open", "");
+  // When the user clicks a contact trigger (utility bar or Quick Links), open the modal
+  triggers.forEach((btn) => {
+    btn.onclick = () => modal.setAttribute("open", "");
+  });
 
   // When the user clicks on <span> (x), close the modal
   span.onclick = () => modal.removeAttribute("open");

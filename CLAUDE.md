@@ -37,7 +37,7 @@ Before reworking layout, skim the design specs in `docs/` (see index below).
 | Area | Path | Notes |
 |------|------|-------|
 | Entry page | `public/index.html` | Single page. Script load order matters (end of `<body>`). |
-| Front-end JS | `public/js/*.js` | `main.js` (fire danger/orchestration), `map.js`, `contact.js`, `calendar.js`, `tabs-accordion.js`, `emergency-dashboard.js`, `error-handler.js`, `modal-utils.js`, `scroll.js`, `dynamicContent.js` |
+| Front-end JS | `public/js/*.js` | `main.js` (fire danger/orchestration), `map.js`, `contact.js`, `calendar.js`, `tabs-accordion.js`, `emergency-dashboard.js`, `error-handler.js`, `modal-utils.js`, `dynamicContent.js` |
 | Vendored libs | `public/js/vendor/` | Luxon, Marked, DOMPurify (minified — **don't read/edit**) |
 | Styles | `public/css/main.css` | One stylesheet; design tokens in `:root` |
 | Content | `public/Content/` | Markdown + JSON rendered client-side |

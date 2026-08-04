@@ -14,7 +14,7 @@
     <!-- Font Awesome (single canonical import – v6) -->
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -41,68 +41,67 @@
   <body>
     <!-- Skip navigation link — first focusable element on the page (Phase 7) -->
     <a href="#main" class="skip-link">Skip to main content</a>
+    <!-- Utility bar: secondary CTAs and social links (Clear Skies refresh) -->
+    <div id="utilityBar" class="utility-bar" aria-label="Utility links">
+      <a target="_blank" rel="noopener" href="https://www.rfs.nsw.gov.au" class="utility-link"
+        ><i class="fas fa-external-link-alt" aria-hidden="true"></i>RFS Website</a
+      >
+      <a
+        target="_blank"
+        rel="noopener"
+        href="https://nswrfsprod.service-now.com/guardian_csp?id=guardian_index"
+        class="utility-link"
+        ><i class="fas fa-file-alt" aria-hidden="true"></i>Permits</a
+      >
+      <a
+        target="_blank"
+        rel="noopener"
+        href="https://shoutforgood.com/fundraisers/bungendoreruralfirebrigade"
+        class="utility-link"
+        ><i class="fas fa-hand-holding-heart" aria-hidden="true"></i>Donate</a
+      >
+      <button id="contactUsBtn" class="contact-trigger utility-link utility-link--btn utility-link--emphasis">
+        <i class="fas fa-envelope" aria-hidden="true"></i>Contact
+      </button>
+      <span class="utility-bar__social">
+        <a
+          href="https://facebook.com/BungendoreRFS"
+          target="_blank"
+          rel="noopener"
+          aria-label="Bungendore RFS Facebook Page"
+          class="utility-link utility-link--social"
+          ><i class="fab fa-facebook" aria-hidden="true"></i
+        ></a>
+        <a
+          href="https://instagram.com/BungendoreRFS"
+          target="_blank"
+          rel="noopener"
+          aria-label="Bungendore RFS Instagram Page"
+          class="utility-link utility-link--social"
+          ><i class="fab fa-instagram" aria-hidden="true"></i
+        ></a>
+      </span>
+    </div>
+
     <header id="siteHeader">
-      <!-- Consolidated single-row header: brand, primary nav, and utility/social links -->
       <nav id="mainNav">
-        <img src="/Images/logo.png" alt="Bungendore Rural Fire Brigade Logo" id="navLogo" />
-        <ul>
-          <li><a class="whiteText contrast" href="#info">Fire Information</a></li>
-          <li><a class="whiteText contrast" href="#prepare">Prepare</a></li>
-          <li><a class="whiteText contrast" href="#membership">Membership</a></li>
-          <li><a class="whiteText contrast" href="#events">Events</a></li>
-        </ul>
-        <div id="utilityBar" class="utility-bar" aria-label="Utility links">
-          <a
-            target="_blank"
-            rel="noopener"
-            href="https://www.rfs.nsw.gov.au"
-            class="utility-link"
-            ><i class="fas fa-external-link-alt" aria-hidden="true"></i>
-            <span class="utility-label">RFS Website</span></a
-          >
-          <a
-            target="_blank"
-            rel="noopener"
-            href="https://nswrfsprod.service-now.com/guardian_csp?id=guardian_index"
-            class="utility-link"
-            ><i class="fas fa-file-alt" aria-hidden="true"></i>
-            <span class="utility-label">Permits</span></a
-          >
-          <a
-            target="_blank"
-            rel="noopener"
-            href="https://shoutforgood.com/fundraisers/bungendoreruralfirebrigade"
-            class="utility-link"
-            ><i class="fas fa-donate" aria-hidden="true"></i>
-            <span class="utility-label">Donate</span></a
-          >
-          <button id="contactUsBtn" class="utility-link utility-link--btn">
-            <i class="fas fa-envelope" aria-hidden="true"></i>
-            <span class="utility-label">Contact</span>
-          </button>
-          <a
-            href="https://facebook.com/BungendoreRFS"
-            target="_blank"
-            rel="noopener"
-            aria-label="Bungendore RFS Facebook Page"
-            class="utility-link utility-link--social"
-            ><i class="fab fa-facebook" aria-hidden="true"></i
-          ></a>
-          <a
-            href="https://instagram.com/BungendoreRFS"
-            target="_blank"
-            rel="noopener"
-            aria-label="Bungendore RFS Instagram Page"
-            class="utility-link utility-link--social"
-            ><i class="fab fa-instagram" aria-hidden="true"></i
-          ></a>
+        <div class="nav-brand">
+          <img src="/Images/logo.png" alt="Bungendore Rural Fire Brigade Logo" id="navLogo" />
+          <span class="nav-brand__text">
+            <span class="nav-brand__name">Bungendore Rural Fire Brigade</span>
+            <span class="nav-brand__tag">NSW Rural Fire Service &middot; Volunteer Brigade</span>
+          </span>
         </div>
+        <ul>
+          <li><a class="active" href="#info">Fire Information</a></li>
+          <li><a href="#prepare">Prepare</a></li>
+          <li><a href="#membership">Membership</a></li>
+          <li><a href="#events">Events</a></li>
+        </ul>
       </nav>
     </header>
 
     <main id="main" class="container-fluid">
-      <!-- Header section with navigation -->
-
       <!-- Hero section with main heading -->
       <div class="hero" id="heroSection">
         <!-- Incident-active state: live map fills the hero background -->
@@ -111,15 +110,15 @@
         <hgroup class="heading-background">
           <div id="heroLogo" class="logo"></div>
           <div>
-            <h1>Bungendore Volunteer Rural Fire Brigade</h1>
-            <p class="hero-cta">Stay Safe. Stay Informed.</p>
             <!-- Incident count — shown only in incident-active state -->
             <p class="hero-incident-summary" id="heroIncidentCountPanel" hidden>
               <i class="fas fa-fire" aria-hidden="true"></i>
               <span id="heroIncidentCount">0</span> active incident(s) in our area
             </p>
+            <h1>Bungendore Volunteer Rural Fire Brigade</h1>
+            <p class="hero-cta">Stay Safe. Stay Informed.</p>
             <a href="#info" class="custom-button prominent-cta-button" role="button"
-              >Get Fire Updates</a
+              >Get Fire Updates &rarr;</a
             >
           </div>
         </hgroup>
@@ -159,12 +158,7 @@
         <!-- Cell 5: Map context / full-map CTA -->
         <article class="strip-cell strip-cell--map" role="group" aria-label="Incident Map" tabindex="0">
           <p class="strip-cell__label"><i class="fas fa-map-marked-alt" aria-hidden="true"></i> Incident Map</p>
-          <div class="strip-cell__map-cta">
-            <a href="#info" class="strip-map-cta-btn">
-              <i class="fas fa-map-marked-alt" aria-hidden="true"></i>
-              View Full Map
-            </a>
-          </div>
+          <a href="#info" class="strip-map-cta-btn">View Full Map &rarr;</a>
           <p class="strip-cell__sub">Open fire incident map</p>
         </article>
       </section>
@@ -240,28 +234,49 @@
                 <i class="fas fa-chevron-down accordion-icon"></i>
               </div>
               <div class="accordion-content" data-content="fire-info">
-                <!-- Detailed sections for each topic with responsive grid -->
                 <article id="info">
-                  <header class="red">
-                    <h3>Fire Information in Our Area</h3>
-                  </header>
-                  <div class="">
-                    <div id="fireDangerTableContainer"></div>
-                    <div id="fireInfoContent"></div>
-                    <!-- Incident map (moved from summary card in Phase 3) -->
-                    <div class="fire-info-map" id="fireInfoMapContainer">
-                      <div class="map-toolbar">
-                        <button id="mapExpandBtn" class="map-expand-btn" type="button" aria-expanded="false">
-                          <i class="fas fa-expand"></i>
-                          <span>Expand</span>
-                        </button>
+                  <h2>Fire Information in Our Area</h2>
+                  <div class="tab-layout">
+                    <div class="tab-layout__main">
+                      <div id="fireDangerTableContainer"></div>
+                      <div id="fireInfoContent"></div>
+                      <!-- Incident map (moved from summary card in Phase 3) -->
+                      <div class="fire-info-map" id="fireInfoMapContainer">
+                        <div class="map-toolbar">
+                          <button id="mapExpandBtn" class="map-expand-btn" type="button" aria-expanded="false">
+                            <i class="fas fa-expand"></i>
+                            <span>Expand</span>
+                          </button>
+                        </div>
+                        <div class="map-layout">
+                          <div id="map" aria-label="Local incident map"></div>
+                          <aside id="mapDetailPanel" class="map-detail-panel" aria-live="polite" hidden></aside>
+                        </div>
                       </div>
-                      <div class="map-layout">
-                        <div id="map" aria-label="Local incident map"></div>
-                        <aside id="mapDetailPanel" class="map-detail-panel" aria-live="polite" hidden></aside>
-                      </div>
+                      <ul class="map-legend">
+                        <li><span class="map-legend__dot map-legend__dot--advice"></span>Advice</li>
+                        <li><span class="map-legend__dot map-legend__dot--watch"></span>Watch &amp; Act</li>
+                        <li><span class="map-legend__dot map-legend__dot--emergency"></span>Emergency Warning</li>
+                        <li><span class="map-legend__dot map-legend__dot--station"></span>Station</li>
+                      </ul>
+                      <a href="#info" class="map-legend-link">View full incident map &rarr;</a>
+                      <div id="fireInfoTableContainer" class="grid-container"></div>
                     </div>
-                    <div id="fireInfoTableContainer" class="grid-container"></div>
+                    <aside class="quick-links">
+                      <p class="quick-links__kicker">Quick Links</p>
+                      <a href="https://www.rfs.nsw.gov.au" target="_blank" rel="noopener" class="quick-links__row"
+                        ><i class="fas fa-globe" aria-hidden="true"></i>NSW RFS Website</a
+                      >
+                      <a href="https://www.rfs.nsw.gov.au" target="_blank" rel="noopener" class="quick-links__row"
+                        ><i class="fas fa-mobile-alt" aria-hidden="true"></i>Fires Near Me App</a
+                      >
+                      <a href="https://www.rfs.nsw.gov.au" target="_blank" rel="noopener" class="quick-links__row"
+                        ><i class="fas fa-ban" aria-hidden="true"></i>Total Fire Ban Info</a
+                      >
+                      <div class="quick-links__row quick-links__row--emphasis">
+                        <i class="fas fa-phone" aria-hidden="true"></i>Emergency &mdash; always call 000
+                      </div>
+                    </aside>
                   </div>
                 </article>
               </div>
@@ -276,38 +291,39 @@
               </div>
               <div class="accordion-content" data-content="prepare">
                 <article id="prepare">
-                  <header class="amber">
-                    <h3>Prepare for Bushfires</h3>
-                  </header>
-                  <div class="grid">
-                    <div>
+                  <h2>Prepare for Bushfires</h2>
+                  <div class="tab-layout">
+                    <div class="tab-layout__main">
+                      <img src="/Images/prepare.jpeg" alt="Prepare for Bushfires" class="tab-layout__image" />
                       <div id="prepareContent"></div>
-                    </div>
-                    <div>
-                      <div class="parallax-container">
-                        <img
-                          src="/Images/prepare.jpeg"
-                          alt="Prepare for Bushfires"
-                          class="parallax-image"
-                        />
-                      </div>
-                      <p>
-                        Bush fire is a part of life in New South Wales. So you need to live bush
-                        fire ready. That means knowing your risk and having a plan for what to do
-                        during a fire. You can make your plan online in as little as five minutes at
-                        <a href="https://www.myfireplan.com.au" target="_blank" rel="noopener"
-                          >www.myfireplan.com.au</a
-                        >
-                      </p>
                       <div id="BFDPContent"></div>
+                    </div>
+                    <aside class="quick-links">
+                      <p class="quick-links__kicker">Quick Links</p>
+                      <a
+                        href="https://www.myfireplan.com.au"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
+                        ><i class="fas fa-clipboard-list" aria-hidden="true"></i>Make Your Bush Fire
+                        Survival Plan</a
+                      >
+                      <a
+                        href="https://www.rfs.nsw.gov.au/__data/assets/pdf_file/0003/36597/BFSP-Complete.pdf"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
+                        ><i class="fas fa-file-pdf" aria-hidden="true"></i>Download Survival Plan PDF</a
+                      >
                       <a
                         href="https://nswrfsprod.service-now.com/guardian_csp?id=guardian_index"
                         target="_blank"
                         rel="noopener"
-                        >Apply for a Fire Permit or Total Fire Ban exemption, notify us of a planned
-                        burn, or to submit Fire Trails enquiries.</a
+                        class="quick-links__row"
+                        ><i class="fas fa-file-signature" aria-hidden="true"></i>Apply for a Fire Permit
+                        / Report a Burn</a
                       >
-                    </div>
+                    </aside>
                   </div>
                 </article>
               </div>
@@ -322,15 +338,37 @@
               </div>
               <div class="accordion-content" data-content="membership">
                 <article id="membership">
-                  <header class="blue">
-                    <h3>Membership</h3>
-                  </header>
-                  <div class="membership-grid">
-                    <div id="membershipContent"></div>
-                    <div id="membershipSection">
-                      <h4>Upcoming Training Cutoff Dates</h4>
-                      <div id="membershipCalendar" class="calendar-widget"></div>
+                  <h2>Membership</h2>
+                  <div class="tab-layout">
+                    <div class="tab-layout__main">
+                      <div id="membershipContent"></div>
+                      <div id="membershipSection">
+                        <h4>Upcoming Training Cutoff Dates</h4>
+                        <div id="membershipCalendar" class="calendar-widget"></div>
+                      </div>
                     </div>
+                    <aside class="quick-links">
+                      <p class="quick-links__kicker">Quick Links</p>
+                      <a
+                        href="https://nswrfsprod.service-now.com/rfsembr?id=embr_rfs_role_explorer"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
+                        ><i class="fas fa-user-plus" aria-hidden="true"></i>Explore Roles &amp; Apply for
+                        Membership</a
+                      >
+                      <a
+                        href="https://www.rfs.nsw.gov.au"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
+                        ><i class="fas fa-globe" aria-hidden="true"></i>NSW RFS Website &mdash;
+                        Volunteering</a
+                      >
+                      <div class="quick-links__row">
+                        <i class="fas fa-clock" aria-hidden="true"></i>Visit us Friday nights from 7pm
+                      </div>
+                    </aside>
                   </div>
                 </article>
               </div>
@@ -345,25 +383,43 @@
               </div>
               <div class="accordion-content" data-content="events">
                 <article id="events">
-                  <header class="lime">
-                    <h3>Upcoming Events</h3>
-                  </header>
-                  <div class="grid">
-                    <div>
-                      <!-- <img src="https://bungendorerfs.org/images/events.jpg" alt="Community Events"> -->
+                  <h2>Upcoming Events</h2>
+                  <div class="tab-layout">
+                    <div class="tab-layout__main">
                       <div id="eventsContent"></div>
-                      <div class="parallax-container">
+                      <figure class="tab-layout__figure">
                         <img
                           src="/Images/communityEvent.jpeg"
                           alt="The brigade at the donation of the Black Summer Bungendore Fridge"
-                          class="parallax-image"
+                          class="tab-layout__image"
                         />
+                        <figcaption>The brigade at the donation of the Black Summer Bungendore Fridge</figcaption>
+                      </figure>
+                      <div id="communityEventsSection">
+                        <h4>Community Events</h4>
+                        <div id="communityEventsCalendar" class="calendar-widget"></div>
                       </div>
                     </div>
-                    <div id="communityEventsSection">
-                      <h4>Community Events</h4>
-                      <div id="communityEventsCalendar" class="calendar-widget"></div>
-                    </div>
+                    <aside class="quick-links">
+                      <p class="quick-links__kicker">Quick Links</p>
+                      <button type="button" id="eventsContactBtn" class="contact-trigger quick-links__row quick-links__row--btn">
+                        <i class="fas fa-envelope" aria-hidden="true"></i>Contact Us
+                      </button>
+                      <a
+                        href="https://facebook.com/BungendoreRFS"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
+                        ><i class="fab fa-facebook" aria-hidden="true"></i>Follow us on Facebook</a
+                      >
+                      <a
+                        href="https://instagram.com/BungendoreRFS"
+                        target="_blank"
+                        rel="noopener"
+                        class="quick-links__row"
+                        ><i class="fab fa-instagram" aria-hidden="true"></i>Follow us on Instagram</a
+                      >
+                    </aside>
                   </div>
                 </article>
               </div>
@@ -398,21 +454,21 @@
         </section>
         <section id="stationCard">
           <header>
-            <img src="/Images/station.png" alt="Station Icon" />
+            <i class="fas fa-warehouse" aria-hidden="true"></i>
             <strong> Station</strong>
           </header>
           <p>28 King St<br />Bungendore NSW 2621</p>
         </section>
         <section>
           <header>
-            <img src="/Images/mail.png" alt="Mail Icon" />
+            <i class="fas fa-envelope" aria-hidden="true"></i>
             <strong> Postal</strong>
           </header>
           <p>Box 23<br />Bungendore NSW 2621</p>
         </section>
         <section>
           <header>
-            <img src="/Images/firefighter.png" alt="Firefighter Icon" />
+            <i class="fas fa-clock" aria-hidden="true"></i>
             <strong> Hours</strong>
           </header>
           <p>
@@ -490,7 +546,6 @@
   <script src="js/emergency-dashboard.js" defer></script>
   <script src="js/tabs-accordion.js" defer></script>
   <script src="js/main.js" defer></script>
-  <script src="js/scroll.js" defer></script>
   <script src="js/map.js" defer></script>
   <script src="js/modal-utils.js" defer></script>
   <script src="js/calendar.js" defer></script>

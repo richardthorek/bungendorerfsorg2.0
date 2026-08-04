@@ -1,9 +1,6 @@
 :root {
   --margin: 0;
   --padding: 0;
-  --hero-height: 38vh; /* Phase 2: compact adaptive hero */
-  --hero-min-height: 340px; /* Minimum height for readability */
-  --hero-max-height: 480px; /* Maximum height to fit above-the-fold */
   --hero-bg: image-set(
     url("/Images/hero4-desktop.webp") type("image/webp"),
     url("/Images/hero4-desktop.jpg") type("image/jpeg")
@@ -42,6 +39,21 @@
     0.9
   ); /* Current setting, review against guide if header styling changes */
   --header-background-shade: rgba(240, 240, 240, 0.9); /* Current setting */
+
+  /* "Clear Skies" visual refresh tokens (design handoff, homepage refresh) */
+  --clear-body-text: #2b2b2b;
+  --clear-text-secondary: #6b6b6b;
+  --clear-text-muted: #9a9a9a;
+  --clear-hairline: #ece9e4;
+  --clear-hairline-strong: #e6e4e0;
+  --clear-card-fill: #f6f5f2;
+  --clear-danger-calm-bg: #e8f5ee;
+  --clear-danger-calm-fg: #008550;
+  --clear-neutral-cell-bg: #f2f2f0;
+  --clear-neutral-cell-fg: #4d4d4f;
+  --clear-incident-bg: #fff4e0;
+  --clear-incident-fg: #8a6d00;
+  --clear-toban-active-bg: #fdeceb;
 
   /* Typography & Spacing */
   /* Style Guide specifies "Public Sans". Ensure this font is available via @import or local files. */
@@ -217,6 +229,21 @@ button::after,
     --rfs-neutral-light: #222222;
     --rfs-neutral-medium: var(--rfs-dark-grey); /* Align with RFS Dark Grey */
     --rfs-neutral-dark: var(--rfs-light-grey); /* Align with RFS Light Grey */
+
+    /* "Clear Skies" tokens — dark equivalents */
+    --clear-body-text: #e8e6e1;
+    --clear-text-secondary: #b0aea8;
+    --clear-text-muted: #8a8a86;
+    --clear-hairline: #3a3a38;
+    --clear-hairline-strong: #454341;
+    --clear-card-fill: #262624;
+    --clear-danger-calm-bg: #10281c;
+    --clear-danger-calm-fg: #4fd393;
+    --clear-neutral-cell-bg: #2c2c2a;
+    --clear-neutral-cell-fg: #cfcfcf;
+    --clear-incident-bg: #3a2e10;
+    --clear-incident-fg: #f0c04d;
+    --clear-toban-active-bg: #3a1210;
   }
 
   .highlight-box {
@@ -289,7 +316,7 @@ body > footer {
 
 article,
 .content-section {
-  scroll-margin-top: 70px;
+  scroll-margin-top: var(--space-lg); /* Header is no longer fixed; small breathing room only */
   padding: var(--pico-card-padding); /* Use the card padding variable */
   margin-bottom: var(--space-lg);
   background-color: var(--pico-card-background-color); /* Should be white */
@@ -354,77 +381,182 @@ h3 {
   color: var(--text-color-dark); /* Changed from --rfs-dark-grey */
 }
 
-/* Colored Headers for Detailed Sections */
-/* They use negative margins to align with the parent article's padding box. */
-article > header.red,
-article > header.amber,
-article > header.blue,
-article > header.green {
-  padding: var(--space-md); /* Consistent padding */
-  margin-bottom: var(--space-lg); /* Space after the header, before content below it */
-  border-bottom: none; /* Remove Pico's default border for article > header */
-  border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0; /* Top corners rounded */
-
-  /* Negative margins to make the header flush with the parent article's padding edges */
-  margin-left: calc(-1 * var(--pico-card-padding));
-  margin-right: calc(-1 * var(--pico-card-padding));
-  margin-top: calc(-1 * var(--pico-card-padding));
+/* Tab content articles (Fire Information / Prepare / Membership / Events) —
+   "Clear Skies" refresh drops the old per-section coloured banner + card
+   chrome in favour of a plain heading and a two-column layout (see below). */
+.tab-panel article {
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+  overflow: visible;
 }
 
-/* Additional styles for green headers */
-article > header.green {
+.tab-panel article > h2 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--clear-body-text);
+  margin: 0 0 20px;
+  padding: 0;
+  border-bottom: none;
+}
+
+/* Main content column + Quick Links sidebar, shared by all four tabs */
+.tab-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.tab-layout__main > *:first-child {
+  margin-top: 0;
+}
+
+.tab-layout__image {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin-bottom: var(--space-lg);
+}
+
+.tab-layout__figure {
+  margin: 0 0 var(--space-lg);
+}
+
+.tab-layout__figure figcaption {
+  font-size: 0.8rem;
+  color: var(--clear-text-secondary);
+  margin-top: var(--space-xs);
+}
+
+.quick-links {
+  background-color: var(--clear-card-fill);
+  border-radius: 10px;
+  padding: 20px 20px 16px;
+  align-self: start;
+}
+
+.quick-links__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rfs-core-red);
+  margin: 0 0 14px;
+}
+
+.quick-links__row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--clear-hairline-strong);
+  color: var(--clear-body-text);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
-/* Ensure colored backgrounds are applied to article headers */
-article > header.red {
+.quick-links__row:last-child {
+  border-bottom: none;
+}
+
+a.quick-links__row:hover,
+a.quick-links__row:focus,
+button.quick-links__row:hover,
+button.quick-links__row:focus {
+  color: var(--rfs-core-red);
+}
+
+.quick-links__row i {
+  width: 16px;
+  text-align: center;
+  color: var(--clear-text-muted);
+}
+
+.quick-links__row--emphasis {
+  color: var(--rfs-core-red);
+  font-weight: 700;
+}
+
+.quick-links__row--emphasis i {
+  color: var(--rfs-core-red);
+}
+
+/* Incident map colour legend, next to the Fire Information map */
+.map-legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+  margin: var(--space-md) 0 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--clear-text-secondary);
+}
+
+.map-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.map-legend__dot--advice {
+  background-color: #215e9e;
+}
+
+.map-legend__dot--watch {
+  background-color: #f59f00;
+}
+
+.map-legend__dot--emergency {
   background-color: var(--rfs-core-red);
-  color: var(--rfs-white); /* White text on red */
 }
 
-article > header.amber {
-  background-color: var(--ui-amber);
-  color: var(--rfs-black); /* Black text on amber */
+.map-legend__dot--station {
+  background-color: var(--clear-danger-calm-fg);
 }
 
-article > header.blue {
-  background-color: var(--ui-blue);
-  color: var(--rfs-white); /* White text on blue */
+.map-legend-link {
+  display: inline-block;
+  margin-top: var(--space-sm);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--rfs-core-red);
 }
 
-article > header.green {
-  background-color: var(--ui-green); /* Dark green */
-  color: var(--rfs-white); /* White text on dark green */
+@media (max-width: 768px) {
+  .tab-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
-article > header.lime {
-  padding: var(--space-md);
-  margin: calc(-1 * var(--pico-card-padding)) calc(-1 * var(--pico-card-padding)) var(--space-lg);
-  border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: var(--rfs-lime);
-  color: var(--rfs-black); /* Black text for LIME */
-}
-
-article > header.lime h3 {
-  color: inherit; /* Inherits black from parent header.lime */
-  margin-bottom: 0;
-  font-size: 1.2rem; /* ≥ 14pt bold → WCAG "large text" → 3:1 AA contrast threshold */
-}
-
-/* Shared styles for h3 within explicitly colored headers (red, amber, blue, green) */
-article > header.red h3,
-article > header.amber h3,
-article > header.blue h3,
-article > header.green h3 {
-  color: inherit; /* Inherit color from parent header */
-  margin-bottom: 0;
-  font-size: 1.2rem; /* ≥ 14pt bold → WCAG "large text" → 3:1 AA contrast threshold */
+@media (prefers-color-scheme: dark) {
+  .quick-links {
+    background-color: var(--clear-card-fill);
+  }
+  .quick-links__row {
+    color: var(--clear-body-text);
+    border-bottom-color: var(--clear-hairline-strong);
+  }
 }
 
 h4 {
@@ -448,21 +580,6 @@ a:hover,
 a:focus {
   text-decoration: underline;
   color: var(--rfs-core-red); /* Core red for hover */
-}
-
-/* Membership Section Grid */
-.membership-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns */
-  gap: var(--space-lg);
-  align-items: start; /* Align items to the start of the grid cell */
-}
-
-@media (max-width: 768px) {
-  /* Stacks to single column */
-  .membership-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .highlight-box.info {
@@ -505,17 +622,16 @@ a:focus {
   height: auto;
 }
 
-/* Hero Section */
+/* Hero Section — "Clear Skies" refresh: full-bleed photo, dark gradient overlay,
+   content anchored bottom-left in white text (design handoff spec). */
 .hero {
   position: relative;
-  height: var(--hero-height);
-  min-height: var(--hero-min-height);
-  max-height: var(--hero-max-height);
+  height: 480px;
   display: flex;
-  align-items: center; /* Vertically center the hgroup */
-  justify-content: flex-start; /* Horizontally align hgroup to the left */
-  text-align: left; /* Left align text within hgroup */
-  padding: var(--space-md) var(--space-xxl); /* Phase 2: reduced padding */
+  align-items: flex-end; /* Anchor content to the bottom */
+  justify-content: flex-start;
+  text-align: left;
+  padding: 0;
   overflow: hidden; /* Contain the hero map */
 }
 
@@ -530,55 +646,72 @@ a:focus {
   transition: opacity 0.9s ease;
 }
 
+/* Left-to-right dark gradient so white text stays legible over the photo (or
+   the map, in incident-active state) without needing a solid text panel. */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2; /* Above the photo (0) and the hero map (1) */
+  background: linear-gradient(
+    100deg,
+    rgba(10, 10, 10, 0.8) 0%,
+    rgba(10, 10, 10, 0.5) 42%,
+    rgba(10, 10, 10, 0) 78%
+  );
+  pointer-events: none; /* Let clicks reach the map beneath in incident-active state */
+}
+
 /* When incidents are active, the photo fades out as the map fades in */
 .hero.hero--incident::before {
   opacity: 0;
 }
 
 .hero hgroup.heading-background {
-  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent light background */
-  padding: var(--space-md); /* Phase 2: reduced from space-xl */
-  border-radius: var(--pico-border-radius);
-  width: 100%; /* Control the width of the banner */
+  background: none;
+  padding: var(--space-xxl);
+  width: 100%;
+  max-width: 620px;
   box-sizing: border-box;
   position: relative;
-  z-index: 2; /* Must sit above both the ::before photo (z-index 0) and the map canvas (z-index 1) */
+  z-index: 3; /* Above the ::before photo, .hero-map and ::after gradient */
+  color: var(--rfs-white);
 }
 
 .hero .logo {
-  display: block;
-  margin: 0 0 var(--space-lg) 0; /* Align logo to left, add bottom margin */
-  height: 7em;
-  width: auto;
-  max-width: 100%; /* Ensure logo fits within the banner */
-  background: var(--rfs-logo) no-repeat left center/contain; /* Align logo left */
+  display: none; /* Brand is carried by the nav; hero focuses on photo + heading */
 }
 
 .hero h1 {
   display: block;
-  padding: 0; /* Remove padding, hgroup handles it */
-  color: black; /* Dark text for light mode banner */
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--rfs-white);
   border-bottom: none;
-  margin-bottom: var(--space-sm); /* Reduced space between H1 and new CTA text */
+  margin: 0 0 10px;
+  padding: 0;
 }
 
 .hero .hero-cta {
-  font-size: 1.5rem; /* Prominent CTA text size */
-  font-weight: 600;
-  color: var(--text-color-dark); /* Ensure good contrast on light banner */
-  margin-bottom: var(--space-lg);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--rfs-white);
+  opacity: 0.92;
+  margin: 0 0 20px;
   padding: 0;
 }
 
 .hero .prominent-cta-button {
   background-color: var(--rfs-core-red); /* RFS Core Red for primary CTA */
-  color: var(--text-color-light);
-  padding: var(--space-md) var(--space-xl); /* Larger padding for prominence */
-  font-size: 1.2rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0; /* Phase 2: button-container removed */
-  display: inline-block; /* Ensure it behaves as a block for margin/padding */
+  color: var(--rfs-white);
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  border-radius: 8px;
+  margin-bottom: 0;
+  display: inline-block;
 }
 
 .hero .prominent-cta-button:hover {
@@ -602,7 +735,7 @@ a:focus {
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 1; /* Above ::before photo, below hgroup (z-index 2) */
+  z-index: 1; /* Above ::before photo, below the ::after gradient and hgroup */
   opacity: 0;
   transition: opacity 0.9s ease;
 }
@@ -617,13 +750,25 @@ a:focus {
   height: 100%;
 }
 
-/* Incident summary shown inside the heading panel in incident-active state */
+/* Incident summary badge — sits above the H1 in incident-active state.
+   Uses :not([hidden]) rather than setting display unconditionally so the
+   native [hidden] attribute (toggled by map.js) still hides it correctly. */
+.hero-incident-summary:not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+}
+
 .hero-incident-summary {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--rfs-core-red);
-  margin-bottom: var(--space-md);
-  padding: 0;
+  background: rgba(229, 40, 27, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffd7d2;
+  margin: 0 0 16px;
 }
 
 /* When the hero is in incident-active state */
@@ -651,45 +796,9 @@ a:focus {
   z-index: auto;
 }
 
-/* ── Desktop/tablet: hero fills the above-fold viewport ─────────────────────
-   On screens ≥769px wide the hero should expand so that the hero and the
-   live-status-strip together fill the full viewport height. The tab content
-   starts just below the strip, so users naturally scroll to reach it.
-
-   Calculation: 100vh – header (≈96px) – main padding-top (20px) – strip (≈82px) ≈ 200px
-   The hero itself is 100vh-200px; the strip (~82px) sits directly below it,
-   and header+hero+strip ≈ 100vh. */
-@media (min-width: 769px) {
-  .hero {
-    height: calc(100vh - 200px);
-    min-height: 420px;
-    max-height: none; /* remove the 480px desktop cap */
-  }
-}
-
 @media (prefers-color-scheme: dark) {
-  .hero hgroup.heading-background {
-    background-color: rgba(0, 0, 0, 0.6); /* Darker semi-transparent background for dark mode */
-  }
-  /* The .hero .logo already switches correctly via the --rfs-logo variable in dark :root */
-
-  .hero h1 {
-    color: var(--text-color-light); /* Light text for dark mode banner */
-    /* text-shadow: 1px 1px 3px rgba(0,0,0,0.7); Add back shadow for light text on dark banner */
-  }
-
-  .hero .hero-cta {
-    color: var(--rfs-light-grey); /* Lighter text for dark mode banner */
-  }
-
-  .hero .prominent-cta-button {
-    background-color: var(--rfs-core-red);
-    color: var(--text-color-light);
-  }
-
-  .hero .prominent-cta-button:hover {
-    background-color: #a91b20; /* Slightly different darker red for dark mode hover if needed */
-  }
+  /* Hero already carries its own dark gradient overlay + white text, so no
+     dark-mode adjustment is needed beyond the existing --hero-bg image swap. */
 }
 
 /* Color Classes & Section Backgrounds */
@@ -726,22 +835,21 @@ a:focus {
 .live-status-strip {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 1px; /* thin dividers via gap + background colour on parent */
-  background-color: var(--rfs-light-grey);
-  border-top: 2px solid var(--rfs-core-red);
-  border-bottom: 1px solid var(--rfs-light-grey);
+  gap: 1px; /* thin hairline dividers via gap + background colour on parent */
+  background-color: var(--clear-hairline);
+  border-top: 3px solid var(--rfs-core-red);
   margin: 0;
   padding: 0;
 }
 
 .strip-cell {
-  background-color: var(--rfs-white);
-  padding: var(--space-sm) var(--space-md);
+  background-color: var(--pico-card-background-color);
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-xs);
+  align-items: flex-start;
+  text-align: left;
+  gap: 6px;
   cursor: default;
   transition: background-color 0.15s ease;
   /* override Pico article defaults */
@@ -758,15 +866,15 @@ a:focus {
 }
 
 .strip-cell:hover {
-  background-color: var(--rfs-neutral-light);
+  background-color: var(--clear-card-fill);
 }
 
 .strip-cell__label {
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--rfs-dark-grey);
+  letter-spacing: 0.08em;
+  color: var(--clear-text-muted);
   margin: 0;
 }
 
@@ -775,16 +883,16 @@ a:focus {
 }
 
 .strip-cell__value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--rfs-black);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--clear-body-text);
   margin: 0;
 }
 
 .strip-cell__sub {
-  font-size: 0.72rem;
-  color: var(--rfs-dark-grey);
+  font-size: 12.5px;
+  color: var(--clear-text-secondary);
   margin: 0;
   line-height: 1.3;
 }
@@ -797,7 +905,7 @@ a:focus {
 .strip-cell__breakdown table {
   width: auto;
   border-collapse: collapse;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .strip-cell__breakdown td {
@@ -810,31 +918,16 @@ a:focus {
   height: 16px;
 }
 
-/* Cell 5 map CTA */
-.strip-cell__map-cta {
-  display: flex;
-  align-items: center;
+/* Cell 5: vertically centred label + plain text link, no button chrome */
+.strip-cell--map {
   justify-content: center;
 }
 
 .strip-map-cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
+  color: var(--rfs-core-red);
   text-decoration: none;
-  border-radius: var(--pico-border-radius);
-  font-size: 0.82rem;
-  font-weight: 600;
-  transition: background-color 0.15s ease;
-}
-
-.strip-map-cta-btn:hover {
-  background-color: #c42216;
-  text-decoration: none;
-  color: var(--text-color-light);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* ── Fire Danger strip cell colour bands (Cell 1) ────────────────────────────
@@ -857,29 +950,29 @@ a:focus {
   background-color: transparent;
 }
 
-/* No Rating / fallback: subtle grey top strip, muted text */
+/* No Rating / fallback: neutral tint, matching the static Warning/Toban cells */
 .strip-cell--danger:has(#fireDangerRatingCell[data-level="NO RATING"]) {
-  border-top: 5px solid var(--rfs-neutral-medium);
+  background-color: var(--clear-neutral-cell-bg);
 }
 #fireDangerRatingCell[data-level="NO RATING"] {
-  color: var(--rfs-dark-grey);
+  color: var(--clear-neutral-cell-fg);
   font-size: 1rem;
 }
 
-/* Moderate: green top strip, value text matches strip colour */
+/* Moderate (calm state): green tint across the whole cell */
 .strip-cell--danger:has(#fireDangerRatingCell[data-level="MODERATE"]) {
-  border-top: 5px solid var(--ui-green);
+  background-color: var(--clear-danger-calm-bg);
 }
 #fireDangerRatingCell[data-level="MODERATE"] {
-  color: var(--ui-green);
+  color: var(--clear-danger-calm-fg);
 }
 
-/* High: amber top strip, value text dark amber for contrast on white */
+/* High (incident-active state): amber tint across the whole cell */
 .strip-cell--danger:has(#fireDangerRatingCell[data-level="HIGH"]) {
-  border-top: 5px solid var(--ui-yellow);
+  background-color: var(--clear-incident-bg);
 }
 #fireDangerRatingCell[data-level="HIGH"] {
-  color: var(--rfs-danger-high-text);
+  color: var(--clear-incident-fg);
 }
 
 /* Extreme: full orange cell, dark text throughout */
@@ -906,6 +999,18 @@ a:focus {
 .strip-cell--danger:has(#fireDangerRatingCell[data-level="CATASTROPHIC"]) #fireDangerRatingCell,
 .strip-cell--danger:has(#fireDangerRatingCell[data-level="CATASTROPHIC"]) #fireDangerMessage {
   color: var(--rfs-white);
+}
+
+/* Warning Level / Total Fire Ban cells: neutral calm-state tint. Cell 2
+   (Incidents) intentionally stays untinted per the design spec. */
+.strip-cell--warning,
+.strip-cell--toban {
+  background-color: var(--clear-neutral-cell-bg);
+}
+
+#stripWarningLevel,
+#stripTotalFireBan {
+  color: var(--clear-neutral-cell-fg);
 }
 
 /* Incident-active state: strip cell 5 shows context message */
@@ -939,29 +1044,16 @@ a:focus {
   }
 }
 
-/* Dark mode for strip */
+/* Dark mode for strip — cells stay on the same dark card colour as the rest
+   of the page (via --pico-card-background-color / --clear-* tokens, both
+   already dark-mode aware) rather than flipping to a light card. */
 @media (prefers-color-scheme: dark) {
   .live-status-strip {
-    background-color: var(--rfs-dark-grey);
-    border-top-color: var(--rfs-core-red);
-  }
-
-  .strip-cell {
-    background-color: var(--rfs-neutral-dark);
-    color: var(--text-color-light);
+    background-color: var(--clear-hairline);
   }
 
   .strip-cell:hover {
-    background-color: #3a3a3a;
-  }
-
-  .strip-cell__value {
-    color: var(--rfs-white);
-  }
-
-  .strip-cell__label,
-  .strip-cell__sub {
-    color: var(--rfs-light-grey);
+    background-color: var(--clear-card-fill);
   }
 }
 
@@ -971,14 +1063,13 @@ a:focus {
   margin-bottom: var(--space-xl);
 }
 
-/* Tab Navigation (Desktop/Tablet) */
+/* Tab Navigation (Desktop/Tablet) — underline style */
 .tab-navigation {
   display: flex;
-  gap: 0;
-  border-bottom: 3px solid var(--rfs-light-grey);
+  gap: 4px;
+  border-bottom: 2px solid var(--clear-hairline);
   margin-bottom: var(--space-lg);
-  background-color: var(--rfs-neutral-light);
-  border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
+  background: none;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
@@ -988,38 +1079,35 @@ a:focus {
 }
 
 .tab-btn {
-  flex: 1;
-  min-width: 150px;
-  padding: var(--space-md) var(--space-lg);
+  flex: none;
+  padding: 14px 20px;
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
-  color: var(--text-color-dark);
-  font-size: 1rem;
-  font-weight: 600;
+  margin-bottom: -2px; /* Sit flush over the container's hairline */
+  color: var(--clear-text-secondary);
+  font-size: 14.5px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
   position: relative;
-  margin-bottom: 0;
 }
 
 .tab-btn i {
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .tab-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
   color: var(--rfs-core-red);
 }
 
 .tab-btn.active {
   color: var(--rfs-core-red);
   border-bottom-color: var(--rfs-core-red);
-  background-color: var(--pico-card-background-color);
 }
 
 .tab-btn:focus {
@@ -1180,20 +1268,14 @@ a:focus {
 /* Dark Mode for Tabs and Accordion */
 @media (prefers-color-scheme: dark) {
   .tab-navigation {
-    background-color: var(--rfs-neutral-dark);
-    border-bottom-color: #4a4a4a;
+    border-bottom-color: var(--clear-hairline);
   }
 
   .tab-btn {
-    color: var(--text-color-dark);
-  }
-
-  .tab-btn:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--clear-text-secondary);
   }
 
   .tab-btn.active {
-    background-color: var(--pico-card-background-color);
     color: var(--rfs-core-red);
   }
 
@@ -1219,66 +1301,126 @@ a:focus {
   }
 }
 
-/* Navigation Styles - Consolidated single-row header */
-/* Site Header - The main fixed container */
+/* Navigation Styles — "Clear Skies" refresh: utility bar + nav, both in
+   normal document flow (not fixed) so neither eats viewport height while
+   scrolling — the header simply scrolls away with the page. */
+
+/* ── Utility bar ──────────────────────────────────────────────────────────── */
+.utility-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-lg);
+  max-width: 1360px;
+  margin: 0 auto;
+  height: 36px;
+  padding: 0 var(--space-xxl);
+  background-color: var(--clear-card-fill);
+  font-size: 0.78rem;
+  color: var(--clear-text-secondary);
+}
+
+.utility-bar__social {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-left: var(--space-sm);
+}
+
+.utility-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--clear-text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.utility-link i {
+  font-size: 0.7rem;
+}
+
+.utility-link:hover,
+.utility-link:focus-visible {
+  color: var(--rfs-core-red);
+}
+
+.utility-link--emphasis {
+  font-weight: 700;
+  color: var(--rfs-core-red);
+}
+
+.utility-link--social {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 700px) {
+  .utility-link:not(.utility-link--social):not(.utility-link--emphasis) {
+    display: none; /* Keep the bar to Contact + social on narrow screens */
+  }
+}
+
+@media (max-width: 420px) {
+  .utility-bar {
+    display: none; /* Core entry points remain reachable via the main nav and footer */
+  }
+}
+
+/* ── Main navigation ──────────────────────────────────────────────────────── */
 #siteHeader {
-  position: fixed;
-  width: 100%;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s ease;
+  background-color: var(--pico-card-background-color);
+  border-bottom: 1px solid var(--clear-hairline-strong);
 }
 
-/* Brand red at all times so the white nav text stays legible; slightly
-   deepened once scrolled to give subtle feedback without losing contrast. */
-#siteHeader.scrolled {
-  background-color: #b81d10;
-}
-
-/* Main Navigation - the single bar holding brand, primary links and utility links */
 #mainNav {
+  max-width: 1360px;
+  margin: 0 auto;
+  min-height: 76px;
+  padding: var(--space-sm) var(--space-xxl);
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
-  gap: var(--space-xs) var(--space-md);
-  padding: var(--space-sm) var(--space-lg);
-  width: 100%;
+  justify-content: space-between;
+  gap: var(--space-md);
   box-sizing: border-box;
-  transition: padding 0.3s ease;
 }
 
-#siteHeader.scrolled #mainNav {
-  padding: var(--space-xs) var(--space-lg); /* Tighter once the page is scrolled */
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
 }
 
 #navLogo {
-  height: 32px;
+  height: 44px;
   width: auto;
-  flex-shrink: 0;
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-  transform: scale(0.9); /* Slightly smaller to begin with */
-  opacity: 0;
 }
 
-#navLogo.hidden {
-  opacity: 0;
-  transform: scale(0.8);
-  width: 0; /* Collapse width when hidden to prevent layout shift */
-  margin-right: 0;
+.nav-brand__text {
+  display: flex;
+  flex-direction: column;
 }
 
-#navLogo.visible {
-  opacity: 1;
-  transform: scale(1);
-  width: auto; /* Actual width when visible */
-  margin-right: var(--space-md); /* Space between logo and nav links */
+.nav-brand__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--clear-body-text);
+  letter-spacing: 0.2px;
+}
+
+.nav-brand__tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--clear-text-muted);
 }
 
 #mainNav ul {
@@ -1286,229 +1428,144 @@ a:focus {
   padding: 0;
   margin: 0;
   display: flex;
-  justify-content: center; /* Center the list items */
   align-items: center;
   flex-wrap: wrap;
-  flex-grow: 1; /* Allow ul to take available space for centering */
-}
-
-#mainNav ul li {
-  margin-left: var(--space-lg); /* Spacing between nav items */
-}
-
-#mainNav ul li:first-child {
-  margin-left: 0;
+  gap: var(--space-xl);
 }
 
 #mainNav ul li a {
   text-decoration: none;
-  color: var(--text-color-light); /* Assuming header has dark background */
-  font-weight: 500;
-  padding: var(--space-xs) var(--space-md); /* Reduced vertical padding */
-  border-radius: var(--pico-border-radius);
-  transition:
-    background-color 0.2s ease-in-out,
-    color 0.2s ease-in-out;
+  color: var(--clear-body-text);
+  font-size: 14.5px;
+  font-weight: 600;
+  padding: var(--space-xs) 0;
+  transition: color 0.2s ease-in-out;
 }
 
 #mainNav ul li a:hover,
 #mainNav ul li a:focus,
 #mainNav ul li a.active {
-  /* Style for active link */
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--rfs-lime); /* Highlight color for hover/active */
+  color: var(--rfs-core-red);
 }
 
-/* Ensure whiteText class is effective for nav links if needed, but direct styling is preferred */
-#mainNav ul li a.whiteText {
-  color: var(--text-color-light) !important;
-}
-
-/* ── Utility links (site, permits, donate, contact, social) ─────────────────
-   Sit inline in the same row as the primary nav on desktop; collapse away
-   once the header is scrolled so the persistent bar stays minimal. */
-.utility-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  flex-shrink: 0;
-  max-height: 40px;
-  opacity: 1;
-  overflow: hidden;
-  transition:
-    max-height 0.25s ease,
-    opacity 0.2s ease;
-}
-
-#siteHeader.scrolled .utility-bar {
-  max-height: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.utility-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3em;
-  color: var(--text-color-light);
-  text-decoration: none;
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--pico-border-radius);
-  white-space: nowrap;
-  transition: background-color 0.2s ease;
-  font-size: 0.8rem;
-  font-weight: 500;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.utility-link:hover,
-.utility-link:focus {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: var(--rfs-lime);
-}
-
-.utility-link--social {
-  font-size: 1rem;
-  padding: var(--space-xs);
-}
-
-/* Utility links collapse to icon-only below 900px — wide enough that the
-   logo, four nav links and full utility labels would otherwise wrap onto a
-   second line. Label stays in the accessibility tree (visually hidden, not
-   display:none) so the accessible name is preserved for screen reader users. */
 @media (max-width: 900px) {
-  .utility-link:not(.utility-link--social) .utility-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+  #navLogo {
+    height: 36px;
+  }
+  .nav-brand__tag {
+    display: none;
+  }
+  #mainNav {
+    min-height: 0;
+    padding: var(--space-md) var(--space-lg);
+  }
+  #mainNav ul {
+    gap: var(--space-lg);
+  }
+}
+
+@media (max-width: 600px) {
+  .nav-brand__text {
+    display: none;
+  }
+  #mainNav ul {
+    width: 100%;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+  #mainNav ul li a {
+    font-size: 0.82rem;
   }
 }
 
 @media (prefers-color-scheme: dark) {
-  /* Header stays on brand red in dark mode too, so white nav text remains legible */
-  #mainNav ul li a {
-    color: var(--text-color-light); /* Ensure light text in dark mode */
+  #siteHeader {
+    background-color: var(--pico-card-background-color);
+    border-bottom-color: var(--clear-hairline);
   }
-  #mainNav ul li a:hover,
-  #mainNav ul li a:focus,
-  #mainNav ul li a.active {
-    background-color: rgba(0, 0, 0, 0.2);
-    color: var(--rfs-lime);
+  .utility-bar {
+    background-color: var(--clear-card-fill);
+    color: var(--clear-text-secondary);
   }
 }
 
-/* Footer Styles */
+/* Footer — "Clear Skies" refresh: dark footer, 3px red top border, 4-column grid */
 #footer {
-  background-color: var(--rfs-dark-grey); /* Dark background for footer */
-  color: var(--rfs-light-grey); /* Light grey text for contrast */
-  padding: var(--space-xl) var(--space-md); /* Add vertical and horizontal padding */
+  background-color: #2b2b2b;
+  color: #cfcfcf;
   margin-top: var(--space-xxl);
 }
 
 #pageFoot {
-  max-width: 1200px; /* Consistent max-width */
+  max-width: 1360px;
   margin: 0 auto;
-  gap: var(--space-lg); /* Spacing for grid items */
+  padding: 40px 48px;
+  gap: 32px;
+  border-top: 3px solid var(--rfs-core-red);
 }
 
 #pageFoot section {
-  padding: var(--space-md);
-  color: var(--rfs-light-grey);
+  padding: 0;
+  color: #b7b7b7;
   background: none;
 }
 
 #pageFoot section header {
   color: var(--rfs-white);
   font-weight: 600;
-  font-size: 1rem;
-  padding-bottom: var(--space-sm);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  margin-bottom: var(--space-md);
+  font-size: 15px;
+  padding-bottom: 0;
+  border-bottom: none;
+  margin-bottom: var(--space-sm);
   display: flex;
   align-items: center;
   gap: var(--space-sm);
 }
 
+#pageFoot section header i {
+  color: #cfcfcf;
+  font-size: 16px;
+}
+
 #pageFoot section header strong {
   font-weight: 600;
+  font-size: 13px;
 }
 
 #pageFoot section p {
-  font-size: 0.9rem;
-  color: var(--rfs-light-grey);
+  font-size: 13px;
+  color: #b7b7b7;
   max-width: none;
-  margin-top: var(--space-sm);
+  margin-top: 8px;
+  line-height: 1.6;
 }
 
 #pageFoot .social-icon {
-  margin-top: var(--space-sm); /* Add space above social icons */
+  margin-top: var(--space-md);
   display: flex;
-  gap: var(--space-sm); /* Add space between social icons */
+  gap: 14px;
   align-items: center;
-  justify-content: flex-start; /* Align icons to the left */
-}
-
-#pageFoot section img {
-  max-height: 24px; /* Control icon size in footer */
-  margin-right: var(--space-sm);
-  vertical-align: middle;
+  justify-content: flex-start;
 }
 
 #pageFoot .social-icon a i {
-  color: var(--rfs-white); /* White icons on dark footer background */
-  font-size: 1.5rem; /* Adjust size as needed */
-  display: inline-block; /* Ensure proper spacing */
-  margin-right: var(--space-sm); /* Add space between icons */
+  color: #cfcfcf;
+  font-size: 18px;
+  display: inline-block;
+  margin-right: 0;
 }
 
 #pageFoot .social-icon a:hover i {
-  color: var(--rfs-lime); /* Lime on hover for contrast */
-}
-
-@media (prefers-color-scheme: dark) {
-  #footer {
-    background-color: var(--rfs-black); /* Even darker for dark mode footer */
-    color: var(--rfs-light-grey);
-  }
-
-  #pageFoot section {
-    color: var(--rfs-light-grey);
-  }
-
-  #pageFoot section header {
-    color: var(--rfs-white);
-    border-bottom-color: rgba(255, 255, 255, 0.15);
-  }
-
-  #pageFoot section p {
-    color: var(--rfs-light-grey);
-  }
-
-  #pageFoot .social-icon a i {
-    color: var(--rfs-white); /* White social icons in footer for dark mode */
-  }
-
-  #pageFoot .social-icon a:hover i {
-    color: var(--rfs-lime); /* Lime on hover for dark mode */
-  }
+  color: var(--rfs-lime);
 }
 
 /* Main Content Styles */
 main {
-  margin-top: 64px; /* Height of the consolidated single-row header */
-  padding-top: 20px; /* Significantly reduced top padding */
-  padding-right: 0; /* Retain original horizontal padding (was 0) */
-  padding-bottom: var(--space-lg); /* Retain original bottom padding */
-  padding-left: 0; /* Retain original horizontal padding (was 0) */
+  /* Header is no longer fixed — it scrolls away with the page, so no offset is needed here */
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: var(--space-lg);
+  padding-left: 0;
   position: relative; /* Establish stacking context if needed */
 }
 
@@ -1521,62 +1578,6 @@ main {
   .content-container {
     padding: var(--space-md) var(--space-sm);
   }
-}
-
-/* Footer Styles */
-
-#pageFoot header {
-  background-color: var(--rfs-core-red);
-}
-
-#pageFoot {
-  margin: var(--space-xl) 0 0 0; /* Add top margin to footer */
-  padding: var(--space-lg) 0; /* Add vertical padding */
-  background-color: var(--rfs-dark-grey); /* Use RFS Dark Grey for footer bg */
-  color: var(--rfs-light-grey); /* Light text on dark footer */
-}
-
-#pageFoot nav {
-  background-color: transparent; /* Inherit from #pageFoot */
-  display: flex;
-  justify-content: center;
-  padding: 0; /* Remove padding, handled by #pageFoot */
-  border-top: none; /* Remove border, handled by #pageFoot or not needed */
-}
-
-#pageFoot a {
-  color: var(--rfs-lime); /* Use RFS Lime for footer links */
-}
-
-#pageFoot a:hover {
-  color: var(--text-color-light); /* White hover for footer links */
-  text-decoration: underline;
-}
-
-#pageFoot .container.grid {
-  gap: var(--space-md);
-}
-
-#pageFoot aside ul {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-#pageFoot aside ul li {
-  padding: 2px 0;
-  margin: 0;
-}
-
-#pageFoot aside ul li button {
-  padding: 5px 10px;
-  margin: 0;
-}
-
-#pageFoot img {
-  max-height: 32px;
-  margin-right: var(--space-sm);
-  vertical-align: middle;
 }
 
 .custom-button {
@@ -2043,54 +2044,26 @@ details > *:not(summary) {
 
 @media (max-width: 770px) {
   .hero {
-    height: auto; /* Let content define height, making it more compact */
-    min-height: 0; /* Reset min-height */
-    padding: var(--space-lg) var(--space-sm) var(--space-xl) var(--space-sm); /* Increased top padding to prevent header overlap */
-    display: flex; /* Ensure flex context for children */
-    flex-direction: column; /* Stack children vertically */
-    align-items: center; /* Center children horizontally */
-    justify-content: center; /* Center children vertically if hero has a fixed/min-height, or centers content block if height is auto */
-    text-align: center; /* Ensure text within is centered */
+    height: 360px; /* Shorter full-bleed hero; still bottom-left anchored */
   }
   .hero hgroup.heading-background {
-    max-width: 90%; /* Limit width of the text background */
-    width: auto; /* Allow it to shrink */
-    padding: var(--space-md);
-    text-align: center; /* Ensure text inside is centered */
-  }
-  .hero .logo {
-    height: 6em; /* Slightly larger logo on mobile */
-    margin: 0 auto var(--space-md) auto; /* Center logo */
-    background-position: center center; /* Ensure logo itself is centered in its box */
+    max-width: 100%;
+    padding: var(--space-xl) var(--space-lg);
   }
   .hero h1 {
-    font-size: 1.5rem; /* Adjusted H1 for mobile */
-    color: var(--hero-text-color); /* Ensure hero text color is applied */
+    font-size: 1.75rem;
   }
   .hero .hero-cta {
     font-size: 1rem;
     margin-bottom: var(--space-md);
-    color: var(--hero-text-color); /* Ensure hero text color is applied */
   }
   .hero .prominent-cta-button {
-    font-size: 1rem;
-    padding: var(--space-md) var(--space-lg); /* Slightly more padding */
-    margin-bottom: 0;
+    font-size: 0.95rem;
+    padding: var(--space-md) var(--space-lg);
     width: 100%;
-    max-width: 300px; /* Max width for the main CTA button */
+    max-width: 300px;
     box-sizing: border-box;
-  }
-  .custom-button {
-    /* This targets all custom buttons, including those in hero */
-    width: 100%;
-    max-width: 300px; /* Max width for other custom buttons in hero */
-    font-size: 0.9rem;
-    padding: var(--space-sm) var(--space-md);
-    margin-bottom: var(--space-sm);
-    box-sizing: border-box;
-  }
-  .custom-button:last-child {
-    margin-bottom: 0;
+    text-align: center;
   }
 
   /* Ensure the container for "Fire Information in Our Area" title is visible */
@@ -2105,82 +2078,17 @@ details > *:not(summary) {
   .summaryCard {
     display: none !important;
   }
-
-  /* Mobile navigation improvements */
-  @media (max-width: 768px) {
-    #mainNav {
-      padding: var(--space-xs) var(--space-md); /* Further reduced padding on mobile */
-      min-height: 45px; /* Set minimum height for mobile header */
-    }
-
-    #navLogo {
-      height: 30px; /* Smaller logo on mobile */
-    }
-
-    #mainNav ul {
-      gap: var(--space-xs); /* Reduce gap between nav items */
-      flex-wrap: wrap; /* Allow wrapping if needed */
-    }
-
-    #mainNav ul li {
-      margin-left: var(--space-xs); /* Further reduced spacing between nav items */
-    }
-
-    #mainNav ul li a {
-      padding: var(--space-xs) var(--space-sm); /* Minimal padding in nav links */
-      font-size: 0.85rem; /* Smaller font for nav links */
-    }
-
-    main {
-      margin-top: 81px; /* Consolidated header wraps to nav row + utility row on mobile */
-      padding-top: 10px; /* Minimal top padding on mobile */
-    }
-  }
-
-  @media (max-width: 480px) {
-    #mainNav {
-      padding: var(--space-xs) var(--space-sm); /* Minimal padding on very small screens */
-      min-height: 40px; /* Even smaller header on very small screens */
-    }
-
-    #navLogo {
-      height: 25px; /* Very small logo on tiny screens */
-    }
-
-    #mainNav ul {
-      justify-content: center; /* Center navigation items */
-      width: 100%;
-      gap: var(--space-xs);
-    }
-
-    #mainNav ul li {
-      margin-left: 0; /* Remove left margin, use gap instead */
-    }
-
-    #mainNav ul li a {
-      padding: var(--space-xs) var(--space-xs); /* Minimal padding */
-      font-size: 0.75rem; /* Smaller font for very small screens */
-    }
-
-    main {
-      margin-top: 76px; /* Consolidated header wraps to nav row + utility row on mobile */
-      padding-top: 5px; /* Minimal top padding */
-    }
-  }
 }
 
 @media (max-width: 500px) {
   .hero {
-    padding: var(--space-md) var(--space-sm) var(--space-lg) var(--space-sm); /* Adjusted padding for very small screens */
+    height: 320px;
   }
   .hero hgroup.heading-background {
-    padding: var(--space-sm);
-  }
-  .hero .logo {
-    height: 5em; /* Smaller logo on very small screens */
+    padding: var(--space-lg) var(--space-md);
   }
   .hero h1 {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
   }
   .hero .hero-cta {
     font-size: 0.9rem;
@@ -2188,10 +2096,6 @@ details > *:not(summary) {
   .hero .prominent-cta-button {
     font-size: 0.9rem;
     padding: var(--space-sm) var(--space-md);
-  }
-  .custom-button {
-    font-size: 0.85rem;
-    padding: var(--space-xs) var(--space-sm);
   }
 }
 
@@ -2211,5 +2115,9 @@ details > *:not(summary) {
 }
 
 #pageFoot {
-  border: none !important;
+  /* Reset Pico's default grid border on the other sides; border-top carries
+     the intentional red accent set above and must stay untouched. */
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
 }
