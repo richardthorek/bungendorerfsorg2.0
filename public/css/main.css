@@ -289,7 +289,7 @@ body > footer {
 
 article,
 .content-section {
-  scroll-margin-top: 90px;
+  scroll-margin-top: 70px;
   padding: var(--pico-card-padding); /* Use the card padding variable */
   margin-bottom: var(--space-lg);
   background-color: var(--pico-card-background-color); /* Should be white */
@@ -1219,7 +1219,7 @@ a:focus {
   }
 }
 
-/* Navigation Styles - Updated */
+/* Navigation Styles - Consolidated single-row header */
 /* Site Header - The main fixed container */
 #siteHeader {
   position: fixed;
@@ -1227,111 +1227,39 @@ a:focus {
   top: 0;
   left: 0;
   z-index: 1000;
-  background-color: var(
-    --rfs-core-red
-  ); /* Ensure siteHeader also has red if mainNav is transparent initially */
+  background-color: var(--rfs-core-red);
   color: var(--text-color-light);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition:
-    background-color 0.3s ease,
-    padding 0.3s ease; /* Added padding transition */
-  padding: var(--space-xs) 0; /* Reduced initial padding for more compact header */
+  transition: background-color 0.3s ease;
 }
 
+/* Brand red at all times so the white nav text stays legible; slightly
+   deepened once scrolled to give subtle feedback without losing contrast. */
 #siteHeader.scrolled {
-  background-color: var(--header-background-shade);
-  padding: 0; /* Even more compact when scrolled */
+  background-color: #b81d10;
 }
 
-/* ── Utility Bar (Phase 2) ───────────────────────────────────────────────── */
-#utilityBar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-sm);
-  padding: 0 var(--space-lg);
-  height: 40px;
-  background-color: #c42216; /* Slightly darker than --rfs-core-red for contrast over header */
-  font-size: 0.8rem;
-  flex-wrap: nowrap;
-  overflow: hidden;
-}
-
-.utility-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3em;
-  color: var(--text-color-light);
-  text-decoration: none;
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--pico-border-radius);
-  white-space: nowrap;
-  transition: background-color 0.2s ease;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.utility-link:hover,
-.utility-link:focus {
-  background-color: rgba(255, 255, 255, 0.15);
-  color: var(--rfs-lime);
-}
-
-.utility-link--btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.utility-link--social {
-  font-size: 1rem;
-  padding: var(--space-xs);
-}
-
-/* Utility bar collapses to icon-only on small screens */
-@media (max-width: 768px) {
-  #utilityBar {
-    justify-content: center;
-    padding: 0 var(--space-sm);
-    gap: var(--space-xs);
-    height: 36px;
-  }
-
-  .utility-link:not(.utility-link--social) .utility-label {
-    display: none; /* Hide text labels on small screens */
-  }
-}
-
-/* Hide utility bar entirely on very small screens.
-   Note: a hamburger overflow menu for these links is a deferred enhancement (Phase 5).
-   On ≤420px, secondary actions remain accessible via the footer links and
-   the main navigation which keeps the core entry points. */
-@media (max-width: 420px) {
-  #utilityBar {
-    display: none;
-  }
-
-  main {
-    margin-top: 40px; /* Utility bar hidden; only nav height remains */
-  }
-}
-
-/* Main Navigation - Inside the header */
+/* Main Navigation - the single bar holding brand, primary links and utility links */
 #mainNav {
   display: flex;
-  justify-content: space-between; /* Distribute space: logo left, links right */
+  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  padding: var(--space-xs) var(--space-lg); /* Reduced vertical padding */
+  gap: var(--space-xs) var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
   width: 100%;
   box-sizing: border-box;
-  position: relative; /* For z-index stacking if needed, and containing absolute elements */
-  background-color: var(--rfs-core-red); /* Red background for mainNav */
+  transition: padding 0.3s ease;
+}
+
+#siteHeader.scrolled #mainNav {
+  padding: var(--space-xs) var(--space-lg); /* Tighter once the page is scrolled */
 }
 
 #navLogo {
-  height: 35px; /* Reduced from 40px for more compact header */
+  height: 32px;
   width: auto;
+  flex-shrink: 0;
   transition:
     opacity 0.3s ease,
     transform 0.3s ease;
@@ -1360,6 +1288,7 @@ a:focus {
   display: flex;
   justify-content: center; /* Center the list items */
   align-items: center;
+  flex-wrap: wrap;
   flex-grow: 1; /* Allow ul to take available space for centering */
 }
 
@@ -1395,13 +1324,77 @@ a:focus {
   color: var(--text-color-light) !important;
 }
 
+/* ── Utility links (site, permits, donate, contact, social) ─────────────────
+   Sit inline in the same row as the primary nav on desktop; collapse away
+   once the header is scrolled so the persistent bar stays minimal. */
+.utility-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+  max-height: 40px;
+  opacity: 1;
+  overflow: hidden;
+  transition:
+    max-height 0.25s ease,
+    opacity 0.2s ease;
+}
+
+#siteHeader.scrolled .utility-bar {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.utility-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: var(--text-color-light);
+  text-decoration: none;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--pico-border-radius);
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.utility-link:hover,
+.utility-link:focus {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--rfs-lime);
+}
+
+.utility-link--social {
+  font-size: 1rem;
+  padding: var(--space-xs);
+}
+
+/* Utility links collapse to icon-only below 900px — wide enough that the
+   logo, four nav links and full utility labels would otherwise wrap onto a
+   second line. Label stays in the accessibility tree (visually hidden, not
+   display:none) so the accessible name is preserved for screen reader users. */
+@media (max-width: 900px) {
+  .utility-link:not(.utility-link--social) .utility-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
-  #siteHeader {
-    background-color: var(--header-background); /* Uses dark mode variable */
-  }
-  #siteHeader.scrolled {
-    background-color: var(--header-background-shade); /* Uses dark mode variable */
-  }
+  /* Header stays on brand red in dark mode too, so white nav text remains legible */
   #mainNav ul li a {
     color: var(--text-color-light); /* Ensure light text in dark mode */
   }
@@ -1511,7 +1504,7 @@ a:focus {
 
 /* Main Content Styles */
 main {
-  margin-top: 96px; /* Accounts for utility bar (40px) + nav (56px) */
+  margin-top: 64px; /* Height of the consolidated single-row header */
   padding-top: 20px; /* Significantly reduced top padding */
   padding-right: 0; /* Retain original horizontal padding (was 0) */
   padding-bottom: var(--space-lg); /* Retain original bottom padding */
@@ -2115,10 +2108,6 @@ details > *:not(summary) {
 
   /* Mobile navigation improvements */
   @media (max-width: 768px) {
-    #siteHeader {
-      padding: 0; /* Remove all padding on mobile for maximum compactness */
-    }
-
     #mainNav {
       padding: var(--space-xs) var(--space-md); /* Further reduced padding on mobile */
       min-height: 45px; /* Set minimum height for mobile header */
@@ -2143,16 +2132,12 @@ details > *:not(summary) {
     }
 
     main {
-      margin-top: 81px; /* Reduced for mobile header height (36px utility bar + nav) */
+      margin-top: 81px; /* Consolidated header wraps to nav row + utility row on mobile */
       padding-top: 10px; /* Minimal top padding on mobile */
     }
   }
 
   @media (max-width: 480px) {
-    #siteHeader {
-      padding: 0; /* No padding on very small screens */
-    }
-
     #mainNav {
       padding: var(--space-xs) var(--space-sm); /* Minimal padding on very small screens */
       min-height: 40px; /* Even smaller header on very small screens */
@@ -2178,7 +2163,7 @@ details > *:not(summary) {
     }
 
     main {
-      margin-top: 76px; /* Reduced for very small mobile header (36px utility bar + nav) */
+      margin-top: 76px; /* Consolidated header wraps to nav row + utility row on mobile */
       padding-top: 5px; /* Minimal top padding */
     }
   }
