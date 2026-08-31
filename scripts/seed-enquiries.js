@@ -6,7 +6,7 @@
  *
  * The JSON is an array of objects; each needs at least name + message. Optional:
  * email, phone, receivedAt (ISO), legacyRef. A starter file with the three
- * recoverable enquiries is at scripts/data/enquiries-seed.example.json.
+ * shape (placeholder data) is at scripts/data/enquiries-seed.example.json.
  */
 
 require("dotenv").config();

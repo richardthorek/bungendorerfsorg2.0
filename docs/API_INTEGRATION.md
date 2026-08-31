@@ -252,7 +252,7 @@ created on first use — `members`, `authcodes`, `ratelimits`, `auditlog`, `duty
 
 **Seeding old enquiries:** `node scripts/seed-enquiries.js <file.json>` — an array
 of `{name, message, email?, phone?, receivedAt?, legacyRef?}`, de-duplicated by
-`legacyRef`. Starter file at `scripts/data/enquiries-seed.example.json`.
+`legacyRef`. See `scripts/data/enquiries-seed.example.json` for the shape (placeholder data).
 
 **First admin:** there's no self-serve bootstrap. Seed it once:
 

@@ -1,26 +1,18 @@
 [
   {
-    "legacyRef": "31",
-    "name": "John Sweeney",
-    "email": "sweeney@y7mail.com",
-    "phone": "+61429070010",
-    "receivedAt": "2026-08-27T01:34:52Z",
-    "message": "Hi\nI have an enquiry if you guys need anyone with heavy plant experience. I am an RFS member and have completed online basic training but have been trying for years to complete basic practical firefighting without success due to scheduling. I have had 40 years operating & managing heavy plant in a large range of applications including trainer assessor for all of the large name OEM's. I also hold the PUAFIR417 supervise machinery use in wildfire operations qualification. I have a fair bit of mines rescue and advanced 1st aid experience over the years and fire fighting training in coal mines.\nNot as mobile as I once was due to knee replacements but may be able to offer heavy plant supervision & training if it was of assistance. I am 56 years old.\nThanks\nJohn Sweeney\n0429 0700 10"
+    "legacyRef": "sp-001",
+    "name": "Jane Example",
+    "email": "jane@example.com",
+    "phone": "0400 000 001",
+    "receivedAt": "2025-06-01T09:15:00Z",
+    "message": "Line-by-line the shape the importer expects. Only name + message are required; email, phone, receivedAt and legacyRef are optional. Rows are de-duplicated by legacyRef so re-running is safe."
   },
   {
-    "legacyRef": "30",
-    "name": "Annika Ernest",
-    "email": "annika.ernest@mintrenewables.com",
-    "phone": "0428232508",
-    "receivedAt": "2026-08-26T06:21:01Z",
-    "message": "Hi, I am reaching out in the hope of connecting with Captain Sandi Love. I work for Mint Renewables, the developer of the proposed Magpie Hill Solar Farm, and would welcome the opportunity to introduce myself and discuss the proposed Project."
-  },
-  {
-    "legacyRef": "29",
-    "name": "Tony Brown",
-    "email": "issyjb@bigpond.com",
-    "phone": "0428629593",
-    "receivedAt": "2026-08-18T00:26:56Z",
-    "message": "We have a massive pile of branches to burn and were wondering if your brigade would like to burn it for a training day. There is easy truck access. The address is 39 Lake Road. Thanks Tony"
+    "legacyRef": "sp-002",
+    "name": "Sam Placeholder",
+    "email": "",
+    "phone": "0400 000 002",
+    "receivedAt": "2025-07-14T00:00:00Z",
+    "message": "An enquiry with no email on file. receivedAt is stored as-is, so pass whatever the old system recorded (a bare date is fine)."
   }
 ]

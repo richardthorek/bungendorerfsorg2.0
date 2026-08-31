@@ -76,14 +76,14 @@ enquirer.
 
 ### Status
 
-| Step                                                                                                                                                              | State                                  |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Root cause of "no enquiry details" found — proxy sent `message`, Logic App read `enquiry`; SharePoint `Description` always null                                   | Done                                   |
-| `api/contact` + `server.js` rewritten to send via ACS, SharePoint/Teams/Logic App dropped                                                                         | Done — merged (#90)                    |
-| ACS Email domain `notify.bungendorerfs.org` created, DNS added, verified + linked to `stationkit-comm`                                                            | Done                                   |
-| SWA app settings + `formHandler` Logic App disabled + deploy verified                                                                                             | Done                                   |
-| Delete the disabled `formHandler` Logic App + `office365` / `office365-1` / `sharepointonline` / `teams` connections                                              | Pending — after a few days' confidence |
-| Historical enquiries #1–#28 seeded into the `enquiries` table via `scripts/seed-enquiries.js` (3 recovered in `scripts/data/…`; the rest need old-tenant sign-in) | Pending — owner                        |
+| Step                                                                                                                                  | State                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Root cause of "no enquiry details" found — proxy sent `message`, Logic App read `enquiry`; SharePoint `Description` always null       | Done                                   |
+| `api/contact` + `server.js` rewritten to send via ACS, SharePoint/Teams/Logic App dropped                                             | Done — merged (#90)                    |
+| ACS Email domain `notify.bungendorerfs.org` created, DNS added, verified + linked to `stationkit-comm`                                | Done                                   |
+| SWA app settings + `formHandler` Logic App disabled + deploy verified                                                                 | Done                                   |
+| Delete the disabled `formHandler` Logic App + `office365` / `office365-1` / `sharepointonline` / `teams` connections                  | Pending — after a few days' confidence |
+| Historical enquiries imported from the SharePoint export (7 rows) and marked resolved; metadata (dates, contacts, assignee) preserved | Done                                   |
 
 ---
 
