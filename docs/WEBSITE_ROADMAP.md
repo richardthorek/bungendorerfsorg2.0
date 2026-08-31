@@ -70,17 +70,7 @@ exactly the elderly, disabled, low-literacy and tourist users with the least
 margin. Render the list from the GeoJSON first; make the map a progressive
 enhancement layered on top. Top equity defect, shares a root cause with 2.1.
 
-### 2.4 The permit-suspension content is likely wrong and legally misleading (verified)
-
-`public/Content/AFDRSMessages.json` asserts *"Fire Permits are Suspended. Do Not
-Burn"* at HIGH, EXTREME **and** CATASTROPHIC ratings (lines 26, 40, 54). Permit
-suspension is tied to **Total Fire Bans and the Bush Fire Danger Period**, *not*
-automatically to an AFDRS "High" rating. A High day is not automatically a Total
-Fire Ban day. This can tell residents burning is banned when it may be legal.
-Verify the exact wording with the RFS district office, then drive the message from
-the actual TFB/BFDP status the site already tracks — not the danger rating.
-
-### 2.5 No shelter-of-last-resort / Neighbourhood Safer Place information exists anywhere
+### 2.4 No shelter-of-last-resort / Neighbourhood Safer Place information exists anywhere
 
 For a community on one fragile arterial (the Kings Highway) with a late-evacuation
 risk profile, the absence of "where do I go if I've left it too late" is a
@@ -88,7 +78,7 @@ life-safety content gap. Add the named/mapped Neighbourhood Safer Place as
 **static content** (no feed needed) with the unambiguous framing that it is a last
 resort, not a plan.
 
-### 2.6 The Prepare content omits the RFS core message: leave early (verified)
+### 2.5 The Prepare content omits the RFS core message: leave early (verified)
 
 `public/Content/prepareContent.md` frames "a prepared home and a clear plan are
 your best defence" and **never tells anyone to leave, or that Catastrophic means
@@ -98,6 +88,13 @@ defect, so it's flagged here.
 
 > **Common root cause:** 2.1, 2.2 and 2.3 are one bug wearing three hats — the
 > emergency-data layer has no honest state model. Fix them together.
+
+> **Correct, not a defect:** an earlier draft questioned the "Fire Permits are
+> Suspended" message shown from the HIGH rating in
+> `public/Content/AFDRSMessages.json`. Confirmed with the brigade: **in the Southern
+> Ranges district permits are suspended from HIGH, so this content is factually
+> correct** and stays as-is. (The separate plain-English permits explainer in §3
+> Workstream 5 is a content *addition*, not a fix.)
 
 ---
 
@@ -126,8 +123,7 @@ highest-leverage quarter the site will ever have.
 
 | Item | Why | Impact | Effort |
 |---|---|:--:|:--:|
-| Verify + fix the permit-suspension logic (2.4) | Likely-wrong, legally misleading content | H | L |
-| Add the Neighbourhood Safer Place page (2.5) | No last-resort information exists anywhere | H | M |
+| Add the Neighbourhood Safer Place page (2.4) | No last-resort information exists anywhere | H | M |
 | Info Line 1800 679 737 + ABC Radio 666AM on every page | Only fallback today is "check the app" | H | L |
 | Per-level warning action text ("Watch and Act: prepare to leave") | A rating without meaning isn't actionable | H | L |
 
@@ -156,9 +152,9 @@ highest-leverage quarter the site will ever have.
 | Item | Why | Impact | Effort |
 |---|---|:--:|:--:|
 | "Bungendore's bushfire risk & where to go" (local risk, mapped NSP, Kings Hwy fragility, leave-early) | Local narrative changes behaviour; leaflets don't | H | M |
-| Rewrite Prepare around leaving early + trigger-setting + a real property checklist + rating→"what to do today" (fixes 2.6) | Current content omits the core survival message | H | M |
+| Rewrite Prepare around leaving early + trigger-setting + a real property checklist + rating→"what to do today" (fixes 2.5) | Current content omits the core survival message | H | M |
 | "Animals in a bushfire" (horses & livestock) | This district is dense with horse properties | M | L |
-| Permits & burning, plain-English explainer (BFDP dates, free permit, 24 hr notify, pile limits, TOBAN) | Pairs with the 2.4 fix; high local search intent | M | L |
+| Permits & burning, plain-English explainer (BFDP dates, free permit, suspended from HIGH here, 24 hr notify, pile limits, TOBAN) | High local search intent; cuts escaped private burns | M | L |
 | "About the brigade / our people" + non-firefighting roles + a real case-for-support on Donate | Trust, recruitment and funding in one page | M | L |
 | Real event dates (kill every "Date TBC") + an "Other languages" block leading with TIS 131 450 | "TBC" reads as neglect; equity for non-English speakers | M | L |
 
@@ -322,5 +318,6 @@ community needs, backend resilience, accessibility & inclusion. All load-bearing
 defect claims were verified against the codebase before writing. Verified anchors:
 `public/index.html:205` (hard-coded `#stripWarningLevel`), `public/js/map.js:858`
 and `:582` (incident list coupled to `map.on("load")` + `mapboxgl.LngLatBounds`),
-`public/Content/AFDRSMessages.json:26,40,54` (permit-suspension at High/Extreme/
-Catastrophic), `public/Content/prepareContent.md` (never says "leave early").*
+`public/Content/prepareContent.md` (never says "leave early"). Note: the
+`AFDRSMessages.json` permit-suspension-from-HIGH message is correct for the Southern
+Ranges district and is not a defect.*
