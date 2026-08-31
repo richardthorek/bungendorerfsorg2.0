@@ -276,7 +276,7 @@ the district duty officer; routes and the `duty` table keep the old name.)
 
 | Endpoint                              | Notes                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/duty`                       | Public — the Twilio flow calls this. Returns `{ "Main": "+61…" }`. If `DUTY_LOOKUP_KEY` is set, the caller must send `X-Duty-Key`. Missing record → 503 so Twilio falls through to its own backup number.                                                                                                                               |
+| `GET /api/duty`                       | Public — the Twilio flow calls this. Returns `{ "Main": "+61…" }`. If `DUTY_LOOKUP_KEY` is set, the caller must send it — `X-Duty-Key` header **or** `?key=` query param. Missing record → 503 so Twilio falls through to its own backup number.                                                                                        |
 | `GET /api/duty/status`                | Members only. `{ number, label, masked, setBy, setByName, method, setAt, contacts[] }` — `contacts` is the deduped list of previously-used `{number, label}` (current excluded) for one-click re-set.                                                                                                                                   |
 | `POST /api/duty` `{number, label?}`   | Members only, `X-BRFS-Auth: 1`. `label` is a free-text name ("Sandi Love"). Validates an AU number, stores it with the label, appends history + audit + change-alert email.                                                                                                                                                             |
 | `POST /api/duty/claim` `{From, Body}` | Twilio SMS webhook. `BRIGADE <pin>` / `DUTY <pin>` → forward to the sender's number; `OFF <pin>` → revert to `DUTY_FALLBACK_NUMBER`. Anything else → `{handled:false}` so Twilio forwards the text normally. Needs `DUTY_CLAIM_PIN`; honours `X-Duty-Key`; rate-limited per sender. Attributed to a member if their `phone` is on file. |
@@ -291,11 +291,10 @@ Members may carry an optional `phone` for SMS attribution.
 
 1. `node scripts/seed-duty.js +61…` — set the current number.
 2. Widgets `phoneNumbers` (calls) and `phoneNumbers2` (SMS): **REQUEST URL** →
-   `https://www.bungendorerfs.org/api/duty`, **METHOD** → `GET`, add header
-   `X-Duty-Key: <DUTY_LOOKUP_KEY>`.
+   `https://www.bungendorerfs.org/api/duty`, **METHOD** → `GET`; put the key in the URL: `…/api/duty?key=<DUTY_LOOKUP_KEY>` (simpler than a header in Studio).
 3. SMS-PIN (optional): before `phoneNumbers2`, add a **Split Based On…**
    `{{trigger.message.Body}}` widget — if it matches `^(?i)(brigade|duty|off)\b`,
-   route to a new **Make HTTP Request** (`POST` to `/api/duty/claim`, body
+   route to a new **Make HTTP Request** (`POST` to `/api/duty/claim?key=<DUTY_LOOKUP_KEY>`, body
    `From={{trigger.message.From}}&Body={{trigger.message.Body}}`, header
    `X-Duty-Key`), then a **Send Message** with `{{widgets.<name>.parsed.reply}}`;
    otherwise fall through to the existing forward.

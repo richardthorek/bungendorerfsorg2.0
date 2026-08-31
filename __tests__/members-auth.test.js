@@ -470,13 +470,28 @@ describe("duty line", () => {
     expect(r).toEqual({ status: 200, body: { Main: "+61488880286" } });
   });
 
-  test("lookup enforces X-Duty-Key when configured", async () => {
+  test("lookup accepts the key as a header or a ?key= query param", async () => {
     process.env.DUTY_LOOKUP_KEY = "s3cr3t";
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    await handlers.handleDutySet({
+      headers: { cookie: cookieHeader, "x-brfs-auth": "1" },
+      body: { number: "0488880286" },
+    });
     try {
-      const noKey = await handlers.handleDutyLookup({ headers: {} });
-      expect(noKey.status).toBe(401);
-      const badKey = await handlers.handleDutyLookup({ headers: { "x-duty-key": "nope" } });
-      expect(badKey.status).toBe(401);
+      expect((await handlers.handleDutyLookup({ headers: {} })).status).toBe(401);
+      expect((await handlers.handleDutyLookup({ headers: { "x-duty-key": "nope" } })).status).toBe(
+        401
+      );
+      expect(
+        (await handlers.handleDutyLookup({ headers: {}, query: { key: "wrong" } })).status
+      ).toBe(401);
+
+      expect(
+        (await handlers.handleDutyLookup({ headers: { "x-duty-key": "s3cr3t" } })).body
+      ).toEqual({ Main: "+61488880286" });
+      expect(
+        (await handlers.handleDutyLookup({ headers: {}, query: { key: "s3cr3t" } })).body
+      ).toEqual({ Main: "+61488880286" });
     } finally {
       delete process.env.DUTY_LOOKUP_KEY;
     }

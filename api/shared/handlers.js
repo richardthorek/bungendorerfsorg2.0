@@ -285,19 +285,24 @@ async function handleMembersDelete(req, email, env = process.env) {
 
 /* ----------------------------------------------------------------- duty line */
 
+/** DUTY_LOOKUP_KEY may arrive as the X-Duty-Key header or a ?key= query param. */
+function dutyKeyOk(req, env) {
+  const key = env.DUTY_LOOKUP_KEY;
+  if (!key) return true;
+  const h = req.headers || {};
+  const q = req.query || {};
+  const provided = h["x-duty-key"] || h["X-Duty-Key"] || q.key || q.Key;
+  return provided === key;
+}
+
 /**
  * Public lookup used by the Twilio flow. Returns { Main: "+61…" } which Twilio
  * parses into widgets.<name>.parsed.Main. If DUTY_LOOKUP_KEY is configured the
- * caller must send it as the X-Duty-Key header. A missing duty record 503s so
- * Twilio takes its own failure branch to the hardcoded fallback number.
+ * caller must send it (X-Duty-Key header or ?key= query param). A missing duty
+ * record 503s so Twilio takes its own failure branch to the fallback number.
  */
 async function handleDutyLookup(req, env = process.env) {
-  const key = env.DUTY_LOOKUP_KEY;
-  if (key) {
-    const h = req.headers || {};
-    const provided = h["x-duty-key"] || h["X-Duty-Key"];
-    if (provided !== key) return { status: 401, body: { error: "Unauthorized" } };
-  }
+  if (!dutyKeyOk(req, env)) return { status: 401, body: { error: "Unauthorized" } };
   const duty = await getDuty(env);
   if (!duty || !duty.number) {
     return { status: 503, body: { error: "No duty number set" } };
@@ -381,13 +386,7 @@ async function notifyDutyChange(change, env) {
  * Requires DUTY_CLAIM_PIN to be configured.
  */
 async function handleDutyClaim(req, env = process.env) {
-  const key = env.DUTY_LOOKUP_KEY;
-  if (key) {
-    const h = req.headers || {};
-    if ((h["x-duty-key"] || h["X-Duty-Key"]) !== key) {
-      return { status: 401, body: { error: "Unauthorized" } };
-    }
-  }
+  if (!dutyKeyOk(req, env)) return { status: 401, body: { error: "Unauthorized" } };
   const body = (req.body && (req.body.Body || req.body.body)) || "";
   const from = normalizeAuPhone((req.body && (req.body.From || req.body.from)) || "");
 
