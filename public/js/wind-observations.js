@@ -19,7 +19,8 @@ function renderWindObservations(data) {
   const windDir = data && data.windDirection;
   const gust = data && typeof data.windGustKmh === "number" ? data.windGustKmh : null;
   const temp = data && typeof data.airTempC === "number" ? data.airTempC : null;
-  const humidity = data && typeof data.relativeHumidityPct === "number" ? data.relativeHumidityPct : null;
+  const humidity =
+    data && typeof data.relativeHumidityPct === "number" ? data.relativeHumidityPct : null;
 
   if (windSpeed === null && temp === null && humidity === null) {
     el.textContent = WIND_DEGRADED_MESSAGE;
@@ -29,7 +30,13 @@ function renderWindObservations(data) {
 
   const parts = [];
   if (windSpeed !== null) {
-    parts.push("Wind " + windSpeed + " km/h" + (windDir ? " " + windDir : "") + (gust !== null ? " (gusts " + gust + ")" : ""));
+    parts.push(
+      "Wind " +
+        windSpeed +
+        " km/h" +
+        (windDir ? " " + windDir : "") +
+        (gust !== null ? " (gusts " + gust + ")" : "")
+    );
   }
   if (temp !== null) parts.push(temp + "°C");
   if (humidity !== null) parts.push(humidity + "% humidity");

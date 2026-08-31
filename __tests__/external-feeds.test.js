@@ -99,7 +99,14 @@ describe("getWindObservations", () => {
     const body = {
       observations: {
         data: [
-          { wind_spd_kmh: 25, wind_dir: "NW", gust_kmh: 40, air_temp: 32.5, rel_hum: 18, local_date_time_full: "20260831140000" },
+          {
+            wind_spd_kmh: 25,
+            wind_dir: "NW",
+            gust_kmh: 40,
+            air_temp: 32.5,
+            rel_hum: 18,
+            local_date_time_full: "20260831140000",
+          },
           { wind_spd_kmh: 20, wind_dir: "N", gust_kmh: 30, air_temp: 31, rel_hum: 20 },
         ],
       },
@@ -141,7 +148,10 @@ describe("getFireHotspots", () => {
   });
 
   test("successful fetch -> GeoJSON FeatureCollection with attribution", async () => {
-    const geojson = { type: "FeatureCollection", features: [{ type: "Feature", geometry: null, properties: {} }] };
+    const geojson = {
+      type: "FeatureCollection",
+      features: [{ type: "Feature", geometry: null, properties: {} }],
+    };
     global.fetch = jest.fn().mockResolvedValue(jsonResponse(geojson));
     const result = await getFireHotspots({}, { logger: quietLogger });
     expect(result.ok).toBe(true);

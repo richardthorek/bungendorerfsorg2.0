@@ -91,7 +91,12 @@ function parseFireWeatherWarning(bulletinText) {
     const line = lines[i];
     // Stop at a subsequent district-style heading (short line, no lowercase
     // sentence punctuation) once we've already collected some body text.
-    if (i > startIdx && blockLines.length > 1 && /^[A-Z][A-Za-z\s]{2,40}$/.test(line.trim()) && line.trim().length < 40) {
+    if (
+      i > startIdx &&
+      blockLines.length > 1 &&
+      /^[A-Z][A-Za-z\s]{2,40}$/.test(line.trim()) &&
+      line.trim().length < 40
+    ) {
       break;
     }
     blockLines.push(line);
@@ -140,11 +145,14 @@ const BOM_OBSERVATIONS_URL = "http://www.bom.gov.au/fwo/IDN60903/IDN60903.94926.
  * @param {{logger?: {error: Function}}} [opts]
  */
 async function getWindObservations(_env, _opts = {}) {
-  const result = await fetchWithFallback("wind-observations", () => fetchJson(BOM_OBSERVATIONS_URL));
+  const result = await fetchWithFallback("wind-observations", () =>
+    fetchJson(BOM_OBSERVATIONS_URL)
+  );
 
   if (!result.ok) return result;
 
-  const observations = (result.body && result.body.observations && result.body.observations.data) || [];
+  const observations =
+    (result.body && result.body.observations && result.body.observations.data) || [];
   const latest = observations[0] || null;
 
   if (!latest) {
@@ -176,13 +184,19 @@ async function getWindObservations(_env, _opts = {}) {
 // WFS GetFeature request against the DEA Geoserver. No API key. CC BY 4.0 —
 // attribution required in the frontend, redistribution permitted. We ask for
 // GeoJSON directly and then filter to a ~50km box around Bungendore so we
-// never ship all of Australia's hotspots to the client. The layer name can
-// change over time; DEA's current published layer is `public:hotspots`
-// (confirmed via GetCapabilities at implementation time) — if it 404s in
-// future, re-run GetCapabilities against the base URL below to find the
-// current typeName.
+// never ship all of Australia's hotspots to the client.
+//
+// Deliberately `public:hotspots_three_days`, NOT the base `public:hotspots`
+// layer: `public:hotspots` is DEA's full unbounded historical archive (a
+// GetFeature request against it timed out entirely when checked, consistent
+// with it being a very large, effectively unindexed-by-time table) with no
+// date filter applied here — querying it with only a spatial bbox would risk
+// surfacing old, long-extinguished hotspots inside the 50km box as if they
+// were current, which is exactly the kind of misleading "looks live but
+// isn't" state this roadmap exists to eliminate. `hotspots_three_days` is
+// DEA's own purpose-built recency-windowed layer and returns quickly.
 const DEA_HOTSPOTS_BASE = "https://hotspots.dea.ga.gov.au/geoserver/wfs";
-const DEA_HOTSPOTS_LAYER = "public:hotspots";
+const DEA_HOTSPOTS_LAYER = "public:hotspots_three_days";
 
 function hotspotBBox() {
   // Rough degrees-per-km at this latitude: ~0.009 deg lat/km, ~0.011 deg lon/km.

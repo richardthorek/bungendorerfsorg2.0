@@ -162,12 +162,7 @@
            fire-weather-warning.js confirms a live "Southern Ranges" warning —
            a fetch error must never flip this to visible, and an absent
            warning is the normal state, not an error. See public/js/fire-weather-warning.js. -->
-      <div
-        id="fireWeatherWarningBanner"
-        class="fire-weather-warning-banner"
-        role="alert"
-        hidden
-      >
+      <div id="fireWeatherWarningBanner" class="fire-weather-warning-banner" role="alert" hidden>
         <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
         <div>
           <p class="fire-weather-warning-banner__title">
@@ -454,7 +449,10 @@
                            image is simpler and more robust than reconstructing
                            BOM's frame sequence ourselves; the alt text and
                            fallback note keep this honest if the image 404s. -->
-                      <section class="rain-radar-panel" aria-label="Rain radar, Captains Flat region">
+                      <section
+                        class="rain-radar-panel"
+                        aria-label="Rain radar, Captains Flat region"
+                      >
                         <h3>Rain Radar &mdash; Captains Flat / Canberra (IDR403)</h3>
                         <img
                           id="rainRadarImage"
@@ -465,7 +463,10 @@
                         />
                         <p id="rainRadarFallback" class="data-label" hidden>
                           Radar image is currently unavailable &mdash; view it directly on the
-                          <a href="https://www.bom.gov.au/products/IDR403.loop.shtml" target="_blank" rel="noopener"
+                          <a
+                            href="https://www.bom.gov.au/products/IDR403.loop.shtml"
+                            target="_blank"
+                            rel="noopener"
                             >Bureau of Meteorology site</a
                           >.
                         </p>
