@@ -12,6 +12,7 @@ the full version, `CLAUDE.md` is a subset with pointers.
 | Doc | Purpose |
 |-----|---------|
 | [`../master_plan.md`](../master_plan.md) | Single source of truth for in-flight work. Update for any non-trivial change. |
+| [`WEBSITE_ROADMAP.md`](WEBSITE_ROADMAP.md) | Gold-standard strategy: safety-first phased roadmap (NOW/NEXT/LATER) synthesised from five specialist reviews. Starts with the critical safety defects to fix first. |
 | [`../.github/copilot-instructions.md`](../.github/copilot-instructions.md) | Conventions, branching, build/CI, coding standards, security rules. |
 | [`../CLAUDE.md`](../CLAUDE.md) | Lean session orientation for AI agents (subset of the above). |
 | [`../README.md`](../README.md) | Project overview, setup, and — for content editors — how to change BFDP dates, events, and the training schedule without touching code. |
