@@ -7,46 +7,42 @@
 
 ---
 
-## Active programme: UI/UX Redesign — "Command Centre" Home Page
+## Closed programme: UI/UX Redesign — "Command Centre" Home Page
 
 **Tracking issue:** [#56](https://github.com/richardthorek/bungendorerfsorg2.0/issues/56)
-**Target outcome:** home page as a compact, dense public-safety dashboard — nav +
-adaptive hero + live status strip above the fold. Calm conditions keep the hero
-compact and image-led; active incidents switch it to a map-led state. No content
+— closed 2026-08-31 (not planned). Child issues #57–#63 all closed.
+**Outcome delivered:** home page is a compact, dense public-safety dashboard — nav +
+adaptive hero + live status strip above the fold; calm conditions keep the hero
+compact and image-led, active incidents switch it to a map-led state; no content
 topic appears twice.
 
-### Status
+### What shipped
 
-All seven implementation phases have landed in code (verified against
-`public/index.html`, `public/css/main.css`, `public/js/tabs-accordion.js`,
-`public/js/emergency-dashboard.js`): the duplicate summary cards are gone, the
-adaptive hero and live status strip are in place, spacing/typography tokens were
-reduced, the footer was flattened, Pico/Font Awesome imports were deduplicated,
-Mapbox GL is lazy-loaded via `IntersectionObserver`, dead CSS was removed
-(`main.css` down from ~78.6 KB to ~58 KB), and the accessibility pass (skip link,
-roving-tabindex tablist, contrast fixes, legacy ID-alias shim removal) is in place.
+All seven implementation phases landed (squash-merged in #66, refined since).
+Verified against `public/index.html`, `public/css/main.css`,
+`public/js/tabs-accordion.js`, `public/js/emergency-dashboard.js`: duplicate
+summary cards removed; adaptive hero + live status strip in place;
+spacing/typography tokens reduced; footer flattened; Pico/Font Awesome imports
+deduplicated; Mapbox GL lazy-loaded via `IntersectionObserver`; dead CSS pass
+(`main.css` ~78.6 KB → ~58 KB); accessibility pass (skip link, roving-tabindex
+tablist, contrast token bump, legacy ID-alias shim removed).
 
-| #   | Phase                                         | Issue                                                                          | Code status                                                       |
-| --- | --------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| 0   | Audit, baseline, wireframe, plan              | #56                                                                            | Done                                                              |
-| 1   | IA cleanup — remove duplicate summary cards   | [#57](https://github.com/richardthorek/bungendorerfsorg2.0/issues/57) closed   | Done                                                              |
-| 2   | Adaptive hero + utility-bar move              | [#58](https://github.com/richardthorek/bungendorerfsorg2.0/issues/58) closed   | Done                                                              |
-| 3   | Live status strip + map continuity            | [#59](https://github.com/richardthorek/bungendorerfsorg2.0/issues/59) closed   | Done                                                              |
-| 4   | Spacing + typography token reductions         | [#60](https://github.com/richardthorek/bungendorerfsorg2.0/issues/60) closed   | Done                                                              |
-| 5   | Footer flattening + scoped hover-lift         | [#61](https://github.com/richardthorek/bungendorerfsorg2.0/issues/61) closed   | Done                                                              |
-| 6   | Asset dedupe, lazy map, CSS dead-code removal | [#62](https://github.com/richardthorek/bungendorerfsorg2.0/issues/62) **open** | Done — see [`docs/CSS_OPTIMIZATION.md`](docs/CSS_OPTIMIZATION.md) |
-| 7   | Accessibility pass + final verification       | [#63](https://github.com/richardthorek/bungendorerfsorg2.0/issues/63) **open** | Done                                                              |
+| #   | Phase                                         | Issue        | Status |
+| --- | --------------------------------------------- | ------------ | ------ |
+| 0–5 | Audit → footer flattening                     | #56–#61      | Done, issues closed as passing |
+| 6   | Asset dedupe, lazy map, CSS dead-code removal | #62          | Implementation done; closed not-planned |
+| 7   | Accessibility pass + final verification       | #63          | Implementation done; closed not-planned |
 
-### Remaining before #56 closes
+### Not done — deferred, not blocking
 
-Implementation is complete; what's left is verification evidence, not code:
+The programme was closed with the numeric verification never run. If it becomes
+worth doing, file a fresh scoped issue:
 
-- [ ] Run Lighthouse against the deployed home page (Performance ≥ 90 mobile,
-      Accessibility ≥ 95, LCP ≤ 2.5 s, CLS ≤ 0.05) and record results in
-      [`docs/current_state/ui-baseline.md`](docs/current_state/ui-baseline.md) §6.
-- [ ] Run an axe-core scan and confirm zero serious/critical violations.
-- [ ] Close #62 and #63 once the above is recorded (both have passing code, just
-      need their acceptance-criteria evidence attached).
+- `main.css` is ~20% under baseline vs the 30% target (~7 KB of a dead-CSS sweep left).
+- Lighthouse never run against the deployed home page (Perf ≥ 90 mobile,
+  A11y ≥ 95, LCP ≤ 2.5 s, CLS ≤ 0.05) — [`docs/current_state/ui-baseline.md`](docs/current_state/ui-baseline.md) §6 still `_TBD_`.
+- axe-core scan never run; WCAG AA contrast never formally measured.
+- 1920 px screenshot missing (360/768/1280 committed); no before/after diff.
 
 Reference specs (target-state, not to be edited without re-verifying against the
 current DOM): [`docs/current_state/ui-baseline.md`](docs/current_state/ui-baseline.md),
