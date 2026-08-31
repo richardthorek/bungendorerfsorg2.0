@@ -1065,6 +1065,26 @@ label {
 .social__bubble.is-pending {
   opacity: 0.6;
 }
+.social__bubble-copy {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface);
+}
+.social__bubble-copy-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-faint);
+  margin-bottom: 0.25rem;
+}
+.social__bubble-copy p {
+  margin: 0;
+  font-style: italic;
+}
 .social__bubble-img {
   display: block;
   max-width: 12rem;

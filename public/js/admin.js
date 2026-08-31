@@ -1672,9 +1672,23 @@
       img.className = "social__bubble-img";
       wrap.appendChild(img);
     }
-    const p = document.createElement("p");
-    p.textContent = msg.text;
-    wrap.appendChild(p);
+    if (msg.text) {
+      const p = document.createElement("p");
+      p.textContent = msg.text;
+      wrap.appendChild(p);
+    }
+    if (msg.proposedCopy) {
+      const copyBlock = document.createElement("div");
+      copyBlock.className = "social__bubble-copy";
+      const label = document.createElement("span");
+      label.className = "social__bubble-copy-label";
+      label.textContent = "Proposed copy";
+      const copyText = document.createElement("p");
+      copyText.textContent = msg.proposedCopy;
+      copyBlock.appendChild(label);
+      copyBlock.appendChild(copyText);
+      wrap.appendChild(copyBlock);
+    }
     el.socialChat.appendChild(wrap);
     el.socialChat.scrollTop = el.socialChat.scrollHeight;
     return wrap;
@@ -1682,7 +1696,8 @@
 
   function socialTranscript() {
     return state.socialMessages.slice(-24).map(function (m) {
-      return { role: m.role, text: m.text, image: m.image };
+      const text = m.proposedCopy ? m.text + "\n\nProposed copy: " + m.proposedCopy : m.text;
+      return { role: m.role, text: text, image: m.image };
     });
   }
 
@@ -1711,7 +1726,11 @@
         setMsg(el.socialAiMsg, (r.data && r.data.error) || "Could not reach the assistant.", "err");
         return;
       }
-      const assistantMsg = { role: "assistant", text: r.data.reply };
+      const assistantMsg = {
+        role: "assistant",
+        text: r.data.message,
+        proposedCopy: r.data.proposedCopy || undefined,
+      };
       state.socialMessages.push(assistantMsg);
       addSocialChatBubble(assistantMsg);
       el.socialDraftBtn.disabled = false;

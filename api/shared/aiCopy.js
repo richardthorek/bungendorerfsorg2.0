@@ -98,7 +98,10 @@ You're chatting with a brigade volunteer to help them plan a post — this is a 
 conversation, not a final draft. Keep replies short (2-4 sentences), ask a clarifying question
 when it would sharpen the post, and clearly push back — explaining why — if asked to write
 something inaccurate, alarmist, political, or privacy-invasive. If a photo is attached, you can
-refer to what's actually in it.`;
+refer to what's actually in it.
+
+Respond with strict JSON only, no markdown fences, matching exactly this shape:
+{"message": "your conversational reply — guidance, questions, pushback — never the post copy itself", "proposedCopy": "a short draft snippet of actual post wording, ONLY if you are proposing specific copy at this point in the conversation — otherwise null"}`;
 
 /**
  * Keyword backstop — catches high-risk content even if the model's own
@@ -245,10 +248,22 @@ async function chatReply({ systemPrompt, transcript }, env = process.env) {
   const content = await callAzureChat(
     systemPrompt + CHAT_REPLY_SUFFIX,
     transcript,
-    { reasoningEffort: "none" },
+    { jsonMode: true, reasoningEffort: "none" },
     env
   );
-  return { reply: truncate(content, 2000) };
+
+  let parsed;
+  try {
+    parsed = parseModelJson(content);
+  } catch {
+    // Fall back to treating the whole thing as the conversational message —
+    // keeps the chat usable even if the model ever drifts off the contract.
+    parsed = { message: content, proposedCopy: null };
+  }
+
+  const message = truncate(parsed.message, 2000);
+  const proposedCopy = typeof parsed.proposedCopy === "string" ? truncate(parsed.proposedCopy, 2000) : "";
+  return { message: message || truncate(content, 2000), proposedCopy: proposedCopy || null };
 }
 
 /** @param {{systemPrompt:string, transcript:Array}} args */
