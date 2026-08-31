@@ -121,7 +121,17 @@ describe("identity gate", () => {
     expect(identity.normalizeEmail("  Foo@RFS.NSW.GOV.AU ")).toBe("foo@rfs.nsw.gov.au");
     expect(identity.normalizeEmail("not-an-email")).toBe("");
     expect(identity.normalizeEmail("a b@x.com")).toBe("");
+    expect(identity.normalizeEmail("two@@x.com")).toBe("");
+    expect(identity.normalizeEmail("@nope.com")).toBe("");
+    expect(identity.normalizeEmail("nope@domain.")).toBe("");
     expect(identity.normalizeEmail(42)).toBe("");
+  });
+
+  test("normalizeEmail is not vulnerable to ReDoS", () => {
+    const hostile = "x@" + "!.".repeat(50000) + " ";
+    const start = Date.now();
+    expect(identity.normalizeEmail(hostile)).toBe("");
+    expect(Date.now() - start).toBeLessThan(50);
   });
 
   test("isAllowedDomain only passes the configured domain", () => {

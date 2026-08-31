@@ -10,12 +10,23 @@
 
 const DEFAULT_DOMAIN = "rfs.nsw.gov.au";
 
-/** Lower-case and trim; returns "" for anything that isn't a plausible address. */
+/**
+ * Lower-case and trim; returns "" for anything that isn't a plausible address.
+ * Uses string ops rather than a regex so a hostile input can't trigger
+ * catastrophic backtracking (polynomial ReDoS).
+ */
 function normalizeEmail(value) {
   if (typeof value !== "string") return "";
   const email = value.trim().toLowerCase();
-  // one @, non-empty local part, a dotted domain, no spaces
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "";
+  if (email.length < 6 || email.length > 254) return "";
+  if (/\s/.test(email)) return ""; // single class, no quantifier — linear
+
+  const at = email.indexOf("@");
+  if (at < 1 || at !== email.lastIndexOf("@")) return ""; // exactly one @, non-empty local part
+
+  const domain = email.slice(at + 1);
+  const dot = domain.lastIndexOf(".");
+  if (dot < 1 || dot === domain.length - 1) return ""; // a dot, not first or last char
   return email;
 }
 
