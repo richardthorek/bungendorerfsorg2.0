@@ -1,14 +1,22 @@
 secrets.env
 node_modules
 .env
+.env.local
+.env.*.local
 RFS-Style-Guide.md
+
+# Azure Functions / Static Web Apps local secrets (api/local.settings.example.json is tracked)
+api/local.settings.json
+infra/parameters.json
 
 # Test coverage
 coverage/
 .nyc_output/
 
 # IDE
-
+# .vscode/ is intentionally tracked (settings.json, extensions/launch/tasks configs help
+# rebuild a working dev environment after a reset) — only ignore machine-local overrides here.
+.vscode/*.local.json
 .idea/
 
 # Claude Code personal/machine-specific overrides (shared .claude/settings.json is tracked)
@@ -25,12 +33,19 @@ coverage/
 .DS_Store
 __MACOSX/
 
+# Windows artifacts
+Thumbs.db
+
+# Editor swap files
+*.swp
+*.swo
+
+# npm/yarn debug logs
+npm-debug.log*
+yarn-error.log*
+*.log
+
 # Backup files
 *~
 *.bak
 .scratch
-.vscode
-Screenshot_1-9-2026_11278_lively-flower-0577f4700-111.eastasia.5.azurestaticapps.net.jpeg
-Screenshot_1-9-2026_112637_lively-flower-0577f4700-111.eastasia.5.azurestaticapps.net.jpeg
-Screenshot_1-9-2026_112648_lively-flower-0577f4700-111.eastasia.5.azurestaticapps.net.jpeg
-Screenshot_1-9-2026_112658_lively-flower-0577f4700-111.eastasia.5.azurestaticapps.net.jpeg
