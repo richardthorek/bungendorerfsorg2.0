@@ -114,6 +114,21 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleNavLogo(); // Initial check
   }
 
+  // BOM rain radar (WEBSITE_ROADMAP Workstream 7): a plain <img> embed of
+  // BOM's own loop, so there's no server-side fetch to proxy. BOM's "classic
+  // radar" image URLs have shifted format before, so honest-failure-state
+  // (§2.1) applies here too — on a broken/changed URL, hide the (now empty
+  // alt-text box) image and show a direct link to BOM's own radar page
+  // instead of a broken-image icon.
+  const rainRadarImage = document.getElementById("rainRadarImage");
+  const rainRadarFallback = document.getElementById("rainRadarFallback");
+  if (rainRadarImage && rainRadarFallback) {
+    rainRadarImage.addEventListener("error", () => {
+      rainRadarImage.hidden = true;
+      rainRadarFallback.hidden = false;
+    });
+  }
+
   // Bush Fire Danger Period (BFDP) check.
   //
   // The RFS Commissioner can vary the BFDP start/end date per district, and

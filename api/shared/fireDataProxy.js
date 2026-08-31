@@ -168,4 +168,10 @@ module.exports = {
   FRESH_TTL_MS,
   STALE_CEILING_MS,
   _resetCacheForTests,
+  // Exported for reuse by api/shared/externalFeeds.js (Workstream 7 feeds),
+  // which follow the exact same fresh/stale/expired cache-tier contract
+  // against different upstreams (BOM, DEA) rather than the Logic App webhooks.
+  fetchWithFallback,
+  fetchUpstreamText,
+  fetchUpstreamJson,
 };

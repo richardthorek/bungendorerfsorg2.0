@@ -6,6 +6,12 @@ const { handleContactSubmission } = require("./api/contact/submit");
 const { getClientIp } = require("./api/shared/auth");
 const { validateContactFormData } = require("./api/shared/contactValidation");
 const { getFireDanger, getFireIncidents } = require("./api/shared/fireDataProxy");
+const {
+  getFireWeatherWarning,
+  getWindObservations,
+  getFireHotspots,
+  getTrafficHazards,
+} = require("./api/shared/externalFeeds");
 const { checkHealth } = require("./api/shared/health");
 const {
   handleAuthRequest,
@@ -152,6 +158,50 @@ app.get("/api/fire-danger", async (req, res) => {
   res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");
   res.set("X-Data-Age-Seconds", String(result.ageSeconds));
   res.send(result.body);
+});
+
+// New external feeds (WEBSITE_ROADMAP Workstream 7) — see
+// api/shared/externalFeeds.js for the shared fetch/cache/honest-failure logic
+// behind each of these, reusing fireDataProxy's cache-tier contract.
+app.get("/api/fire-weather-warning", async (req, res) => {
+  const result = await getFireWeatherWarning(process.env, { logger: console });
+  if (!result.ok) {
+    return res.status(result.status || 500).json({ error: result.error || "Failed to fetch fire weather warning" });
+  }
+  res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");
+  res.set("X-Data-Age-Seconds", String(result.ageSeconds));
+  res.json(result.body);
+});
+
+app.get("/api/wind-observations", async (req, res) => {
+  const result = await getWindObservations(process.env, { logger: console });
+  if (!result.ok) {
+    return res.status(result.status || 500).json({ error: result.error || "Failed to fetch wind observations" });
+  }
+  res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");
+  res.set("X-Data-Age-Seconds", String(result.ageSeconds));
+  res.json(result.body);
+});
+
+app.get("/api/fire-hotspots", async (req, res) => {
+  const result = await getFireHotspots(process.env, { logger: console });
+  if (!result.ok) {
+    return res.status(result.status || 500).json({ error: result.error || "Failed to fetch fire hotspots" });
+  }
+  res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");
+  res.set("X-Data-Age-Seconds", String(result.ageSeconds));
+  res.json(result.body);
+});
+
+app.get("/api/traffic-hazards", async (req, res) => {
+  const hazardType = req.query.type || "fire";
+  const result = await getTrafficHazards(process.env, { logger: console, hazardType });
+  if (!result.ok) {
+    return res.status(result.status || 500).json({ error: result.error || "Failed to fetch traffic hazards" });
+  }
+  res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");
+  res.set("X-Data-Age-Seconds", String(result.ageSeconds));
+  res.json(result.body);
 });
 
 // Lightweight health check for external uptime monitoring — see

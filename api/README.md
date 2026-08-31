@@ -19,6 +19,10 @@ Each function is its own directory with `index.js` + `function.json`.
 | `mapbox-token/` | `GET /api/mapbox-token` | Returns the Mapbox token, origin-validated |
 | `fire-danger/` | `GET /api/fire-danger` | Proxies the fire-danger XML feed (Logic App). Last-known-good in-memory cache with stale-while-revalidate — see `fireDataProxy.js` below |
 | `fire-incidents/` | `GET /api/fire-incidents` | Proxies the incidents GeoJSON (Logic App). Same cache/staleness policy as `fire-danger/` |
+| `fire-weather-warning/` | `GET /api/fire-weather-warning` | BOM Fire Weather Warning bulletin (IDN22000), filtered to the "Southern Ranges" district — see `externalFeeds.js` below |
+| `wind-observations/` | `GET /api/wind-observations` | BOM live wind/temp/humidity, Canberra Airport (IDN60903.94926) — see `externalFeeds.js` below |
+| `fire-hotspots/` | `GET /api/fire-hotspots` | DEA satellite hotspots (Himawari), filtered to ~50km of Bungendore — see `externalFeeds.js` below |
+| `traffic-hazards/` | `GET /api/traffic-hazards` | TfNSW Live Traffic Hazards (Kings Highway). **Pending `TFNSW_API_KEY`** — returns an honest 503 until the key is issued; see `externalFeeds.js` below |
 | `health/` | `GET /api/health` | Public liveness check for external uptime monitoring: `{ status: "ok" \| "degraded", timestamp }` |
 | `contact/` | `POST /api/contact` | Contact-form submit: validates, records to the `enquiries` table, emails the committee DL via ACS (`submit.js` + `notify.js`) |
 | `auth-request/` | `POST /api/auth/request` | Members' area: email a one-time sign-in code (ACS) |
@@ -39,7 +43,9 @@ Storage), `otpEmail.js` (ACS sign-in code), `aiCopy.js` (Azure OpenAI),
 `clarityInsights.js` (Clarity export API), `phone.js`, `dutyAlert.js`,
 `contentSchema.js`, `functionAdapter.js`, `contactValidation.js` (contact-form
 rules), `fireDataProxy.js` (fire-danger/fire-incidents fetch + cache), `health.js`
-(the `/api/health` check).
+(the `/api/health` check), `externalFeeds.js` (Workstream 7: BOM Fire Weather
+Warning, BOM wind observations, DEA hotspots, TfNSW traffic hazards — reuses
+`fireDataProxy.js`'s `fetchWithFallback` cache-tier helper).
 
 ### Fire-data caching (`fireDataProxy.js`)
 
@@ -66,6 +72,38 @@ if that tradeoff ever needs revisiting.
 second independent probe) to decide `ok` vs `degraded`, so it never doubles
 load on the upstream webhook.
 
+### New external feeds (`externalFeeds.js`)
+
+WEBSITE_ROADMAP.md Workstream 7. All four reuse `fireDataProxy.js`'s exported
+`fetchWithFallback` helper, so they get the identical fresh/stale/expired
+cache-tier behaviour and `X-Data-Freshness` / `X-Data-Age-Seconds` headers
+described above, against different public upstreams:
+
+- **`fire-weather-warning`** — BOM's IDN22000 free-text bulletin. When a
+  warning is current, "Southern Ranges" appears as a section heading; when
+  there's no current warning the bulletin is simply empty. That empty/absent
+  state is parsed as `{ hasWarning: false }` — a normal, non-error response —
+  never conflated with an actual upstream fetch failure.
+- **`wind-observations`** — BOM's IDN60903.94926 JSON feed for Canberra
+  Airport (nearest station). Surfaces the latest observation's wind speed/
+  direction/gust, air temp and relative humidity.
+- **`fire-hotspots`** — Digital Earth Australia (DEA) Himawari satellite
+  hotspots via WFS `GetFeature`, bounded to ~50km of Bungendore server-side so
+  the frontend never receives all of Australia's hotspots. CC BY 4.0 —
+  attribution is folded into the response body and rendered client-side.
+- **`traffic-hazards`** — TfNSW Live Traffic Hazards. Requires `TFNSW_API_KEY`,
+  which is **not yet issued** (free key, reCAPTCHA-gated human signup). While
+  the key is absent, this returns the same honest "unavailable" shape as any
+  other degraded feed (503, no stack trace, no upstream URL) — never a 500 and
+  never a silently-omitted response. Once a key is obtained, set
+  `TFNSW_API_KEY` and no code change is needed.
+
+BOM's rain radar (Captains Flat/Canberra, product `IDR403`) has no shared
+handler — the frontend embeds BOM's own loop image directly
+(`public/index.html`'s Fire Information tab), since there's no data to proxy
+or cache server-side. If BOM changes that image URL, update it in
+`public/index.html` only.
+
 ## Environment variables
 
 Set these as **Application settings** on the Static Web App (Configuration blade).
@@ -77,6 +115,7 @@ The authoritative list with dev-friendly values is
 | `MAPBOX_ACCESS_TOKEN` | `mapbox-token` |
 | `ALLOWED_ORIGINS` | `mapbox-token` origin allow-list (optional) |
 | `AZURE_FIRE_DANGER_WEBHOOK_URL`, `AZURE_INCIDENTS_WEBHOOK_URL` | `fire-danger`, `fire-incidents` |
+| `TFNSW_API_KEY` | `traffic-hazards` (pending — see above; feed returns an honest 503 without it) |
 | `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS` | contact email + sign-in codes |
 | `CONTACT_NOTIFY_TO`, `CONTACT_NOTIFY_CONFIRM` | `contact` |
 | `AUTH_JWT_SECRET`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES` | members'-area auth |

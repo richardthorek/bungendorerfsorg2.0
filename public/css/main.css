@@ -2264,3 +2264,76 @@ body.map-fullscreen-active {
     transform: none;
   }
 }
+
+/* ── New external feeds (WEBSITE_ROADMAP Workstream 7) ──────────────────── */
+
+/* BOM Fire Weather Warning banner — only rendered visible (hidden attribute
+   removed) when public/js/fire-weather-warning.js confirms a live "Southern
+   Ranges" warning. Uses the same amber/red caution language as the rest of
+   the emergency surfaces, never the calm palette. */
+.fire-weather-warning-banner {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+  background-color: var(--clear-toban-active-bg);
+  border: 2px solid var(--rfs-core-red);
+  border-radius: var(--pico-border-radius);
+  padding: var(--space-lg);
+  margin: var(--space-lg) auto;
+  max-width: 1200px;
+  color: var(--clear-body-text);
+}
+
+.fire-weather-warning-banner i {
+  color: var(--rfs-core-red);
+  font-size: 1.5rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.fire-weather-warning-banner__title {
+  font-weight: 800;
+  margin: 0 0 0.25rem;
+}
+
+.fire-weather-warning-banner__text {
+  margin: 0 0 0.25rem;
+  white-space: pre-line;
+}
+
+.fire-weather-warning-banner__source {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--clear-text-muted);
+}
+
+/* Wind/temp/humidity sub-label under the Fire Danger cell. */
+.strip-cell__sub--wind {
+  margin-top: 0.15rem;
+  font-style: italic;
+}
+
+/* Rain radar embed, Fire Information tab. */
+.rain-radar-panel {
+  margin: var(--space-xl) 0;
+}
+
+.rain-radar-panel h3 {
+  font-size: 1rem;
+  margin-bottom: var(--space-sm);
+}
+
+.rain-radar-panel__image {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  border-radius: var(--pico-border-radius);
+  border: 1px solid var(--clear-hairline);
+  display: block;
+}
+
+.rain-radar-panel__source {
+  font-size: 0.78rem;
+  color: var(--clear-text-muted);
+  margin-top: var(--space-xs);
+}

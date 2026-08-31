@@ -157,6 +157,27 @@
         </hgroup>
       </div>
 
+      <!-- BOM Fire Weather Warning banner (WEBSITE_ROADMAP Workstream 7).
+           Honest-failure-state (§2.1): hidden by default and only shown when
+           fire-weather-warning.js confirms a live "Southern Ranges" warning —
+           a fetch error must never flip this to visible, and an absent
+           warning is the normal state, not an error. See public/js/fire-weather-warning.js. -->
+      <div
+        id="fireWeatherWarningBanner"
+        class="fire-weather-warning-banner"
+        role="alert"
+        hidden
+      >
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>
+          <p class="fire-weather-warning-banner__title">
+            Fire Weather Warning &mdash; Southern Ranges
+          </p>
+          <p id="fireWeatherWarningText" class="fire-weather-warning-banner__text"></p>
+          <p class="fire-weather-warning-banner__source">Source: Bureau of Meteorology</p>
+        </div>
+      </div>
+
       <!-- Live Status Strip (Phase 3): replaces header status bar, dashboard overlay, mobile panel, and fire-info summary card.
            aria-live="polite" (roadmap Workstream 1): screen-reader users must hear
            escalations (a rating change, a new incident, the warning level moving)
@@ -180,6 +201,13 @@
           </p>
           <div id="fireDangerRatingCell" class="strip-cell__value tabular-nums">Loading…</div>
           <p id="fireDangerMessage" class="strip-cell__sub">Fetching latest data…</p>
+          <!-- BOM wind/temp/humidity, Canberra Airport (nearest station) —
+               WEBSITE_ROADMAP Workstream 7. Honest-failure-state: shows
+               "Wind data unavailable" rather than blank or a stale-looking
+               default on fetch failure. See public/js/wind-observations.js. -->
+          <p id="windObservationsSub" class="strip-cell__sub strip-cell__sub--wind">
+            Checking wind conditions&hellip;
+          </p>
         </article>
 
         <!-- Cell 2: Active Incidents -->
@@ -420,6 +448,36 @@
                       <a href="#info" class="map-legend-link">View full incident map &rarr;</a>
                       <div id="fireInfoTableContainer" class="grid-container"></div>
                       <div id="permitsContent"></div>
+
+                      <!-- BOM rain radar, Captains Flat/Canberra (IDR403) —
+                           WEBSITE_ROADMAP Workstream 7. A plain embedded loop
+                           image is simpler and more robust than reconstructing
+                           BOM's frame sequence ourselves; the alt text and
+                           fallback note keep this honest if the image 404s. -->
+                      <section class="rain-radar-panel" aria-label="Rain radar, Captains Flat region">
+                        <h3>Rain Radar &mdash; Captains Flat / Canberra (IDR403)</h3>
+                        <img
+                          id="rainRadarImage"
+                          src="https://reg.bom.gov.au/radar/IDR403.gif"
+                          alt="BOM 128km rain radar loop centred on Captains Flat, covering the Bungendore area"
+                          loading="lazy"
+                          class="rain-radar-panel__image"
+                        />
+                        <p id="rainRadarFallback" class="data-label" hidden>
+                          Radar image is currently unavailable &mdash; view it directly on the
+                          <a href="https://www.bom.gov.au/products/IDR403.loop.shtml" target="_blank" rel="noopener"
+                            >Bureau of Meteorology site</a
+                          >.
+                        </p>
+                        <p class="rain-radar-panel__source">Source: Bureau of Meteorology</p>
+                      </section>
+
+                      <!-- DEA satellite hotspots status line — the layer itself renders on
+                           the map above (see public/js/map.js loadHotspotLayer); this line
+                           gives a non-map-dependent, honest summary of feed health. -->
+                      <p id="hotspotsStatusLine" class="data-label" aria-live="polite">
+                        Checking satellite hotspot data&hellip;
+                      </p>
                     </div>
                     <aside class="quick-links">
                       <p class="quick-links__kicker">Quick Links</p>
@@ -821,6 +879,8 @@
   <script src="js/tabs-accordion.js" defer></script>
   <script src="js/main.js" defer></script>
   <script src="js/emergency-data.js" defer></script>
+  <script src="js/fire-weather-warning.js" defer></script>
+  <script src="js/wind-observations.js" defer></script>
   <script src="js/map.js" defer></script>
   <script src="js/modal-utils.js" defer></script>
   <script src="js/calendar.js" defer></script>
