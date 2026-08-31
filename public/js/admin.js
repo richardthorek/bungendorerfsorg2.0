@@ -163,7 +163,7 @@
     el.appView.hidden = false;
     el.whoami.textContent = me.email;
     el.navItems.forEach(function (b) {
-      if (b.dataset.admin) b.hidden = me.role !== "admin";
+      if (b.hasAttribute("data-admin")) b.hidden = me.role !== "admin";
     });
     switchView(currentViewFromHash() || "duty");
     if (currentViewFromHash() !== "enquiries") loadEnquiries(); // for the nav badge
@@ -738,7 +738,7 @@
     return rows.map(function (row) {
       const obj = {};
       cfg.fields.forEach(function (field) {
-        const holder = row.querySelector("[data-field=\"" + field.key + "\"]");
+        const holder = row.querySelector(`[data-field="${field.key}"]`);
         if (field.type === "recurrence") {
           obj[field.key] =
             holder.querySelector(".recur__ord").value +
