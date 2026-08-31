@@ -77,6 +77,7 @@ is left is manual teardown / config only the owner can do:
 | Test infrastructure (Jest + Testing-Library)                                          | Done   | [`docs/TESTING.md`](docs/TESTING.md), `__tests__/`                                                |
 | CI (lint + test + audit)                                                              | Done   | `.github/workflows/ci.yml`                                                                        |
 | Calendar migration off Microsoft Graph to static content files                        | Done   | `public/Content/communityEvents.json`, `trainingSchedule.json`; see README § Editing site content |
+| Website Roadmap "Bet 2" — PWA + offline last-known-good (`public/sw.js`, localStorage last-known-good fallback in `emergency-data.js`, manifest completeness) | Done — branch `bet2-pwa-offline` | [`docs/WEBSITE_ROADMAP.md`](docs/WEBSITE_ROADMAP.md) §4 |
 
 ---
 

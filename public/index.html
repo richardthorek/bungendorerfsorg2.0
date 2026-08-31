@@ -826,4 +826,20 @@
   <script src="js/calendar.js" defer></script>
   <script src="js/contact.js" defer></script>
   <script src="js/dynamicContent.js" defer></script>
+
+  <!-- Service worker registration (Bet 2, WEBSITE_ROADMAP.md §4): app-shell +
+       last-known-good API caching so the emergency status strip still has
+       something honest to show when the client is fully offline. Feature-
+       detected and deliberately outside the deferred script chain above so a
+       registration failure (unsupported browser, disabled SW) can never block
+       or delay the page's own scripts. -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function (error) {
+          console.warn("Service worker registration failed:", error);
+        });
+      });
+    }
+  </script>
 </html>
