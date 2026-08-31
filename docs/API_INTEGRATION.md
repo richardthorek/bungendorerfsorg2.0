@@ -7,7 +7,7 @@ This document describes all API integrations used in the Bungendore RFS website.
 ## Table of Contents
 
 - [Overview](#overview)
-- [Server-Side Proxy Endpoints](#server-side-proxy-endpoints) — contact, events/training, fire incidents, fire danger, mapbox token, members' area, brigade phone
+- [Server-Side Proxy Endpoints](#server-side-proxy-endpoints) — contact, events/training, fire incidents, fire danger, health check, mapbox token, members' area, brigade phone
 - [Social Studio — Azure OpenAI copy assistant](#social-studio--azure-openai-copy-assistant)
 - [Analytics — Microsoft Clarity](#analytics--microsoft-clarity)
 - [Azure Logic Apps Integration](#azure-logic-apps-integration)
@@ -163,6 +163,13 @@ The old Microsoft 365 calendar feed — `api/calendar-events`,
 3. Creates map markers with appropriate icons
 4. Populates incident table
 
+**Freshness headers:** the proxy keeps an in-memory last-known-good cache
+(`api/shared/fireDataProxy.js`) and serves it — clearly marked — if the live
+upstream fetch fails. Every response carries `X-Data-Freshness: fresh|stale`
+and `X-Data-Age-Seconds: <n>`. Cache older than 30 minutes is not served; the
+endpoint errors instead (an hours-old incident count during an active fire is
+worse than an honest failure).
+
 ---
 
 ### 4. Fire Danger Rating
@@ -192,6 +199,31 @@ The old Microsoft 365 calendar feed — `api/calendar-events`,
    - Fire behavior message
    - Key safety message
 4. Displays in fire danger section
+
+**Freshness headers:** same last-known-good cache and `X-Data-Freshness` /
+`X-Data-Age-Seconds` headers as `/api/fire-incidents` above — see
+`api/shared/fireDataProxy.js`.
+
+---
+
+### 3a. Health Check
+
+**Endpoint:** `GET /api/health`
+
+**Purpose:** Public, unauthenticated liveness probe for an external uptime
+monitor (the monitor itself is configured outside this repo).
+
+**Response:**
+
+```json
+{ "status": "ok", "timestamp": "2026-08-31T10:00:00.000Z" }
+```
+
+`status` is `"degraded"` (still HTTP 200 — the body carries the signal, not
+the status code) when the fire-data upstream looks unreachable. The check
+reuses `fireDataProxy`'s own fetch/cache path rather than issuing a second
+independent upstream request, so polling this endpoint doesn't add extra load
+beyond what `/api/fire-danger` already causes.
 
 ---
 
@@ -590,6 +622,9 @@ curl http://localhost:3000/api/fire-incidents
 
 # Test fire danger
 curl http://localhost:3000/api/fire-danger
+
+# Test health check
+curl http://localhost:3000/api/health
 
 # Test mapbox token
 curl http://localhost:3000/mapbox-token
