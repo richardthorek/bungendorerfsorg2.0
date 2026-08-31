@@ -100,6 +100,17 @@ jest.mock("../api/shared/store", () => ({
   async listDutyHistory(limit) {
     return mockDb.duty.history.slice(0, limit || 20);
   },
+  async listDutyContacts(limit) {
+    const seen = new Set();
+    const out = [];
+    for (const h of mockDb.duty.history) {
+      if (!h.number || seen.has(h.number)) continue;
+      seen.add(h.number);
+      out.push({ number: h.number, label: h.label || "", lastUsedAt: h.setAt });
+      if (out.length >= (limit || 10)) break;
+    }
+    return out;
+  },
   async getContent(key) {
     return mockDb.content[key] || null;
   },
@@ -489,17 +500,33 @@ describe("duty line", () => {
     expect(bad.status).toBe(400);
   });
 
-  test("status returns the current number, masked, plus history", async () => {
+  test("status returns the current number + label and a recent-contacts list", async () => {
     const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
     const hdr = { cookie: cookieHeader, ...CSRF };
-    await handlers.handleDutySet({ headers: hdr, body: { number: "0488880286" } });
-    await handlers.handleDutySet({ headers: hdr, body: { number: "0412345678" } });
+    await handlers.handleDutySet({ headers: hdr, body: { number: "0488880286", label: "Sandi" } });
+    await handlers.handleDutySet({ headers: hdr, body: { number: "0412345678", label: "Tony" } });
 
     const r = await handlers.handleDutyStatus({ headers: { cookie: cookieHeader } });
     expect(r.status).toBe(200);
     expect(r.body.number).toBe("+61412345678");
+    expect(r.body.label).toBe("Tony");
     expect(r.body.masked).toMatch(/5678$/);
-    expect(r.body.history.length).toBe(2);
+    // the current number is excluded from the quick-pick list
+    expect(r.body.contacts).toEqual([
+      expect.objectContaining({ number: "+61488880286", label: "Sandi" }),
+    ]);
+  });
+
+  test("one-click set from a saved contact carries its label", async () => {
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const hdr = { cookie: cookieHeader, ...CSRF };
+    const r = await handlers.handleDutySet({
+      headers: hdr,
+      body: { number: "0499111222", label: "Station landline" },
+    });
+    expect(r.body.label).toBe("Station landline");
+    const store = require("../api/shared/store");
+    expect((await store.getDuty()).label).toBe("Station landline");
   });
 
   test("setting the number over the web fires a change alert", async () => {

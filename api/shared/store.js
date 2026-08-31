@@ -261,6 +261,7 @@ function dutyFromEntity(e) {
   if (!e) return null;
   return {
     number: e.number || "",
+    label: e.label || "",
     setBy: e.setBy || "",
     setByName: e.setByName || "",
     method: e.method || "",
@@ -274,20 +275,21 @@ async function getDuty(env) {
 
 /**
  * Set the forwarding number and append a history row.
- * @param {{number:string, setBy:string, setByName?:string, method:string}} entry
+ * @param {{number:string, label?:string, setBy?:string, setByName?:string, method:string}} entry
  */
 async function setDuty(entry, env) {
   const setAt = new Date().toISOString();
-  const record = {
-    partitionKey: "duty",
-    rowKey: "current",
+  const fields = {
     number: entry.number,
+    label: entry.label || "",
     setBy: entry.setBy || "",
     setByName: entry.setByName || "",
     method: entry.method || "",
     setAt,
   };
-  await (await db(env)).duty.upsertEntity(record, "Replace");
+  await (
+    await db(env)
+  ).duty.upsertEntity({ partitionKey: "duty", rowKey: "current", ...fields }, "Replace");
   // reverse-timestamp row key so listing is newest-first
   const reverse = String(1e15 - Date.now()).padStart(16, "0");
   await (
@@ -295,13 +297,9 @@ async function setDuty(entry, env) {
   ).duty.createEntity({
     partitionKey: "duty",
     rowKey: `h:${reverse}`,
-    number: entry.number,
-    setBy: entry.setBy || "",
-    setByName: entry.setByName || "",
-    method: entry.method || "",
-    setAt,
+    ...fields,
   });
-  return dutyFromEntity(record);
+  return dutyFromEntity({ ...fields, rowKey: "current" });
 }
 
 async function listDutyHistory(limit, env) {
@@ -312,12 +310,27 @@ async function listDutyHistory(limit, env) {
   for await (const e of iter) {
     out.push({
       number: e.number || "",
+      label: e.label || "",
       setBy: e.setBy || "",
       setByName: e.setByName || "",
       method: e.method || "",
       setAt: e.setAt || "",
     });
-    if (out.length >= (limit || 20)) break;
+    if (out.length >= (limit || 40)) break;
+  }
+  return out;
+}
+
+/** Distinct numbers used before, newest first — the quick-pick list. */
+async function listDutyContacts(limit, env) {
+  const history = await listDutyHistory(80, env);
+  const seen = new Set();
+  const out = [];
+  for (const h of history) {
+    if (!h.number || seen.has(h.number)) continue;
+    seen.add(h.number);
+    out.push({ number: h.number, label: h.label || "", lastUsedAt: h.setAt });
+    if (out.length >= (limit || 10)) break;
   }
   return out;
 }
@@ -457,6 +470,7 @@ module.exports = {
   getDuty,
   setDuty,
   listDutyHistory,
+  listDutyContacts,
   getContent,
   setContent,
   getMember,

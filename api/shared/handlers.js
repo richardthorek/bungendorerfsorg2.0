@@ -34,6 +34,7 @@ const {
   getDuty,
   setDuty,
   listDutyHistory,
+  listDutyContacts,
   getContent,
   setContent,
   listEnquiries,
@@ -308,17 +309,20 @@ async function handleDutyStatus(req, env = process.env) {
   const s = await resolveSession(req, {}, env);
   if (!s.ok) return { status: s.status, body: { error: s.error } };
   const duty = await getDuty(env);
-  const history = await listDutyHistory(15, env);
+  const contacts = (await listDutyContacts(10, env)).filter(
+    (c) => !duty || c.number !== duty.number
+  );
   return {
     status: 200,
     body: {
       number: duty ? duty.number : "",
+      label: duty ? duty.label : "",
       masked: duty ? maskPhone(duty.number) : "",
       setBy: duty ? duty.setBy : "",
       setByName: duty ? duty.setByName : "",
       method: duty ? duty.method : "",
       setAt: duty ? duty.setAt : "",
-      history,
+      contacts,
     },
   };
 }
@@ -332,22 +336,30 @@ async function handleDutySet(req, env = process.env) {
   if (!number) {
     return { status: 400, body: { error: "Enter a valid Australian phone number." } };
   }
+  const label = String((req.body && req.body.label) || "")
+    .trim()
+    .slice(0, 60);
 
   const previous = await getDuty(env);
   const saved = await setDuty(
-    { number, setBy: s.member.email, setByName: s.member.displayName, method: "web" },
+    { number, label, setBy: s.member.email, setByName: s.member.displayName, method: "web" },
     env
   );
   await audit(
     "duty_changed",
-    { email: s.member.email, detail: `${maskPhone(number)} via web` },
+    { email: s.member.email, detail: `${label || maskPhone(number)} via web` },
     env
   );
   await notifyDutyChange({ ...saved, previous: previous ? previous.number : "" }, env);
 
   return {
     status: 200,
-    body: { number: saved.number, masked: maskPhone(saved.number), setAt: saved.setAt },
+    body: {
+      number: saved.number,
+      label: saved.label,
+      masked: maskPhone(saved.number),
+      setAt: saved.setAt,
+    },
   };
 }
 
@@ -413,7 +425,7 @@ async function handleDutyClaim(req, env = process.env) {
       };
     }
     const saved = await setDuty(
-      { number: fallback, setBy: "", setByName: "SMS: OFF", method: "sms" },
+      { number: fallback, label: "Backup number", setBy: "", setByName: "SMS: OFF", method: "sms" },
       env
     );
     await audit(
@@ -443,6 +455,7 @@ async function handleDutyClaim(req, env = process.env) {
   const saved = await setDuty(
     {
       number: from,
+      label: member ? member.displayName || "" : "",
       setBy: member ? member.email : "",
       setByName: member ? member.displayName || "" : "",
       method: "sms",

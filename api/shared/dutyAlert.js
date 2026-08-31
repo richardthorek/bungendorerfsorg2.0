@@ -48,6 +48,7 @@ async function sendDutyChangeAlert(change, options = {}) {
   }
 
   const who = change.setByName || change.setBy || "an unrecognised number";
+  const forWhom = change.label ? ` (${change.label})` : "";
   const via =
     change.method === "sms"
       ? "by SMS"
@@ -61,7 +62,7 @@ async function sendDutyChangeAlert(change, options = {}) {
 <table role="presentation" width="460" cellpadding="0" cellspacing="0" style="max-width:460px;width:100%;background:#fff;border:1px solid ${C.hairline};border-radius:8px;overflow:hidden;font-family:${FONT};">
 <tr><td style="background:${C.red};padding:14px 22px;color:#fff;font-weight:700;font-size:13px;letter-spacing:.04em;">BUNGENDORE RFS — BRIGADE PHONE</td></tr>
 <tr><td style="padding:20px 22px;font-size:15px;color:${C.ink};line-height:1.6;">
-The brigade phone now forwards to <strong>${esc(change.number)}</strong>.<br>
+The brigade phone now forwards to <strong>${esc(change.number)}</strong>${esc(forWhom)}.<br>
 Set ${esc(via)} by ${esc(who)}${change.setByName || change.setBy ? "" : ` (${esc(maskPhone(change.number))})`}.<br>
 <span style="color:${C.soft};font-size:13px;">${esc(when)}${change.previous ? ` — previously ${esc(change.previous)}` : ""}</span>
 </td></tr>
@@ -71,7 +72,7 @@ Set ${esc(via)} by ${esc(who)}${change.setByName || change.setBy ? "" : ` (${esc
   const plainText = [
     "Bungendore RFS — brigade phone changed",
     "",
-    `Now forwards to: ${change.number}`,
+    `Now forwards to: ${change.number}${forWhom}`,
     `Set ${via} by ${who}`,
     when,
     change.previous ? `Previously: ${change.previous}` : "",

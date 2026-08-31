@@ -73,13 +73,10 @@
       <header class="topbar">
         <div class="topbar__brand">
           <span class="topbar__mark"></span>
-          <span>Bungendore RFS <span class="topbar__sub">Members</span></span>
+          <span class="topbar__title">Bungendore RFS <span class="topbar__sub">Members</span></span>
         </div>
-        <div class="topbar__session">
-          <span id="whoami" class="topbar__who"></span>
-          <span id="sessionTimer" class="topbar__timer" title="Time left in this session"></span>
-          <button id="signoutBtn" type="button" class="btn btn--ghost">Sign out</button>
-        </div>
+        <span id="whoami" class="topbar__who"></span>
+        <button id="signoutBtn" type="button" class="btn btn--ghost topbar__out">Sign out</button>
       </header>
 
       <div class="shell">
@@ -135,9 +132,17 @@
               <p class="duty-card__meta" id="dutyMeta"></p>
             </div>
 
+            <h3 class="duty-history__h">Recent phones</h3>
+            <ul id="dutyContacts" class="duty-contacts">
+              <li class="duty-contacts__empty">No previous numbers yet.</li>
+            </ul>
+
             <form id="dutyForm" class="duty-form" novalidate>
-              <label for="dutyInput">Change the brigade phone number</label>
-              <div class="duty-form__row">
+              <h3 class="duty-history__h">Set a different phone</h3>
+              <div class="duty-form__grid">
+                <label for="dutyName">Name</label>
+                <input id="dutyName" type="text" autocomplete="off" placeholder="e.g. Sandi Love" />
+                <label for="dutyInput">Number</label>
                 <input
                   id="dutyInput"
                   type="tel"
@@ -145,18 +150,13 @@
                   autocomplete="off"
                   placeholder="0488 880 286"
                 />
-                <button type="submit" class="btn btn--primary">Set number</button>
               </div>
+              <button type="submit" class="btn btn--primary">Set as brigade phone</button>
               <p class="duty-form__hint">
-                Australian mobile or landline. This takes effect on the next incoming call.
+                Australian mobile or landline. Takes effect on the next incoming call.
               </p>
             </form>
             <p id="dutyMsg" class="msg" role="status" aria-live="polite" hidden></p>
-
-            <h3 class="duty-history__h">Recent changes</h3>
-            <ul id="dutyHistory" class="duty-history">
-              <li class="duty-history__empty">&mdash;</li>
-            </ul>
           </section>
 
           <!-- Events & training -->

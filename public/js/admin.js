@@ -22,7 +22,6 @@
     verifyEmailLabel: document.getElementById("verifyEmailLabel"),
     signinMsg: document.getElementById("signinMsg"),
     whoami: document.getElementById("whoami"),
-    sessionTimer: document.getElementById("sessionTimer"),
     signoutBtn: document.getElementById("signoutBtn"),
     navItems: Array.prototype.slice.call(document.querySelectorAll(".nav__item")),
     membersBody: document.getElementById("membersBody"),
@@ -38,15 +37,16 @@
     dutyMeta: document.getElementById("dutyMeta"),
     dutyForm: document.getElementById("dutyForm"),
     dutyInput: document.getElementById("dutyInput"),
+    dutyName: document.getElementById("dutyName"),
     dutyMsg: document.getElementById("dutyMsg"),
-    dutyHistory: document.getElementById("dutyHistory"),
+    dutyContacts: document.getElementById("dutyContacts"),
     enqList: document.getElementById("enqList"),
     enqMsg: document.getElementById("enqMsg"),
     enqBadge: document.getElementById("enqBadge"),
     enqFilter: document.getElementById("enqFilter"),
   };
 
-  const state = { me: null, expiresAt: null, timer: null, enqFilter: "all", enquiries: [] };
+  const state = { me: null, enqFilter: "all", enquiries: [] };
 
   /* ---------------------------------------------------------------- helpers */
 
@@ -91,7 +91,6 @@
   /* ---------------------------------------------------------------- sign-in */
 
   function showSignin(message) {
-    stopTimer();
     state.me = null;
     el.appView.hidden = true;
     el.signinView.hidden = false;
@@ -151,25 +150,21 @@
           setMsg(el.signinMsg, r.data.error || "That code didn't work.", "err");
           return;
         }
-        enterApp(r.data.member, r.data.expiresInMinutes);
+        enterApp(r.data.member);
       }
     );
   });
 
   /* -------------------------------------------------------------- dashboard */
 
-  function enterApp(me, expiresInMinutes) {
+  function enterApp(me) {
     state.me = me;
-    if (expiresInMinutes) {
-      state.expiresAt = Date.now() + expiresInMinutes * 60000;
-    }
     el.signinView.hidden = true;
     el.appView.hidden = false;
     el.whoami.textContent = me.email;
     el.navItems.forEach(function (b) {
       if (b.dataset.admin) b.hidden = me.role !== "admin";
     });
-    startTimer();
     switchView(currentViewFromHash() || "duty");
     if (currentViewFromHash() !== "enquiries") loadEnquiries(); // for the nav badge
   }
@@ -206,34 +201,6 @@
       showSignin("Signed out.");
     });
   });
-
-  /* --------------------------------------------------------- session timer */
-
-  function startTimer() {
-    stopTimer();
-    if (!state.expiresAt) {
-      el.sessionTimer.textContent = "";
-      return;
-    }
-    tick();
-    state.timer = setInterval(tick, 1000);
-  }
-  function stopTimer() {
-    if (state.timer) clearInterval(state.timer);
-    state.timer = null;
-  }
-  function tick() {
-    const left = Math.round((state.expiresAt - Date.now()) / 1000);
-    if (left <= 0) {
-      stopTimer();
-      showSignin("Your 1-hour session has expired. Please sign in again.");
-      return;
-    }
-    const m = Math.floor(left / 60);
-    const s = left % 60;
-    el.sessionTimer.textContent = m + ":" + (s < 10 ? "0" : "") + s + " left";
-    el.sessionTimer.classList.toggle("is-low", left < 300);
-  }
 
   /* ------------------------------------------------------------- members UI */
 
@@ -583,35 +550,69 @@
   function renderDuty(d) {
     const has = !!d.number;
     el.dutyDot.className = "duty-dot " + (has ? "is-ok" : "is-warn");
-    el.dutyState.textContent = has ? "Brigade phone active" : "No number set";
+    el.dutyState.textContent = has
+      ? d.label
+        ? d.label + "’s phone"
+        : "Brigade phone active"
+      : "No number set";
     el.dutyNumber.textContent = d.number || "—";
     el.dutyMeta.textContent = has
       ? "Set " +
         (d.setAt ? relTime(d.setAt) : "—") +
         (d.setByName || d.setBy ? " by " + (d.setByName || d.setBy) : "") +
-        (d.method ? " (" + d.method + ")" : "")
+        (d.method === "sms" ? " by text" : "")
       : "Calls fall through to the Twilio backup number.";
 
-    el.dutyHistory.innerHTML = "";
-    const rows = d.history || [];
+    el.dutyContacts.innerHTML = "";
+    const rows = d.contacts || [];
     if (!rows.length) {
       const li = document.createElement("li");
-      li.className = "duty-history__empty";
-      li.textContent = "No changes recorded yet.";
-      el.dutyHistory.appendChild(li);
+      li.className = "duty-contacts__empty";
+      li.textContent = "No previous numbers yet.";
+      el.dutyContacts.appendChild(li);
       return;
     }
-    rows.forEach(function (h) {
+    rows.forEach(function (c) {
       const li = document.createElement("li");
+      const info = document.createElement("span");
+      info.className = "duty-contacts__info";
+      const nm = document.createElement("strong");
+      nm.textContent = c.label || c.number;
       const num = document.createElement("span");
-      num.className = "duty-history__num";
-      num.textContent = h.number + (h.setByName ? " — " + h.setByName : "");
-      const when = document.createElement("span");
-      when.className = "duty-history__when";
-      when.textContent = h.setAt ? relTime(h.setAt) : "";
-      li.appendChild(num);
-      li.appendChild(when);
-      el.dutyHistory.appendChild(li);
+      num.className = "duty-contacts__num";
+      num.textContent = c.label ? c.number : "";
+      info.appendChild(nm);
+      info.appendChild(num);
+      const set = document.createElement("button");
+      set.type = "button";
+      set.className = "btn btn--ghost duty-contacts__set";
+      set.textContent = "Set";
+      set.addEventListener("click", function () {
+        submitDuty({ number: c.number, label: c.label }, set);
+      });
+      li.appendChild(info);
+      li.appendChild(set);
+      el.dutyContacts.appendChild(li);
+    });
+  }
+
+  function submitDuty(body, btn) {
+    setMsg(el.dutyMsg, "");
+    if (btn) btn.disabled = true;
+    api("/api/duty", { method: "POST", body: body }).then(function (r) {
+      if (btn) btn.disabled = false;
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.dutyMsg, (r.data && r.data.error) || "Could not set the number.", "err");
+        return;
+      }
+      setMsg(
+        el.dutyMsg,
+        "Brigade phone is now " + (r.data.label ? r.data.label + " — " : "") + r.data.number + ".",
+        "ok"
+      );
+      el.dutyForm.reset();
+      loadDuty();
     });
   }
 
@@ -622,20 +623,10 @@
       setMsg(el.dutyMsg, "Enter a phone number.", "err");
       return;
     }
-    setMsg(el.dutyMsg, "");
-    const btn = el.dutyForm.querySelector("button");
-    btn.disabled = true;
-    api("/api/duty", { method: "POST", body: { number: number } }).then(function (r) {
-      btn.disabled = false;
-      if (!r) return;
-      if (!r.ok) {
-        setMsg(el.dutyMsg, r.data.error || "Could not set the number.", "err");
-        return;
-      }
-      setMsg(el.dutyMsg, "Brigade phone is now " + r.data.number + ".", "ok");
-      el.dutyForm.reset();
-      loadDuty();
-    });
+    submitDuty(
+      { number: number, label: el.dutyName.value.trim() },
+      el.dutyForm.querySelector("button")
+    );
   });
 
   /* --------------------------------------------------------- events + training */
@@ -834,10 +825,7 @@
 
   api("/api/auth/me").then(function (r) {
     if (r && r.ok) {
-      const mins = r.data.expiresAt
-        ? Math.max(0, Math.round((Date.parse(r.data.expiresAt) - Date.now()) / 60000))
-        : null;
-      enterApp({ email: r.data.email, name: r.data.name, role: r.data.role }, mins);
+      enterApp({ email: r.data.email, name: r.data.name, role: r.data.role });
     } else {
       showSignin();
       el.email.focus();
