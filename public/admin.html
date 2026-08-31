@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Members — Bungendore RFS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <!-- ============ SIGN-IN ============ -->
+    <div id="signinView" class="signin" hidden>
+      <div class="signin__card">
+        <p class="brandmark">Bungendore RFS</p>
+        <h1>Members&rsquo; area</h1>
+
+        <form id="requestForm" class="signin__form" novalidate>
+          <p class="signin__hint">
+            Sign in with your <strong>@rfs.nsw.gov.au</strong> email. We&rsquo;ll send a 6-digit
+            code. You must be on the brigade&rsquo;s member list.
+          </p>
+          <label for="email">Email address</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            spellcheck="false"
+            placeholder="you@rfs.nsw.gov.au"
+            required
+          />
+          <button type="submit" class="btn btn--primary" id="requestBtn">Send code</button>
+        </form>
+
+        <form id="verifyForm" class="signin__form" novalidate hidden>
+          <p class="signin__hint">
+            Enter the code sent to <strong id="verifyEmailLabel"></strong>. It expires in 10
+            minutes.
+          </p>
+          <label for="code">6-digit code</label>
+          <input
+            id="code"
+            name="code"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxlength="6"
+            placeholder="000000"
+            required
+          />
+          <button type="submit" class="btn btn--primary" id="verifyBtn">
+            Verify &amp; sign in
+          </button>
+          <button type="button" class="btn btn--link" id="restartBtn">Use a different email</button>
+        </form>
+
+        <p id="signinMsg" class="msg" role="status" aria-live="polite" hidden></p>
+      </div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <div id="appView" hidden>
+      <header class="topbar">
+        <div class="topbar__brand">
+          <span class="topbar__mark"></span>
+          <span>Bungendore RFS <span class="topbar__sub">Members</span></span>
+        </div>
+        <div class="topbar__session">
+          <span id="whoami" class="topbar__who"></span>
+          <span id="sessionTimer" class="topbar__timer" title="Time left in this session"></span>
+          <button id="signoutBtn" type="button" class="btn btn--ghost">Sign out</button>
+        </div>
+      </header>
+
+      <div class="shell">
+        <nav class="nav" aria-label="Members area sections">
+          <button class="nav__item is-active" data-view="duty" type="button">
+            Duty line<span class="nav__note">phone forwarding</span>
+          </button>
+          <button class="nav__item" data-view="events" type="button">
+            Events &amp; training<span class="nav__note">community &amp; drill calendar</span>
+          </button>
+          <button class="nav__item" data-view="members" data-admin type="button" hidden>
+            Members<span class="nav__note">who can sign in</span>
+          </button>
+        </nav>
+
+        <main id="main" class="content">
+          <!-- Duty line (built in a later change) -->
+          <section id="view-duty" class="view">
+            <h2>Duty line</h2>
+            <div class="placeholder">
+              <p class="placeholder__lead">The call-forwarding switch will live here.</p>
+              <p>
+                Today the public number is forwarded using a lookup that depends on the old
+                Microsoft&nbsp;365 tenant. This screen will show which phone is on duty, when it
+                last changed, and let an authorised member take the line.
+              </p>
+              <p class="placeholder__tag">Coming in the next update</p>
+            </div>
+          </section>
+
+          <!-- Events & training (built in a later change) -->
+          <section id="view-events" class="view" hidden>
+            <h2>Events &amp; training</h2>
+            <div class="placeholder">
+              <p class="placeholder__lead">
+                Community engagement events and the training schedule will be editable here.
+              </p>
+              <p>
+                These currently come from a Microsoft&nbsp;365 calendar. This screen will let
+                members add, edit and remove entries and manage calendar links, writing to the
+                website&rsquo;s own store so the public pages keep working after the tenant is
+                retired.
+              </p>
+              <p class="placeholder__tag">Coming after the duty line</p>
+            </div>
+          </section>
+
+          <!-- Members (admin only) -->
+          <section id="view-members" class="view" hidden>
+            <h2>Members</h2>
+            <p class="view__lead">
+              Anyone on this list with an <strong>@rfs.nsw.gov.au</strong> address can sign in.
+              Removing someone ends their session immediately.
+            </p>
+
+            <form id="addMemberForm" class="add-row" novalidate>
+              <div class="add-row__fields">
+                <input
+                  id="newEmail"
+                  type="email"
+                  placeholder="person@rfs.nsw.gov.au"
+                  autocomplete="off"
+                  spellcheck="false"
+                  required
+                />
+                <input id="newName" type="text" placeholder="Name (optional)" autocomplete="off" />
+                <select id="newRole" aria-label="Role">
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn--primary">Add</button>
+            </form>
+            <p id="membersMsg" class="msg" role="status" aria-live="polite" hidden></p>
+
+            <div class="table-wrap">
+              <table class="members-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Email</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Last sign-in</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody id="membersBody">
+                  <tr>
+                    <td colspan="5" class="members-table__empty">Loading&hellip;</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="/js/admin.js" defer></script>
+  </body>
+</html>

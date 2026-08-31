@@ -220,6 +220,44 @@ Allowed origins:
 
 ---
 
+### 6. Members' area (sign-in + allow-list)
+
+**Page:** `/admin` (served from `public/admin.html`; `noindex`). Plain-JS dashboard
+shell — sign-in, then sections for Duty line, Events & training (both built later)
+and Members (admin only). Backend logic is shared: `api/shared/handlers.js` is used
+by `api/auth-*` / `api/members` and mirrored in `server.js`.
+
+**Sign-in** is passwordless. A person may sign in only if BOTH:
+
+1. their email is on `AUTH_ALLOWED_EMAIL_DOMAIN` (`rfs.nsw.gov.au`), and
+2. their email is a row in the `members` table (the allow-list) and not disabled.
+
+| Endpoint                                       | Notes                                                                                                                                                                                         |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/request` `{email}`             | Emails a 6-digit code via ACS (10-min, single-use, 5-attempt lock). Always returns `{ok:true}` — never reveals whether the address is a member. Rate-limited per email (3/15 min) and per IP. |
+| `POST /api/auth/verify` `{email,code}`         | On success sets `brfs_session` — an HS256 JWT, `HttpOnly; Secure; SameSite=Lax`, **60-min** expiry (`AUTH_SESSION_MINUTES`).                                                                  |
+| `GET /api/auth/me`                             | `{email,name,role,expiresAt}` or 401. Re-checks the `members` row every call, so disabling a member or bumping `tokenVersion` logs them out at once.                                          |
+| `POST /api/auth/logout`                        | Clears the cookie and bumps `tokenVersion` so the token can't be replayed.                                                                                                                    |
+| `GET /api/members`                             | Admin only. `{members:[…]}`                                                                                                                                                                   |
+| `POST /api/members` `{email,displayName,role}` | Admin only. Adds/updates an allow-list entry (must be an `@rfs.nsw.gov.au` address). Requires header `X-BRFS-Auth: 1`.                                                                        |
+| `DELETE /api/members/{email}`                  | Admin only. Ends the member's session and removes them. Refuses to remove the last admin. Requires `X-BRFS-Auth: 1`.                                                                          |
+
+**Storage:** four Azure Storage tables in `brfsstorage` (`BRFS_STORAGE_CONNECTION`),
+created on first use — `members`, `authcodes`, `ratelimits`, `auditlog`.
+
+**First admin:** there's no self-serve bootstrap. Seed it once:
+
+```bash
+BRFS_STORAGE_CONNECTION="<brfsstorage connection string>" \
+  node scripts/seed-member.js richardthorek-vol@rfs.nsw.gov.au "Richard Thorek" admin
+```
+
+**Config:** `AUTH_JWT_SECRET` (≥32 chars), `BRFS_STORAGE_CONNECTION`,
+`AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`, plus the existing
+`ACS_CONNECTION_STRING` / `ACS_SENDER_ADDRESS`.
+
+---
+
 ## Azure Logic Apps Integration
 
 Azure Logic Apps provides the serverless backend for:

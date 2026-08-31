@@ -96,6 +96,12 @@ ACS_CONNECTION_STRING=endpoint=https://stationkit-comm.australia.communication.a
 ACS_SENDER_ADDRESS=contact@notify.bungendorerfs.org
 CONTACT_NOTIFY_TO=committee@example-distribution-list.org
 
+# Members' area (public/admin.html) — see docs/API_INTEGRATION.md
+AUTH_JWT_SECRET=a-long-random-string-at-least-32-chars
+BRFS_STORAGE_CONNECTION=UseDevelopmentStorage=true
+AUTH_ALLOWED_EMAIL_DOMAIN=rfs.nsw.gov.au
+AUTH_SESSION_MINUTES=60
+
 AZURE_INCIDENTS_WEBHOOK_URL=https://prod-...
 AZURE_FIRE_DANGER_WEBHOOK_URL=https://prod-...
 

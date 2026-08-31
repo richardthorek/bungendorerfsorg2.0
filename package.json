@@ -21,8 +21,10 @@
   },
   "dependencies": {
     "@azure/communication-email": "^1.1.0",
+    "@azure/data-tables": "^13.3.2",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "leaflet": "^1.9.4",
     "marked": "^18.0.7"
   },

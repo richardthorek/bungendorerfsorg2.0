@@ -48,11 +48,11 @@ README.md                       # Project overview + setup + content-editing gui
 
 ## 2. Branching & PRs
 
-| Branch | Role | Protected |
-|--------|------|-----------|
-| `main` | Production. Auto-deploys to Azure Static Web Apps. | Yes — owner merges from `liveDev` only |
-| `liveDev` | Integration / staging. Permanent preview URL. | Yes — PRs require review |
-| `copilot/*`, `feature/*` | Topic branches off `liveDev` | No |
+| Branch                   | Role                                               | Protected                              |
+| ------------------------ | -------------------------------------------------- | -------------------------------------- |
+| `main`                   | Production. Auto-deploys to Azure Static Web Apps. | Yes — owner merges from `liveDev` only |
+| `liveDev`                | Integration / staging. Permanent preview URL.      | Yes — PRs require review               |
+| `copilot/*`, `feature/*` | Topic branches off `liveDev`                       | No                                     |
 
 **Workflow:** topic branch off `liveDev` → PR into `liveDev` → owner promotes `liveDev` → `main`. Reference the GitHub issue (`Fixes #N`) and link the relevant `master_plan.md` phase. One PR per phase where possible.
 
@@ -101,9 +101,13 @@ Copy `.env.example` to `.env`. Required for full local function:
 
 ```
 MAPBOX_ACCESS_TOKEN=...
-ACS_CONNECTION_STRING=...        # contact form: Azure Communication Services
+ACS_CONNECTION_STRING=...        # contact form + members' area sign-in codes (ACS)
 ACS_SENDER_ADDRESS=contact@notify.bungendorerfs.org
 CONTACT_NOTIFY_TO=...           # committee distribution list (comma-separated ok)
+AUTH_JWT_SECRET=...             # members' area: >= 32 chars, signs the session cookie
+BRFS_STORAGE_CONNECTION=...     # members' area: storage account for allow-list tables (UseDevelopmentStorage=true locally)
+AUTH_ALLOWED_EMAIL_DOMAIN=rfs.nsw.gov.au
+AUTH_SESSION_MINUTES=60
 AZURE_CALENDAR_WEBHOOK_URL=...
 AZURE_INCIDENTS_WEBHOOK_URL=...
 AZURE_FIRE_DANGER_WEBHOOK_URL=...
@@ -249,16 +253,16 @@ The CRITICAL items from earlier reviews have been addressed: Logic Apps URLs are
 
 ## 9. Quick reference
 
-| Task | Where |
-|------|-------|
-| Plan / track work | [`master_plan.md`](../master_plan.md) |
-| Per-phase specs & acceptance criteria | `docs/current_state/<topic>.md` |
-| Run tests | `npm test` |
-| Lint + format | `npm run lint && npm run format:check` |
-| Pre-merge gate (local) | `npm run build` |
-| Add/change a proxy endpoint | `api/<fn>/index.js` **and** mirror in `server.js` |
-| Add new docs | `docs/<NAME>.md` (never recreate `Documentation/`) |
-| Security audit trail | [`SECURITY_FIXES.md`](../SECURITY_FIXES.md) |
+| Task                                  | Where                                              |
+| ------------------------------------- | -------------------------------------------------- |
+| Plan / track work                     | [`master_plan.md`](../master_plan.md)              |
+| Per-phase specs & acceptance criteria | `docs/current_state/<topic>.md`                    |
+| Run tests                             | `npm test`                                         |
+| Lint + format                         | `npm run lint && npm run format:check`             |
+| Pre-merge gate (local)                | `npm run build`                                    |
+| Add/change a proxy endpoint           | `api/<fn>/index.js` **and** mirror in `server.js`  |
+| Add new docs                          | `docs/<NAME>.md` (never recreate `Documentation/`) |
+| Security audit trail                  | [`SECURITY_FIXES.md`](../SECURITY_FIXES.md)        |
 
 ---
 

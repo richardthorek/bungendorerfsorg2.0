@@ -26,16 +26,16 @@ Mapbox GL is lazy-loaded via `IntersectionObserver`, dead CSS was removed
 (`main.css` down from ~78.6 KB to ~58 KB), and the accessibility pass (skip link,
 roving-tabindex tablist, contrast fixes, legacy ID-alias shim removal) is in place.
 
-| # | Phase | Issue | Code status |
-|---|-------|-------|-------------|
-| 0 | Audit, baseline, wireframe, plan | #56 | Done |
-| 1 | IA cleanup — remove duplicate summary cards | [#57](https://github.com/richardthorek/bungendorerfsorg2.0/issues/57) closed | Done |
-| 2 | Adaptive hero + utility-bar move | [#58](https://github.com/richardthorek/bungendorerfsorg2.0/issues/58) closed | Done |
-| 3 | Live status strip + map continuity | [#59](https://github.com/richardthorek/bungendorerfsorg2.0/issues/59) closed | Done |
-| 4 | Spacing + typography token reductions | [#60](https://github.com/richardthorek/bungendorerfsorg2.0/issues/60) closed | Done |
-| 5 | Footer flattening + scoped hover-lift | [#61](https://github.com/richardthorek/bungendorerfsorg2.0/issues/61) closed | Done |
-| 6 | Asset dedupe, lazy map, CSS dead-code removal | [#62](https://github.com/richardthorek/bungendorerfsorg2.0/issues/62) **open** | Done — see [`docs/CSS_OPTIMIZATION.md`](docs/CSS_OPTIMIZATION.md) |
-| 7 | Accessibility pass + final verification | [#63](https://github.com/richardthorek/bungendorerfsorg2.0/issues/63) **open** | Done |
+| #   | Phase                                         | Issue                                                                          | Code status                                                       |
+| --- | --------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| 0   | Audit, baseline, wireframe, plan              | #56                                                                            | Done                                                              |
+| 1   | IA cleanup — remove duplicate summary cards   | [#57](https://github.com/richardthorek/bungendorerfsorg2.0/issues/57) closed   | Done                                                              |
+| 2   | Adaptive hero + utility-bar move              | [#58](https://github.com/richardthorek/bungendorerfsorg2.0/issues/58) closed   | Done                                                              |
+| 3   | Live status strip + map continuity            | [#59](https://github.com/richardthorek/bungendorerfsorg2.0/issues/59) closed   | Done                                                              |
+| 4   | Spacing + typography token reductions         | [#60](https://github.com/richardthorek/bungendorerfsorg2.0/issues/60) closed   | Done                                                              |
+| 5   | Footer flattening + scoped hover-lift         | [#61](https://github.com/richardthorek/bungendorerfsorg2.0/issues/61) closed   | Done                                                              |
+| 6   | Asset dedupe, lazy map, CSS dead-code removal | [#62](https://github.com/richardthorek/bungendorerfsorg2.0/issues/62) **open** | Done — see [`docs/CSS_OPTIMIZATION.md`](docs/CSS_OPTIMIZATION.md) |
+| 7   | Accessibility pass + final verification       | [#63](https://github.com/richardthorek/bungendorerfsorg2.0/issues/63) **open** | Done                                                              |
 
 ### Remaining before #56 closes
 
@@ -56,12 +56,12 @@ current DOM): [`docs/current_state/ui-baseline.md`](docs/current_state/ui-baseli
 
 ## Other programmes
 
-| Programme | Status | Reference |
-|-----------|--------|-----------|
-| Security remediation (token logging, Logic Apps proxy, XSS, mapbox origin validation) | Done | [`SECURITY_FIXES.md`](SECURITY_FIXES.md) |
-| Test infrastructure (Jest + Testing-Library) | Done | [`docs/TESTING.md`](docs/TESTING.md), `__tests__/` |
-| CI (lint + test + audit on push/PR) | Done | `.github/workflows/ci.yml` |
-| Calendar migration off Microsoft Graph to static content files | Done | `public/Content/communityEvents.json`, `trainingSchedule.json`; see README § Editing site content |
+| Programme                                                                             | Status | Reference                                                                                         |
+| ------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------- |
+| Security remediation (token logging, Logic Apps proxy, XSS, mapbox origin validation) | Done   | [`SECURITY_FIXES.md`](SECURITY_FIXES.md)                                                          |
+| Test infrastructure (Jest + Testing-Library)                                          | Done   | [`docs/TESTING.md`](docs/TESTING.md), `__tests__/`                                                |
+| CI (lint + test + audit on push/PR)                                                   | Done   | `.github/workflows/ci.yml`                                                                        |
+| Calendar migration off Microsoft Graph to static content files                        | Done   | `public/Content/communityEvents.json`, `trainingSchedule.json`; see README § Editing site content |
 
 ---
 
@@ -76,17 +76,45 @@ enquirer.
 
 ### Status
 
-| Step | State |
-|------|-------|
-| Root cause of "no enquiry details" found — proxy sent `message`, Logic App read `enquiry`; SharePoint `Description` always null | Done |
-| `api/contact` + `server.js` rewritten to send via ACS (`api/contact/notify.js`), SharePoint/Teams/Logic App dropped from the path | Done — this branch |
-| Jest coverage for the notify helper | Done — `__tests__/contact-notify.test.js` |
-| ACS Email domain `notify.bungendorerfs.org` created under `stationkit-email` | Done |
-| DNS records for `notify.bungendorerfs.org` added in Cloudflare (TXT verify, SPF, 2× DKIM CNAME) | **Pending — owner** |
-| Domain verified + linked to `stationkit-comm`, sender username created | Pending (blocked on DNS) |
-| SWA app settings set: `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS`, `CONTACT_NOTIFY_TO=Leadership-Bungendore-vol@rfs.nsw.gov.au` | Pending |
-| Retire `formHandler` Logic App + `office365`, `office365-1`, `sharepointonline`, `teams` connections | Pending (after cutover verified) |
-| Historical enquiries #1–#28 recovered from the SharePoint list before the tenant closes | Pending — needs sign-in to the old tenant |
+| Step                                                                                                                            | State                                     |
+| ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Root cause of "no enquiry details" found — proxy sent `message`, Logic App read `enquiry`; SharePoint `Description` always null | Done                                      |
+| `api/contact` + `server.js` rewritten to send via ACS, SharePoint/Teams/Logic App dropped                                       | Done — merged (#90)                       |
+| ACS Email domain `notify.bungendorerfs.org` created, DNS added, verified + linked to `stationkit-comm`                          | Done                                      |
+| SWA app settings + `formHandler` Logic App disabled + deploy verified                                                           | Done                                      |
+| Delete the disabled `formHandler` Logic App + `office365` / `office365-1` / `sharepointonline` / `teams` connections            | Pending — after a few days' confidence    |
+| Historical enquiries #1–#28 recovered from the SharePoint list before the tenant closes                                         | Pending — needs sign-in to the old tenant |
+
+---
+
+## Active programme: Members' area + duty-line + events, off the retiring M365 tenant
+
+**Target outcome:** a passwordless members' sign-in on the website that replaces the
+Microsoft-365-dependent workflows — the SharePoint duty-phone lookup behind the
+Twilio call/SMS forwarding flow, and the M365 calendar behind the training /
+community-engagement feeds — with an allow-list and editing screens the brigade
+controls.
+
+**Approach:** email one-time code (via the existing ACS setup) + a short session
+cookie; an allow-list in `brfsstorage`; only `@rfs.nsw.gov.au` addresses that are on
+the list may sign in; 60-minute sessions. Chose this over an Entra External ID (CIAM)
+tenant — simpler, no SWA Standard upgrade, and the allow-list is needed either way.
+
+### Status
+
+| Step                                                                                                                                                                                         | State                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| PR 1 — auth core: sign-in codes, sessions, `members` allow-list + admin screen, audit log, seed script, tests                                                                                | Done — branch `feat/members-auth`                            |
+| First admin seeded (`richardthorek-vol@rfs.nsw.gov.au`)                                                                                                                                      | Pending — run `scripts/seed-member.js` against `brfsstorage` |
+| SWA app settings: `AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`                                                                          | Pending                                                      |
+| PR 2 — `/api/duty` reads `brfsstorage`; repoint the Twilio Studio flow's two HTTP widgets (`phoneNumbers`, `phoneNumbers2`) at it; retire `phoneNumberForwarding` + the `prod-00` SMS lookup | Pending                                                      |
+| PR 3 — duty screen (set / history) + "duty changed" alert; SMS-PIN handover branch in the Twilio flow                                                                                        | Pending                                                      |
+| PR 4 — events + training + calendar-link admin in `brfsstorage`; retire `getCalendar`                                                                                                        | Pending                                                      |
+
+Twilio flow notes: inbound calls hit widget `phoneNumbers` → `prod-08` Logic App
+`32aded0a…`; inbound SMS hit `phoneNumbers2` → `prod-00` Logic App `86da0e0d…` and
+are forwarded to the duty officer with an auto-reply. Call fallback is hardcoded
+`+61419983748`. Both HTTP widgets need their URL pointed at `/api/duty`.
 
 ---
 

@@ -3,6 +3,15 @@ const express = require("express");
 const app = express();
 const path = require("path");
 const { sendContactNotifications } = require("./api/contact/notify");
+const {
+  handleAuthRequest,
+  handleAuthVerify,
+  handleAuthMe,
+  handleAuthLogout,
+  handleMembersList,
+  handleMembersUpsert,
+  handleMembersDelete,
+} = require("./api/shared/handlers");
 
 const allowedOrigins = [
   "https://bungendorerfs.org",
@@ -220,6 +229,44 @@ app.get("/api/fire-danger", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch fire danger" });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Members' area — mirrors api/auth-* and api/members (see api/shared/handlers.js)
+// ---------------------------------------------------------------------------
+function sendResult(res, result) {
+  if (result.headers) {
+    for (const [k, v] of Object.entries(result.headers)) res.set(k, v);
+  }
+  if (result.setCookie) res.append("Set-Cookie", result.setCookie);
+  if (result.clearCookie) {
+    const { clearCookie } = require("./api/shared/auth");
+    res.append("Set-Cookie", clearCookie());
+  }
+  res.status(result.status || 200).json(result.body);
+}
+
+function mirror(handler) {
+  return async (req, res) => {
+    try {
+      sendResult(res, await handler(req, process.env));
+    } catch (err) {
+      console.error("members-area handler failed:", err);
+      res.status(500).json({ error: "Something went wrong. Try again." });
+    }
+  };
+}
+
+app.post("/api/auth/request", mirror(handleAuthRequest));
+app.post("/api/auth/verify", mirror(handleAuthVerify));
+app.get("/api/auth/me", mirror(handleAuthMe));
+app.post("/api/auth/logout", mirror(handleAuthLogout));
+
+app.get("/api/members", mirror(handleMembersList));
+app.post("/api/members", mirror(handleMembersUpsert));
+app.delete(
+  "/api/members/:email",
+  mirror((req) => handleMembersDelete(req, req.params.email, process.env))
+);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
