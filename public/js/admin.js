@@ -352,13 +352,13 @@
     });
   });
 
-  /* ------------------------------------------------------------- duty line UI */
+  /* --------------------------------------------------------- brigade phone UI */
 
   function loadDuty() {
     api("/api/duty/status").then(function (r) {
       if (!r) return;
       if (!r.ok) {
-        el.dutyState.textContent = r.data.error || "Could not load the duty line.";
+        el.dutyState.textContent = r.data.error || "Could not load the brigade phone.";
         return;
       }
       renderDuty(r.data);
@@ -368,7 +368,7 @@
   function renderDuty(d) {
     const has = !!d.number;
     el.dutyDot.className = "duty-dot " + (has ? "is-ok" : "is-warn");
-    el.dutyState.textContent = has ? "Duty line active" : "No duty number set";
+    el.dutyState.textContent = has ? "Brigade phone active" : "No number set";
     el.dutyNumber.textContent = d.number || "—";
     el.dutyMeta.textContent = has
       ? "Set " +
@@ -414,10 +414,10 @@
       btn.disabled = false;
       if (!r) return;
       if (!r.ok) {
-        setMsg(el.dutyMsg, r.data.error || "Could not set the duty line.", "err");
+        setMsg(el.dutyMsg, r.data.error || "Could not set the number.", "err");
         return;
       }
-      setMsg(el.dutyMsg, "Duty line is now " + r.data.number + ".", "ok");
+      setMsg(el.dutyMsg, "Brigade phone is now " + r.data.number + ".", "ok");
       el.dutyForm.reset();
       loadDuty();
     });
