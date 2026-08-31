@@ -273,6 +273,17 @@
     tr.appendChild(cell(m.lastLoginAt ? relTime(m.lastLoginAt) : "never"));
 
     const actionCell = document.createElement("td");
+    actionCell.className = "members-table__actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "row-edit";
+    editBtn.type = "button";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", function () {
+      tr.replaceWith(memberEditRow(m));
+    });
+    actionCell.appendChild(editBtn);
+
     const btn = document.createElement("button");
     btn.className = "row-remove";
     btn.type = "button";
@@ -283,6 +294,87 @@
     actionCell.appendChild(btn);
     tr.appendChild(actionCell);
 
+    return tr;
+  }
+
+  function memberEditRow(m) {
+    const tr = document.createElement("tr");
+    tr.className = "members-table__edit-row";
+
+    tr.appendChild(cell(m.email));
+
+    const nameTd = document.createElement("td");
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = m.displayName || "";
+    nameInput.setAttribute("aria-label", "Name");
+    nameTd.appendChild(nameInput);
+    tr.appendChild(nameTd);
+
+    const phoneTd = document.createElement("td");
+    const phoneInput = document.createElement("input");
+    phoneInput.type = "tel";
+    phoneInput.value = m.phone || "";
+    phoneInput.setAttribute("aria-label", "Mobile");
+    phoneTd.appendChild(phoneInput);
+    tr.appendChild(phoneTd);
+
+    const roleTd = document.createElement("td");
+    const roleSelect = document.createElement("select");
+    roleSelect.setAttribute("aria-label", "Role");
+    ["member", "admin"].forEach(function (r) {
+      const opt = document.createElement("option");
+      opt.value = r;
+      opt.textContent = r === "admin" ? "Admin" : "Member";
+      if (m.role === r) opt.selected = true;
+      roleSelect.appendChild(opt);
+    });
+    roleTd.appendChild(roleSelect);
+    tr.appendChild(roleTd);
+
+    tr.appendChild(cell(m.lastLoginAt ? relTime(m.lastLoginAt) : "never"));
+
+    const actionCell = document.createElement("td");
+    actionCell.className = "members-table__actions";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "btn btn--primary btn--small";
+    saveBtn.type = "button";
+    saveBtn.textContent = "Save";
+    saveBtn.addEventListener("click", function () {
+      saveBtn.disabled = true;
+      cancelBtn.disabled = true;
+      setMsg(el.membersMsg, "");
+      const body = {
+        email: m.email,
+        displayName: nameInput.value.trim(),
+        phone: phoneInput.value.trim(),
+        role: roleSelect.value === "admin" ? "admin" : "member",
+      };
+      api("/api/members", { method: "POST", body: body }).then(function (r) {
+        if (!r) return;
+        if (!r.ok) {
+          saveBtn.disabled = false;
+          cancelBtn.disabled = false;
+          setMsg(el.membersMsg, (r.data && r.data.error) || "Could not save changes.", "err");
+          return;
+        }
+        setMsg(el.membersMsg, "Saved " + body.email + ".", "ok");
+        loadMembers();
+      });
+    });
+    actionCell.appendChild(saveBtn);
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "row-remove";
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", function () {
+      tr.replaceWith(memberRow(m));
+    });
+    actionCell.appendChild(cancelBtn);
+
+    tr.appendChild(actionCell);
     return tr;
   }
 

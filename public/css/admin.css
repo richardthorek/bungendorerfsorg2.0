@@ -627,7 +627,8 @@ label {
   background: var(--warn-bg);
   color: var(--warn);
 }
-.row-remove {
+.row-remove,
+.row-edit {
   font: inherit;
   font-size: 0.82rem;
   background: none;
@@ -641,7 +642,12 @@ label {
   color: var(--err);
   border-color: var(--err);
 }
-.row-remove:disabled {
+.row-edit:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+.row-remove:disabled,
+.row-edit:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -649,6 +655,27 @@ label {
   font-size: 0.72rem;
   color: var(--ink-faint);
   margin-left: 0.4rem;
+}
+.members-table__actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.btn--small {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.82rem;
+}
+.members-table__edit-row input,
+.members-table__edit-row select {
+  width: 100%;
+  min-width: 6rem;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
 }
 
 /* -------------------------------------------------- duty line */

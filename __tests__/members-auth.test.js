@@ -433,6 +433,74 @@ describe("members management", () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/last admin/i);
   });
+
+  test("admin can edit another member's name, phone, and role", async () => {
+    const { cookieHeader } = await signIn("boss@rfs.nsw.gov.au", "admin");
+    const headers = { cookie: cookieHeader, ...CSRF };
+    await handlers.handleMembersUpsert({
+      headers,
+      body: { email: "grunt@rfs.nsw.gov.au", displayName: "Grunt", role: "member" },
+    });
+
+    const edit = await handlers.handleMembersUpsert({
+      headers,
+      body: {
+        email: "grunt@rfs.nsw.gov.au",
+        displayName: "Grunt Promoted",
+        phone: "0488880286",
+        role: "admin",
+      },
+    });
+    expect(edit.status).toBe(200);
+    expect(edit.body.member).toMatchObject({
+      displayName: "Grunt Promoted",
+      phone: "+61488880286",
+      role: "admin",
+    });
+  });
+
+  test("admin can edit another admin's details", async () => {
+    const { cookieHeader } = await signIn("boss@rfs.nsw.gov.au", "admin");
+    const headers = { cookie: cookieHeader, ...CSRF };
+    await handlers.handleMembersUpsert({
+      headers,
+      body: { email: "chief@rfs.nsw.gov.au", displayName: "Chief", role: "admin" },
+    });
+
+    const edit = await handlers.handleMembersUpsert({
+      headers,
+      body: { email: "chief@rfs.nsw.gov.au", displayName: "Chief Renamed", role: "admin" },
+    });
+    expect(edit.status).toBe(200);
+    expect(edit.body.member.displayName).toBe("Chief Renamed");
+  });
+
+  test("cannot demote the last admin via edit", async () => {
+    const { cookieHeader } = await signIn("only@rfs.nsw.gov.au", "admin");
+    const res = await handlers.handleMembersUpsert({
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { email: "only@rfs.nsw.gov.au", displayName: "Only", role: "member" },
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/last admin/i);
+    expect(mockDb.members.get("only@rfs.nsw.gov.au").role).toBe("admin");
+  });
+
+  test("demoting one of several admins is allowed", async () => {
+    const { cookieHeader } = await signIn("first@rfs.nsw.gov.au", "admin");
+    const headers = { cookie: cookieHeader, ...CSRF };
+    await handlers.handleMembersUpsert({
+      headers,
+      body: { email: "second@rfs.nsw.gov.au", displayName: "Second", role: "admin" },
+    });
+
+    const res = await handlers.handleMembersUpsert({
+      headers,
+      body: { email: "second@rfs.nsw.gov.au", displayName: "Second", role: "member" },
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.member.role).toBe("member");
+  });
 });
 
 /* ------------------------------------------------------------------- phone */

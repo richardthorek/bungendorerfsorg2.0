@@ -253,6 +253,16 @@ async function handleMembersUpsert(req, env = process.env) {
   }
 
   const existed = await getMember(email, env);
+  if (existed && existed.role === "admin" && role !== "admin") {
+    const admins = (await listMembers(env)).filter((m) => m.role === "admin" && !m.disabled);
+    if (admins.length <= 1) {
+      return {
+        status: 400,
+        body: { error: "Can't demote the last admin. Add another admin first." },
+      };
+    }
+  }
+
   const saved = await upsertMember(
     { email, displayName, phone, role, disabled: false, addedBy: gate.member.email },
     env
