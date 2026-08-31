@@ -19,14 +19,16 @@ function escapeHtml(v) {
 }
 
 function buildCodeEmail(code, minutes) {
-  const spaced = code.split("").join(" ");
+  // No literal separators between digits (previously a thin space) so that
+  // copy-and-paste from the email yields the bare 6-digit code.  Visual
+  // separation is done with letter-spacing in the styles below.
   const html = `<!doctype html><html><body style="margin:0;background:#f4f4f4;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background:#fff;border:1px solid ${C.hairline};border-radius:8px;overflow:hidden;font-family:${FONT};">
 <tr><td style="background:${C.red};padding:16px 24px;color:#fff;font-weight:700;font-size:14px;letter-spacing:.04em;">BUNGENDORE RFS &mdash; MEMBERS</td></tr>
 <tr><td style="padding:24px;">
 <p style="margin:0 0 8px;font-size:15px;color:${C.ink};">Your sign-in code:</p>
-<p style="margin:0 0 8px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:30px;font-weight:600;letter-spacing:.14em;color:${C.ink};">${escapeHtml(spaced)}</p>
+<p style="margin:0 0 8px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:30px;font-weight:600;letter-spacing:.4em;color:${C.ink};">${escapeHtml(code)}</p>
 <p style="margin:0;font-size:13px;color:${C.soft};">Expires in ${minutes} minutes. It can be used once. If you didn&rsquo;t ask to sign in, ignore this email &mdash; no action is needed.</p>
 </td></tr>
 <tr><td style="padding:14px 24px;background:${C.fill};border-top:1px solid ${C.hairline};font-size:12px;color:#9a9a9a;font-family:${FONT};">Bungendore Volunteer Rural Fire Brigade &middot; ${escapeHtml(SITE_URL)}</td></tr>

@@ -134,7 +134,9 @@ async function handleAuthRequest(req, env = process.env) {
 async function handleAuthVerify(req, env = process.env) {
   const ip = getClientIp(req);
   const email = normalizeEmail(req.body && req.body.email);
-  const code = String((req.body && req.body.code) || "").trim();
+  // Tolerate spacing / grouping a mail client or the user may introduce
+  // when copying the code out of the email ("123 456", thin spaces, etc.).
+  const code = String((req.body && req.body.code) || "").replace(/\D/g, "");
 
   const byIp = await hitRateLimit(`verify:ip:${ip}`, { max: 20, windowSeconds: 900 }, env);
   if (!byIp.allowed) {

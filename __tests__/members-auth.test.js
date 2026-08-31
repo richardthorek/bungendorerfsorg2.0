@@ -326,6 +326,17 @@ describe("handleAuthVerify", () => {
     expect(mockDb.codes.has("m@rfs.nsw.gov.au")).toBe(false);
   });
 
+  test("accepts a code pasted with spacing from the email", async () => {
+    const store = require("../api/shared/store");
+    await store.upsertMember({ email: "m@rfs.nsw.gov.au", role: "member" });
+    await handlers.handleAuthRequest(req({ email: "m@rfs.nsw.gov.au" }));
+    const digits = mockSentCodes[0].code;
+    const spaced = `${digits.slice(0, 3)} ${digits.slice(3)}`; // "123 456"
+    const res = await handlers.handleAuthVerify(req({ email: "m@rfs.nsw.gov.au", code: spaced }));
+    expect(res.status).toBe(200);
+    expect(res.body.member.email).toBe("m@rfs.nsw.gov.au");
+  });
+
   test("code locks after 5 attempts", async () => {
     const store = require("../api/shared/store");
     await store.upsertMember({ email: "m@rfs.nsw.gov.au", role: "member" });

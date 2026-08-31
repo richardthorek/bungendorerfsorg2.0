@@ -198,10 +198,18 @@
     el.email.focus();
   });
 
+  // The code email prints the digits with a gap for readability, so a paste
+  // can arrive as "123 456" (or with thin spaces). Keep only the digits, and
+  // don't let a longer paste be rejected before we've stripped it.
+  el.code.addEventListener("input", function () {
+    const digits = el.code.value.replace(/\D/g, "").slice(0, 6);
+    if (digits !== el.code.value) el.code.value = digits;
+  });
+
   el.verifyForm.addEventListener("submit", function (e) {
     e.preventDefault();
     const email = el.verifyEmailLabel.textContent;
-    const code = el.code.value.trim();
+    const code = el.code.value.replace(/\D/g, "");
     if (!/^\d{6}$/.test(code)) {
       setMsg(el.signinMsg, "Enter the 6-digit code from the email.", "err");
       return;
