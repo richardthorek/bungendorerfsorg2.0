@@ -18,6 +18,82 @@
 const { EmailClient } = require("@azure/communication-email");
 
 const SOURCE_URL = "https://www.bungendorerfs.org";
+const LOGO_URL = `${SOURCE_URL}/Images/logo.png`; // white RFS wordmark, reads on the red band
+const BRIGADE_NAME = "Bungendore Volunteer Rural Fire Brigade";
+
+// Palette lifted from the live site (main.css :root — NSW RFS brand + "Clear Skies")
+const C = {
+  red: "#e5281b",
+  darkGrey: "#4d4d4f",
+  ink: "#2b2b2b",
+  secondary: "#6b6b6b",
+  muted: "#9a9a9a",
+  hairline: "#ece9e4",
+  cardFill: "#f6f5f2",
+  pageBg: "#f4f4f4",
+  link: "#215e9e",
+  calloutBg: "#fff4e0",
+  calloutFg: "#8a6d00",
+  white: "#ffffff",
+};
+const FONT = "'Public Sans','Helvetica Neue',Helvetica,Arial,sans-serif";
+
+/** Wrap body content in a branded, table-based email shell (Outlook-safe). */
+function emailShell({ preheader, heading, subheading, bodyHtml }) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>${escapeHtml(heading)}</title>
+</head>
+<body style="margin:0;padding:0;background:${C.pageBg};">
+<span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;overflow:hidden;mso-hide:all;">${escapeHtml(
+    preheader
+  )}</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.pageBg};">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${
+  C.white
+};border:1px solid ${C.hairline};border-radius:8px;overflow:hidden;font-family:${FONT};">
+<tr><td style="background:${C.red};padding:20px 28px;">
+<img src="${LOGO_URL}" width="150" alt="${escapeHtml(BRIGADE_NAME)}" style="display:block;border:0;height:auto;width:150px;max-width:60%;">
+</td></tr>
+<tr><td style="padding:28px 28px 8px 28px;">
+<h1 style="margin:0;font-family:${FONT};font-size:20px;line-height:1.3;color:${C.ink};font-weight:700;">${escapeHtml(
+  heading
+)}</h1>
+${
+  subheading
+    ? `<p style="margin:6px 0 0 0;font-family:${FONT};font-size:13px;color:${C.secondary};">${escapeHtml(
+      subheading
+    )}</p>`
+    : ""
+}
+</td></tr>
+<tr><td style="padding:16px 28px 28px 28px;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};">
+${bodyHtml}
+</td></tr>
+<tr><td style="padding:18px 28px;background:${C.cardFill};border-top:1px solid ${C.hairline};font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">
+${escapeHtml(BRIGADE_NAME)}<br>
+<a href="${SOURCE_URL}" style="color:${C.link};text-decoration:none;">bungendorerfs.org</a>
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+/** Render the enquiry message as an accent-bordered quote block. */
+function messageBlock(message) {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 0 0;">
+<tr><td style="border-left:3px solid ${C.red};background:${C.cardFill};border-radius:0 6px 6px 0;padding:12px 16px;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};white-space:normal;">${escapeHtml(
+  message
+).replace(/\r?\n/g, "<br>")}</td></tr>
+</table>`;
+}
 
 /** Escape a string for safe interpolation into HTML. */
 function escapeHtml(value) {
@@ -62,88 +138,109 @@ function formatTimestamp(date = new Date()) {
  */
 function buildNotification(data, receivedAt) {
   const rows = [
-    ["Name", data.name],
-    ["Email", data.email],
-    ["Phone", data.phone || "—"],
-    ["Received", receivedAt],
+    ["Name", escapeHtml(data.name)],
+    [
+      "Email",
+      `<a href="mailto:${escapeHtml(data.email)}" style="color:${C.link};text-decoration:none;">${escapeHtml(data.email)}</a>`,
+    ],
+    [
+      "Phone",
+      data.phone
+        ? `<a href="tel:${escapeHtml(data.phone.replace(/[^\d+]/g, ""))}" style="color:${C.link};text-decoration:none;">${escapeHtml(data.phone)}</a>`
+        : "&mdash;",
+    ],
+    ["Received", escapeHtml(receivedAt)],
   ]
     .map(
-      ([label, value]) =>
-        `<tr><td style="padding:4px 12px 4px 0;font-weight:600;vertical-align:top">${escapeHtml(
-          label,
-        )}</td><td style="padding:4px 0">${escapeHtml(value)}</td></tr>`,
+      ([label, value], i) =>
+        `<tr><td style="padding:${i ? "8" : "0"}px 16px 8px 0;font-family:${FONT};font-size:13px;font-weight:700;color:${C.darkGrey};vertical-align:top;white-space:nowrap;">${escapeHtml(
+          label
+        )}</td><td style="padding:${i ? "8" : "0"}px 0 8px 0;font-family:${FONT};font-size:15px;color:${C.ink};vertical-align:top;">${value}</td></tr>`
     )
     .join("");
 
-  const messageHtml = escapeHtml(data.message).replace(/\r?\n/g, "<br>");
+  const bodyHtml = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
+<p style="margin:20px 0 6px 0;font-family:${FONT};font-size:13px;font-weight:700;color:${C.darkGrey};">Enquiry</p>
+${messageBlock(data.message)}
+<p style="margin:20px 0 0 0;font-family:${FONT};font-size:13px;color:${C.secondary};">Reply to this email to respond to ${escapeHtml(
+  data.name
+)} directly &mdash; their address is set as the reply-to.</p>`;
 
-  const html = `<!doctype html><html><body style="font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;line-height:1.5">
-<h2 style="margin:0 0 4px">New website enquiry</h2>
-<p style="margin:0 0 16px;color:#555">Submitted via ${escapeHtml(SOURCE_URL)}</p>
-<table style="border-collapse:collapse;margin-bottom:16px">${rows}</table>
-<div style="border-left:3px solid #c8102e;padding:8px 0 8px 12px;background:#faf7f7">${messageHtml}</div>
-<p style="margin:16px 0 0;color:#777;font-size:12px">Reply directly to this email to respond to ${escapeHtml(
-    data.name,
-  )}.</p>
-</body></html>`;
+  const html = emailShell({
+    preheader: `${data.name}: ${data.message.slice(0, 120)}`,
+    heading: "New website enquiry",
+    subheading: "Submitted via bungendorerfs.org",
+    bodyHtml,
+  });
 
   const plainText = [
-    "New website enquiry",
-    `Submitted via ${SOURCE_URL}`,
+    "NEW WEBSITE ENQUIRY",
+    "Submitted via bungendorerfs.org",
     "",
     `Name:     ${data.name}`,
     `Email:    ${data.email}`,
     `Phone:    ${data.phone || "—"}`,
     `Received: ${receivedAt}`,
     "",
+    "Enquiry:",
     data.message,
     "",
-    `Reply directly to this email to respond to ${data.name}.`,
+    `Reply to this email to respond to ${data.name} directly.`,
+    "",
+    "—",
+    BRIGADE_NAME,
+    SOURCE_URL,
   ].join("\n");
 
-  return {
-    subject: `Website enquiry from ${data.name}`,
-    html,
-    plainText,
-  };
+  return { subject: `Website enquiry from ${data.name}`, html, plainText };
 }
 
 /** Build the acknowledgement sent back to the enquirer. */
 function buildConfirmation(data) {
-  const html = `<!doctype html><html><body style="font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;line-height:1.5">
-<p>Thanks ${escapeHtml(data.name.split(/\s+/)[0] || data.name)},</p>
-<p>We've received your enquiry and one of our team will get back to you. We're all
-volunteers, so this might take a few days — thank you for your patience.</p>
-<p><strong>If this enquiry is about an unattended fire, please call 000.</strong></p>
-<p>For reference, this is what you sent us:</p>
-<div style="border-left:3px solid #c8102e;padding:8px 0 8px 12px;background:#faf7f7">${escapeHtml(
-    data.message,
-  ).replace(/\r?\n/g, "<br>")}</div>
-<p style="color:#777;font-size:12px">We only use your contact details for this enquiry.
-This mailbox is not monitored for replies — we'll be in touch from a brigade address.</p>
-</body></html>`;
+  const firstName = data.name.split(/\s+/)[0] || data.name;
+
+  const bodyHtml = `<p style="margin:0 0 14px 0;">Thanks ${escapeHtml(firstName)},</p>
+<p style="margin:0 0 14px 0;">We&rsquo;ve received your enquiry and one of our team will get back to you. We&rsquo;re
+all volunteers, so this might take a few days &mdash; thank you for your patience.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;">
+<tr><td style="border-left:3px solid ${C.calloutFg};background:${C.calloutBg};border-radius:0 6px 6px 0;padding:12px 16px;font-family:${FONT};font-size:15px;line-height:1.5;color:${C.calloutFg};font-weight:700;">
+If this enquiry is about an unattended fire, please call 000 now.
+</td></tr>
+</table>
+<p style="margin:0 0 6px 0;font-family:${FONT};font-size:13px;font-weight:700;color:${C.darkGrey};">Your message</p>
+${messageBlock(data.message)}
+<p style="margin:20px 0 0 0;font-family:${FONT};font-size:12px;color:${C.muted};">
+We only use your contact details for this enquiry. This mailbox isn&rsquo;t monitored for
+replies &mdash; we&rsquo;ll be in touch from a brigade address.
+</p>`;
+
+  const html = emailShell({
+    preheader: "We've got your enquiry — one of our volunteers will be in touch.",
+    heading: "We've received your enquiry",
+    subheading: null,
+    bodyHtml,
+  });
 
   const plainText = [
-    `Thanks ${data.name.split(/\s+/)[0] || data.name},`,
+    `Thanks ${firstName},`,
     "",
     "We've received your enquiry and one of our team will get back to you. We're all",
     "volunteers, so this might take a few days - thank you for your patience.",
     "",
-    "If this enquiry is about an unattended fire, please call 000.",
+    "If this enquiry is about an unattended fire, please call 000 now.",
     "",
-    "For reference, this is what you sent us:",
-    "",
+    "Your message:",
     data.message,
     "",
-    "We only use your contact details for this enquiry. This mailbox is not monitored",
+    "We only use your contact details for this enquiry. This mailbox isn't monitored",
     "for replies - we'll be in touch from a brigade address.",
+    "",
+    "—",
+    BRIGADE_NAME,
+    SOURCE_URL,
   ].join("\n");
 
-  return {
-    subject: "We've received your enquiry — Bungendore RFS",
-    html,
-    plainText,
-  };
+  return { subject: "We've received your enquiry — Bungendore RFS", html, plainText };
 }
 
 /**

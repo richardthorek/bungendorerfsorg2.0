@@ -21,3 +21,4 @@ __MACOSX/
 # Backup files
 *~
 *.bak
+.scratch

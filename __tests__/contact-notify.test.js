@@ -42,9 +42,7 @@ function fakeClient(status = "Succeeded") {
 
 describe("escapeHtml", () => {
   test("escapes HTML-significant characters", () => {
-    expect(escapeHtml('<script>"x"&\'y\'')).toBe(
-      "&lt;script&gt;&quot;x&quot;&amp;&#39;y&#39;",
-    );
+    expect(escapeHtml("<script>\"x\"&'y'")).toBe("&lt;script&gt;&quot;x&quot;&amp;&#39;y&#39;");
   });
 });
 
@@ -52,7 +50,7 @@ describe("readConfig", () => {
   test("reports every missing variable", () => {
     const { missing } = readConfig({});
     expect(missing).toEqual(
-      expect.arrayContaining(["ACS_CONNECTION_STRING", "ACS_SENDER_ADDRESS", "CONTACT_NOTIFY_TO"]),
+      expect.arrayContaining(["ACS_CONNECTION_STRING", "ACS_SENDER_ADDRESS", "CONTACT_NOTIFY_TO"])
     );
   });
 
@@ -64,7 +62,9 @@ describe("readConfig", () => {
 
   test("confirmation defaults on, disabled only by explicit false", () => {
     expect(readConfig(fullEnv).sendConfirmation).toBe(true);
-    expect(readConfig({ ...fullEnv, CONTACT_NOTIFY_CONFIRM: "false" }).sendConfirmation).toBe(false);
+    expect(readConfig({ ...fullEnv, CONTACT_NOTIFY_CONFIRM: "false" }).sendConfirmation).toBe(
+      false
+    );
   });
 });
 
@@ -76,6 +76,15 @@ describe("buildNotification", () => {
     expect(msg.html).toContain("Jane &lt;b&gt;");
     expect(msg.html).toContain("hi &lt;img src=x&gt;");
     expect(msg.html).not.toContain("<img src=x>");
+    // plain-text part keeps the raw message (no HTML there to escape)
+    expect(msg.plainText).toContain("hi <img src=x>");
+  });
+
+  test("includes the enquiry details and a link back to the site", () => {
+    const msg = buildNotification(validData, "Mon 1 Sep 2026, 9:00 am");
+    expect(msg.html).toContain("39 Lake Road");
+    expect(msg.html).toContain("mailto:jane@example.com");
+    expect(msg.html).toContain("https://www.bungendorerfs.org");
     expect(msg.plainText).toContain("39 Lake Road");
   });
 
@@ -97,9 +106,9 @@ describe("sendContactNotifications", () => {
   const silent = { log: () => {}, warn: () => {}, error: () => {} };
 
   test("throws when configuration is incomplete", async () => {
-    await expect(
-      sendContactNotifications(validData, { env: {}, logger: silent }),
-    ).rejects.toThrow(/not configured/);
+    await expect(sendContactNotifications(validData, { env: {}, logger: silent })).rejects.toThrow(
+      /not configured/
+    );
   });
 
   test("sends committee notification with enquirer as reply-to", async () => {
@@ -147,7 +156,7 @@ describe("sendContactNotifications", () => {
         env: fullEnv,
         logger: silent,
         clientFactory: () => client,
-      }),
+      })
     ).resolves.toEqual({ id: "ok" });
   });
 
@@ -158,7 +167,7 @@ describe("sendContactNotifications", () => {
         env: { ...fullEnv, CONTACT_NOTIFY_CONFIRM: "false" },
         logger: silent,
         clientFactory: () => client,
-      }),
+      })
     ).rejects.toThrow(/status Failed/);
   });
 });
