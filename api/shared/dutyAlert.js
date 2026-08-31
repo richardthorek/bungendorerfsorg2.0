@@ -1,8 +1,8 @@
 /**
- * Emails a short notice whenever the brigade phone number changes, so there is
- * always an off-system record of who took the line and when.
- * Reuses ACS_CONNECTION_STRING / ACS_SENDER_ADDRESS; recipient DUTY_ALERT_TO
- * (falls back to CONTACT_NOTIFY_TO). Best-effort — never blocks the change.
+ * Emails a short notice whenever the brigade phone number changes.
+ * OPT-IN: nothing is sent unless DUTY_ALERT_TO is set to one or more recipients.
+ * Reuses ACS_CONNECTION_STRING / ACS_SENDER_ADDRESS. Best-effort — never blocks
+ * the change.
  */
 
 const { EmailClient } = require("@azure/communication-email");
@@ -39,7 +39,7 @@ async function sendDutyChangeAlert(change, options = {}) {
   const env = options.env || process.env;
   const connectionString = env.ACS_CONNECTION_STRING;
   const senderAddress = env.ACS_SENDER_ADDRESS;
-  const to = (env.DUTY_ALERT_TO || env.CONTACT_NOTIFY_TO || "")
+  const to = (env.DUTY_ALERT_TO || "")
     .split(",")
     .map((a) => a.trim())
     .filter(Boolean);

@@ -285,7 +285,7 @@ the district duty officer; routes and the `duty` table keep the old name.)
 Members may carry an optional `phone` for SMS attribution.
 
 **Config:** `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`,
-`DUTY_ALERT_TO` (defaults to `CONTACT_NOTIFY_TO`).
+`DUTY_ALERT_TO` (opt-in — no alert email unless set).
 
 **Cut-over (Twilio Studio GUI):**
 
