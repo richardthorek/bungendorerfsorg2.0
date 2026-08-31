@@ -105,6 +105,37 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Utility: visually hidden but still announced by screen readers (WCAG 2.2 AA
+   1.3.1/4.1.2) — used for <label>s that would otherwise duplicate visible
+   placeholder text, e.g. the contact form's inputs. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Contact form validation errors: an aria-live region, hidden until a
+   validation message is set (WCAG 2.2 AA 3.3.1). */
+.form-errors {
+  color: var(--rfs-core-red);
+  background-color: rgba(229, 40, 27, 0.08);
+  border: 1px solid var(--rfs-core-red);
+  border-radius: var(--pico-border-radius);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+  font-size: 0.9rem;
+}
+
+.form-errors:empty {
+  display: none;
+}
+
 /* ── Skip link (Phase 7) ─────────────────────────────────────────────────────
    Visually hidden until focused; moves into view for keyboard users.
    Position: fixed so it works regardless of scroll state. */
@@ -1304,8 +1335,18 @@ a:focus {
 }
 
 /* Accordion Headers (Mobile Only) */
+/* .accordion-header is a real <button> (WCAG 2.2 AA: keyboard focus + native
+   Enter/Space activation, announced as a button by screen readers) — unset
+   the browser's default button chrome so it still matches the accordion's
+   visual language rather than looking like a form control. */
 .accordion-header {
   display: none;
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
 
 .mobile-only {
@@ -2190,4 +2231,36 @@ body.map-fullscreen-active {
   border-left: none;
   border-right: none;
   border-bottom: none;
+}
+
+/* ── Reduced motion (WCAG 2.2 AA 2.3.3 / roadmap Workstream 6) ───────────────
+   The site is deliberately animated — hero cross-fade, card hover-lift,
+   tab/accordion transitions, focus/hover scale effects — none of that is
+   being removed for everyone. This block only takes effect for visitors who
+   have told their OS/browser they want reduced motion
+   (prefers-reduced-motion: reduce), and it shortens animations/transitions
+   to effectively nothing rather than deleting them outright, so elements
+   still reach their end state (open/active/etc.) without an animated
+   journey to get there. Layout, colour, and content are unaffected. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Hover/focus "lift" and scale effects (buttons, cards, tab underline)
+     are motion, not just timing — freeze the transform itself rather than
+     just speeding up the transition to it. */
+  button:hover,
+  .custom-button:hover,
+  button:active,
+  .custom-button:active,
+  .tab-panel article:hover,
+  .live-status-strip article:hover {
+    transform: none;
+  }
 }

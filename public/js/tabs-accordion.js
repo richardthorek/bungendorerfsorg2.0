@@ -10,6 +10,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const accordionHeaders = document.querySelectorAll(".accordion-header.mobile-only");
 
   /**
+   * Open (or close) a single accordion header + its content panel, keeping
+   * the "active" class and the aria-expanded state in sync (WCAG 2.2 AA:
+   * screen readers must hear open/closed state, not just see it).
+   */
+  function setAccordionOpen(header, isOpen) {
+    header.classList.toggle("active", isOpen);
+    header.setAttribute("aria-expanded", String(isOpen));
+    const content = header.nextElementSibling;
+    if (content) {
+      content.classList.toggle("active", isOpen);
+    }
+  }
+
+  /**
    * Resolve a tab from the current hash, if present
    */
   function getTabFromHash() {
@@ -106,15 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const targetContent = targetPanel?.querySelector(".accordion-content");
 
         if (targetHeader && targetContent) {
-          accordionHeaders.forEach((h) => {
-            h.classList.remove("active");
-            if (h.nextElementSibling) {
-              h.nextElementSibling.classList.remove("active");
-            }
-          });
-
-          targetHeader.classList.add("active");
-          targetContent.classList.add("active");
+          accordionHeaders.forEach((h) => setAccordionOpen(h, false));
+          setAccordionOpen(targetHeader, true);
           scrollTarget = targetContent;
         }
       }
@@ -144,23 +151,14 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   function toggleAccordion(header) {
     const tabPanel = header.closest(".tab-panel");
-    const content = header.nextElementSibling;
     const isActive = header.classList.contains("active");
 
     // Close all accordions (optional: remove these lines to allow multiple open)
-    accordionHeaders.forEach((h) => {
-      h.classList.remove("active");
-      if (h.nextElementSibling) {
-        h.nextElementSibling.classList.remove("active");
-      }
-    });
+    accordionHeaders.forEach((h) => setAccordionOpen(h, false));
 
     // Toggle current accordion
     if (!isActive) {
-      header.classList.add("active");
-      if (content) {
-        content.classList.add("active");
-      }
+      setAccordionOpen(header, true);
 
       // Save accordion state
       const tabId = tabPanel?.id?.replace("-tab", "") || "fire-info";
@@ -243,19 +241,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /**
-   * Handle accordion header clicks (mobile)
+   * Handle accordion header clicks (mobile). Headers are real <button>
+   * elements, so Enter/Space activation is native — no manual keydown
+   * listener needed (WCAG 2.2 AA: keyboard operability "for free").
    */
   accordionHeaders.forEach((header) => {
     header.addEventListener("click", () => {
       toggleAccordion(header);
-    });
-
-    // Keyboard support
-    header.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        toggleAccordion(header);
-      }
     });
   });
 
@@ -301,11 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.innerWidth <= 768) {
     const firstAccordion = accordionHeaders[0];
     if (firstAccordion) {
-      firstAccordion.classList.add("active");
-      const firstContent = firstAccordion.nextElementSibling;
-      if (firstContent) {
-        firstContent.classList.add("active");
-      }
+      setAccordionOpen(firstAccordion, true);
     }
   }
 
@@ -323,10 +311,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Mobile: ensure first accordion is open
         accordionHeaders.forEach((h, index) => {
           if (index === 0) {
-            h.classList.add("active");
-            if (h.nextElementSibling) {
-              h.nextElementSibling.classList.add("active");
-            }
+            setAccordionOpen(h, true);
           }
         });
       }

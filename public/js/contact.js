@@ -1,24 +1,96 @@
+// Maps validateContactForm() field keys to their input elements, so
+// validation failures can set aria-invalid / aria-describedby on the right
+// field as well as being announced via the aria-live region (WCAG 2.2 AA
+// 3.3.1, 4.1.3).
+const CONTACT_FIELD_IDS = {
+  name: "contactNameInput",
+  email: "emailInput",
+  phone: "contactPhoneInput",
+  message: "contactMessageInput",
+};
+
+/**
+ * Render (or clear) validation/submission errors in the aria-live region,
+ * and mark/unmark the offending fields as aria-invalid.
+ * @param {Array<{field: string, message: string}>} errors
+ */
+function renderContactFormErrors(errors) {
+  const errorsRegion = document.getElementById("contactFormErrors");
+
+  // Clear aria-invalid/aria-describedby from every field first.
+  Object.values(CONTACT_FIELD_IDS).forEach((id) => {
+    const field = document.getElementById(id);
+    if (!field) return;
+    field.removeAttribute("aria-invalid");
+    field.removeAttribute("aria-describedby");
+  });
+
+  if (!errorsRegion) return;
+
+  if (!errors || errors.length === 0) {
+    errorsRegion.textContent = "";
+    errorsRegion.hidden = true;
+    return;
+  }
+
+  const list = document.createElement("ul");
+  errors.forEach((error, index) => {
+    const itemId = `contactFormError-${index}`;
+    const item = document.createElement("li");
+    item.id = itemId;
+    item.textContent = error.message;
+    list.appendChild(item);
+
+    const fieldId = CONTACT_FIELD_IDS[error.field];
+    const field = fieldId && document.getElementById(fieldId);
+    if (field) {
+      field.setAttribute("aria-invalid", "true");
+      field.setAttribute("aria-describedby", itemId);
+    }
+  });
+
+  errorsRegion.innerHTML = "";
+  errorsRegion.appendChild(list);
+  errorsRegion.hidden = false;
+}
+
+/**
+ * Show a one-off, non-validation status message (success/failure) in the
+ * same aria-live region used for validation errors, so it's announced the
+ * same way without borrowing the unrelated calendar-event modal.
+ * @param {string} message
+ */
+function announceContactFormStatus(message) {
+  const errorsRegion = document.getElementById("contactFormErrors");
+  if (!errorsRegion) return;
+  errorsRegion.textContent = message;
+  errorsRegion.hidden = false;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const modal = document.getElementById("contactModal");
   const triggers = document.querySelectorAll(".contact-trigger");
-  const span = document.getElementsByClassName("close")[0];
+  const closeButton = modal.querySelector(".close");
   const form = document.getElementById("contactForm");
   const submitButton = document.getElementById("submitButton"); // Select the submit button
 
   // When the user clicks a contact trigger (utility bar or Quick Links), open the modal
   triggers.forEach((btn) => {
-    btn.onclick = () => modal.setAttribute("open", "");
+    btn.addEventListener("click", () => openDialog(modal, btn));
   });
 
-  // When the user clicks on <span> (x), close the modal
-  span.onclick = () => modal.removeAttribute("open");
+  // When the user clicks the close (x) button, close the modal
+  closeButton.addEventListener("click", () => closeDialog(modal));
 
-  // When the user clicks anywhere outside of the modal, close it
-  window.onclick = (event) => {
+  // When the user clicks the backdrop (outside the <article> card), close it.
+  // With a native <dialog>, a click that isn't captured by a descendant
+  // lands on the dialog element itself, so this only fires for true
+  // outside-clicks — not clicks on the form inside.
+  modal.addEventListener("click", (event) => {
     if (event.target === modal) {
-      modal.removeAttribute("open");
+      closeDialog(modal);
     }
-  };
+  });
 
   // Handle form submission
   form.addEventListener("submit", (event) => {
@@ -31,18 +103,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // Validate the form
     const validationErrors = validateContactForm(data);
     if (validationErrors.length > 0) {
-      showModal("Validation Error", validationErrors.join("<br>"));
+      renderContactFormErrors(validationErrors);
       return;
     }
+    renderContactFormErrors([]);
 
     // Check honeypot field (should be empty if not a bot)
     if (data.website) {
       console.warn("Potential spam submission detected (honeypot filled)");
       // Silently reject spam submissions
-      showModal("Success", "Thank you! Your message has been received.");
+      announceContactFormStatus("Thank you! Your message has been received.");
       setTimeout(() => {
         form.reset();
-        modal.removeAttribute("open");
+        closeDialog(modal);
       }, 2000);
       return;
     }
@@ -86,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => {
           form.reset();
           form.removeChild(successMessage);
-          modal.removeAttribute("open");
+          closeDialog(modal);
         }, 2000);
       })
       .catch((error) => {
@@ -94,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const errorMessage = getUserFriendlyErrorMessage(error);
 
         // Show error message to user
-        showModal("Submission Failed", errorMessage);
+        renderContactFormErrors([{ field: null, message: errorMessage }]);
 
         // Restore the original submit button text in case of error
         submitButton.innerHTML = originalButtonText;
@@ -106,28 +179,29 @@ document.addEventListener("DOMContentLoaded", () => {
 /**
  * Validate contact form data
  * @param {Object} data - Form data object
- * @returns {Array} - Array of validation error messages
+ * @returns {Array<{field: string, message: string}>} - Validation errors,
+ *   tagged with the field they apply to so the UI can point at them.
  */
 function validateContactForm(data) {
   const errors = [];
 
   // Name validation
   if (!data.name || data.name.trim().length < 2) {
-    errors.push("Name must be at least 2 characters long.");
+    errors.push({ field: "name", message: "Name must be at least 2 characters long." });
   }
   if (data.name && data.name.trim().length > 100) {
-    errors.push("Name must be less than 100 characters.");
+    errors.push({ field: "name", message: "Name must be less than 100 characters." });
   }
 
   // Email validation
   // Prevent ReDoS by checking length first and using a simpler pattern
   if (!data.email || data.email.length > 254) {
-    errors.push("Please enter a valid email address.");
+    errors.push({ field: "email", message: "Please enter a valid email address." });
   } else {
     // Simple email validation - allows basic email format without ReDoS risk
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailPattern.test(data.email)) {
-      errors.push("Please enter a valid email address.");
+      errors.push({ field: "email", message: "Please enter a valid email address." });
     }
   }
 
@@ -139,16 +213,16 @@ function validateContactForm(data) {
     const cleanPhone = data.phone.replace(/[\s()-]/g, ""); // Remove spaces, hyphens, parentheses
 
     if (!phonePattern.test(cleanPhone)) {
-      errors.push("Please enter a valid Australian phone number.");
+      errors.push({ field: "phone", message: "Please enter a valid Australian phone number." });
     }
   }
 
   // Message validation
   if (!data.message || data.message.trim().length < 10) {
-    errors.push("Message must be at least 10 characters long.");
+    errors.push({ field: "message", message: "Message must be at least 10 characters long." });
   }
   if (data.message && data.message.trim().length > 2000) {
-    errors.push("Message must be less than 2000 characters.");
+    errors.push({ field: "message", message: "Message must be less than 2000 characters." });
   }
 
   return errors;
