@@ -1,5 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const contentIds = ["prepareContent", "fireInfoContent", "membershipContent", "eventsContent"];
+  const contentIds = [
+    "prepareContent",
+    "fireInfoContent",
+    "membershipContent",
+    "eventsContent",
+    "bushfireRiskContent",
+    "neighbourhoodSaferPlaceContent",
+    "animalsInBushfireContent",
+    "permitsContent",
+  ];
   const localBasePath = "/Content/";
 
   function fetchLocalMarkdownContent(contentId, filePath) {

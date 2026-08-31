@@ -814,7 +814,7 @@
       msg: document.getElementById("eventMsg"),
       fields: [
         { key: "name", placeholder: "Event name", type: "text" },
-        { key: "timing", placeholder: "Timing, e.g. Date TBC", type: "text" },
+        { key: "timing", placeholder: "Timing, e.g. Saturday 14 March, 10am", type: "text" },
         { key: "description", placeholder: "Short description", type: "textarea" },
       ],
     },
