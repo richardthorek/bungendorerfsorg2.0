@@ -894,6 +894,36 @@ a:focus {
   margin-right: 0.25rem;
 }
 
+/* Total Fire Ban indicator (roadmap feedback: TFB is an icon, not a colour
+   scale — the standard pictogram is a black flame inside a red "no" circle,
+   as used on real TFB signage). Composed from two free Font Awesome glyphs
+   stacked with CSS rather than a hand-drawn asset: fa-ban is a hollow red
+   ring, so overlaying it on fa-fire reproduces the prohibition symbol without
+   a new icon file. updateControlledBurnCell() (main.js) swaps this in only
+   while a Total Fire Ban is actually in effect; otherwise it's a plain flame. */
+.icon-prohibit-slot {
+  margin-right: 0.25rem;
+  display: inline-block;
+}
+
+.icon-prohibit {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+}
+
+.icon-prohibit i {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+
+.icon-prohibit .icon-prohibit__ring {
+  color: var(--rfs-core-red);
+}
+
 .strip-cell__value {
   font-size: 26px;
   font-weight: 800;
@@ -1041,6 +1071,59 @@ a:focus {
   color: var(--clear-neutral-cell-fg);
 }
 
+/* Cell 3 (Warning Level) escalation — wired from live incident data in
+   emergency-data.js (roadmap §2.2: this was previously a hard-coded "None").
+   Colours are the official Australian Warning System (AWS) palette, not the
+   Fire Danger Rating's AFDRS palette (§961 below) — the two systems are
+   distinct and must not be blended into a single invented scale. These three
+   hexes must stay identical to AREA_FILL_COLOUR in map.js, which samples the
+   same colours from the official advice/watch-and-act/emergency-warning icon
+   assets. data-state lives on the article itself (set directly by JS),
+   unlike the Fire Danger/Burn cells which target a child element via :has(). */
+.strip-cell--warning[data-state="advice"] {
+  background-color: #fbe032; /* AWS Advice yellow */
+}
+.strip-cell--warning[data-state="advice"] .strip-cell__label,
+.strip-cell--warning[data-state="advice"] #stripWarningLevel,
+.strip-cell--warning[data-state="advice"] #stripWarningLevelSub {
+  color: var(--rfs-black);
+}
+
+.strip-cell--warning[data-state="watch-and-act"] {
+  background-color: #ff7900; /* AWS Watch and Act orange */
+}
+.strip-cell--warning[data-state="watch-and-act"] .strip-cell__label,
+.strip-cell--warning[data-state="watch-and-act"] #stripWarningLevel,
+.strip-cell--warning[data-state="watch-and-act"] #stripWarningLevelSub {
+  color: var(--rfs-black);
+}
+
+.strip-cell--warning[data-state="emergency-warning"] {
+  background-color: #d6001c; /* AWS Emergency Warning red — not --rfs-core-red,
+                                 which is the brand/AFDRS red for a different system */
+}
+.strip-cell--warning[data-state="emergency-warning"]:hover {
+  background-color: #b40017;
+}
+.strip-cell--warning[data-state="emergency-warning"] .strip-cell__label,
+.strip-cell--warning[data-state="emergency-warning"] #stripWarningLevel,
+.strip-cell--warning[data-state="emergency-warning"] #stripWarningLevelSub {
+  color: var(--rfs-white);
+}
+
+/* Degraded/failed data-fetch state (roadmap §2.1) — applies to the
+   Incidents and Warning Level cells whenever the live fetch fails. Amber,
+   matching the Controlled Burn "high" treatment, so a failure always reads
+   as caution and is never mistaken for the calm "nothing happening" state. */
+.strip-cell[data-state="degraded"] {
+  background-color: var(--clear-incident-bg);
+}
+.strip-cell[data-state="degraded"] .strip-cell__label,
+.strip-cell[data-state="degraded"] .strip-cell__value,
+.strip-cell[data-state="degraded"] .strip-cell__sub {
+  color: var(--clear-incident-fg);
+}
+
 /* Cell 4 (Controlled Burn) escalation — same colour language as the Fire
    Danger cell: amber once fire danger reaches High (permits may be
    suspended), full alert red when a Total Fire Ban is actually in effect
@@ -1079,6 +1162,23 @@ a:focus {
 .hero--incident ~ .live-status-strip .strip-cell--map .strip-cell__sub {
   color: var(--rfs-core-red);
   font-weight: 600;
+}
+
+/* Freshness + trust line (roadmap Workstream 1) — thin bar directly under the
+   strip: an "as-at" timestamp so a stale page is visible as stale, plus a
+   permanent pointer to the authoritative sources. */
+.strip-meta {
+  margin: 0;
+  padding: 8px 24px;
+  background-color: var(--clear-neutral-cell-bg);
+  color: var(--clear-text-secondary);
+  font-size: 12px;
+  text-align: center;
+  border-bottom: 1px solid var(--clear-hairline);
+}
+
+.strip-meta__divider {
+  margin: 0 0.5em;
 }
 
 /* Responsive: ≥ 900 px → full 5-column row */
@@ -2070,6 +2170,18 @@ body.map-fullscreen-active {
   font-size: 0.8rem; /* Smaller font for label */
   color: #555;
   margin-bottom: 0.25rem; /* Small space between label and value */
+}
+
+/* Honest degraded state for the incident text list (roadmap §2.1) — same
+   amber caution language as the strip's degraded cells, never styled to look
+   like the calm "no incidents" state above. */
+.data-label--degraded {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--clear-incident-fg);
+  background-color: var(--clear-incident-bg);
+  padding: 1rem;
+  border-radius: 8px;
 }
 
 #pageFoot {

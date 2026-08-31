@@ -287,28 +287,6 @@ function addIncidentAreaLayers(map, areaFeatureCollection) {
   map.on("mouseleave", "incident-areas-fill", function() { map.getCanvas().style.cursor = ""; });
 }
 
-// ─── Icon selection ───────────────────────────────────────────────────────────
-
-function getIconUrlForFeature(feature, categoryCounts) {
-  const category = (feature.properties && feature.properties.category) || "";
-
-  if (category.includes("Emergency Warning")) {
-    categoryCounts["Emergency Warning"]++;
-    return ICONS.emergencyWarning;
-  }
-  if (category.includes("Watch and Act")) {
-    categoryCounts["Watch and Act"]++;
-    return ICONS.watchAndAct;
-  }
-  if (category.includes("Advice")) {
-    categoryCounts.Advice++;
-    return ICONS.advice;
-  }
-
-  categoryCounts.Other++;
-  return ICONS.other;
-}
-
 // ─── Incident loading ─────────────────────────────────────────────────────────
 
 // ─── Hero state management (Phase 2) ─────────────────────────────────────────
@@ -560,138 +538,94 @@ function initHeroMap(token, bounds, markerData, areaFeatureCollection, heroEl, h
   });
 }
 
+/**
+ * The map is a progressive enhancement (roadmap §2.3): it never fetches
+ * incident data itself. It consumes the same fetch that emergency-data.js
+ * already uses to render the honest text list/status strip — reusing an
+ * in-flight or completed promise rather than issuing a second network call.
+ * If that fetch fails, the honest degraded state is already visible in the
+ * status strip; the map simply shows the basemap with no markers.
+ */
 function loadIncidentData(map) {
-  fetch(getApiBaseUrl() + "/api/fire-incidents", {
-    method: "GET",
-    headers: {
-      "X-Request-ID": "Get-Fire-Incidents",
-      "Content-Type": "application/json",
-    },
-  })
-    .then(function(response) {
-      if (!response.ok) throw new Error("HTTP error! status: " + response.status);
-      return response.json();
-    })
-    .then(function(data) {
-      const features = Array.isArray(data && data.features) ? data.features : [];
-      const filteredFeatures = filterFeaturesForEnvironment(features);
-      const categoryCounts = { Other: 0, Advice: 0, "Watch and Act": 0, "Emergency Warning": 0 };
+  if (typeof window.loadEmergencyData !== "function") return;
 
-      populateFireInfoTable({ features: filteredFeatures });
-
-      const bounds = new mapboxgl.LngLatBounds();
-      const incidentsList = [];
-      const areaFeatures = [];
-      const markerDataList = [];
-
-      filteredFeatures.forEach(function(feature) {
-        const category = (feature.properties && feature.properties.category) || "";
-        const iconUrl = getIconUrlForFeature(feature, categoryCounts);
-        const fields = extractFields((feature.properties && feature.properties.description) || "");
-        const title = (feature.properties && feature.properties.title) || "Incident";
-        const alertLevel = fields.alertlevel || "Not Applicable";
-        const categoryKey = getCategoryKey(category);
-
-        // Collect non-point geometries for area rendering
-        getNonPointGeometries(feature).forEach(function(geom) {
-          areaFeatures.push({
-            type: "Feature",
-            geometry: geom,
-            properties: {
-              category: category,
-              categoryKey: categoryKey,
-              title: title,
-              description: (feature.properties && feature.properties.description) || "",
-            },
-          });
-        });
-
-        // Point marker
-        const coordinates = getFeatureCoordinates(feature);
-        if (coordinates) {
-          const markerEl = createMarkerElement(iconUrl, alertLevel, category);
-
-          (function(t, c, f) {
-            markerEl.addEventListener("click", function() {
-              showDetailPanel(buildIncidentDetailHTML(t, c, f));
-            });
-            markerEl.addEventListener("keydown", function(e) {
-              if (e.key === "Enter" || e.key === " ") {
-                showDetailPanel(buildIncidentDetailHTML(t, c, f));
-              }
-            });
-          })(title, category, fields);
-
-          new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
-            .setLngLat(coordinates)
-            .addTo(map);
-
-          bounds.extend(coordinates);
-
-          // Collect data so the hero map can render the same markers
-          markerDataList.push({ coordinates: coordinates, iconUrl: iconUrl, alertLevel: alertLevel, category: category });
-        }
-
-        incidentsList.push({
-          title: title,
-          status: fields.status || alertLevel || "Unknown",
-          location: fields.location || "Unknown location",
-        });
-      });
-
-      if (areaFeatures.length > 0) {
-        addIncidentAreaLayers(map, { type: "FeatureCollection", features: areaFeatures });
-      }
-
-      addStationMarker(map, bounds);
-      updateIncidentSummary(categoryCounts);
-      updateEmergencyWidget(incidentsList, categoryCounts);
-
-      const total =
-        categoryCounts["Emergency Warning"] +
-        categoryCounts["Watch and Act"] +
-        categoryCounts.Advice +
-        categoryCounts.Other;
-      const heroAreaCollection = areaFeatures.length > 0
-        ? { type: "FeatureCollection", features: areaFeatures }
-        : null;
-      updateHeroState(total, bounds, markerDataList, heroAreaCollection);
-
-      if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
-      }
+  window.loadEmergencyData()
+    .then(function(result) {
+      renderIncidentsOnMap(map, result.filteredFeatures, result.total);
     })
     .catch(function(error) {
-      console.error("Error fetching the GeoJSON data:", error);
-      const errorMessage = getUserFriendlyErrorMessage(error);
-      const incidentCountCell = document.getElementById("incidentCountCell");
-      const incidentCountLabel = document.getElementById("incidentCountLabel");
-      const incidentTotalCount = document.getElementById("incidentTotalCount");
-
-      if (incidentTotalCount) incidentTotalCount.textContent = "0";
-
-      if (incidentCountCell) {
-        incidentCountCell.innerHTML = DOMPurify.sanitize(
-          "<div role=\"alert\" style=\"color:var(--rfs-error-color,#c33);padding:1rem;\">" +
-          "<i class=\"fas fa-exclamation-triangle\"></i> " + errorMessage + "</div>"
-        );
-      }
-
-      if (incidentCountLabel) incidentCountLabel.textContent = "No active incidents in our area";
-
-      populateFireInfoTable({ features: [] });
-
-      if (typeof window.updateEmergencyDashboard === "function") {
-        const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
-        const fireDangerMessage = document.getElementById("fireDangerMessage");
-        window.updateEmergencyDashboard({
-          dangerLevel: (fireDangerRatingCell && fireDangerRatingCell.textContent) || "NO RATING",
-          message: (fireDangerMessage && fireDangerMessage.textContent) || "Rating information currently unavailable.",
-          incidentCount: 0,
-          incidents: [],
-        });
-      }
+      console.error("Map: skipping incident layer, fetch failed:", getUserFriendlyErrorMessage(error));
     });
+}
+
+function renderIncidentsOnMap(map, filteredFeatures, total) {
+  const bounds = new mapboxgl.LngLatBounds();
+  const areaFeatures = [];
+  const markerDataList = [];
+
+  filteredFeatures.forEach(function(feature) {
+    const category = (feature.properties && feature.properties.category) || "";
+    const iconUrl = getIconUrl(category);
+    const fields = extractFields((feature.properties && feature.properties.description) || "");
+    const title = (feature.properties && feature.properties.title) || "Incident";
+    const alertLevel = fields.alertlevel || "Not Applicable";
+    const categoryKey = getCategoryKey(category);
+
+    // Collect non-point geometries for area rendering
+    getNonPointGeometries(feature).forEach(function(geom) {
+      areaFeatures.push({
+        type: "Feature",
+        geometry: geom,
+        properties: {
+          category: category,
+          categoryKey: categoryKey,
+          title: title,
+          description: (feature.properties && feature.properties.description) || "",
+        },
+      });
+    });
+
+    // Point marker
+    const coordinates = getFeatureCoordinates(feature);
+    if (coordinates) {
+      const markerEl = createMarkerElement(iconUrl, alertLevel, category);
+
+      (function(t, c, f) {
+        markerEl.addEventListener("click", function() {
+          showDetailPanel(buildIncidentDetailHTML(t, c, f));
+        });
+        markerEl.addEventListener("keydown", function(e) {
+          if (e.key === "Enter" || e.key === " ") {
+            showDetailPanel(buildIncidentDetailHTML(t, c, f));
+          }
+        });
+      })(title, category, fields);
+
+      new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
+        .setLngLat(coordinates)
+        .addTo(map);
+
+      bounds.extend(coordinates);
+
+      // Collect data so the hero map can render the same markers
+      markerDataList.push({ coordinates: coordinates, iconUrl: iconUrl, alertLevel: alertLevel, category: category });
+    }
+  });
+
+  if (areaFeatures.length > 0) {
+    addIncidentAreaLayers(map, { type: "FeatureCollection", features: areaFeatures });
+  }
+
+  addStationMarker(map, bounds);
+
+  const heroAreaCollection = areaFeatures.length > 0
+    ? { type: "FeatureCollection", features: areaFeatures }
+    : null;
+  updateHeroState(total, bounds, markerDataList, heroAreaCollection);
+
+  if (!bounds.isEmpty()) {
+    map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
+  }
 }
 
 // ─── Station marker ───────────────────────────────────────────────────────────
@@ -715,83 +649,6 @@ function addStationMarker(map, bounds) {
     .addTo(map);
 
   bounds.extend(stationCoordinates);
-}
-
-// ─── Incident summary widget ──────────────────────────────────────────────────
-
-function updateIncidentSummary(categoryCounts) {
-  const incidentCountCell = document.getElementById("incidentCountCell");
-  const incidentCountLabel = document.getElementById("incidentCountLabel");
-  const incidentTotalCount = document.getElementById("incidentTotalCount");
-
-  const total =
-    categoryCounts["Emergency Warning"] +
-    categoryCounts["Watch and Act"] +
-    categoryCounts.Advice +
-    categoryCounts.Other;
-
-  if (incidentTotalCount) incidentTotalCount.textContent = String(total);
-
-  const rows = [
-    ["Emergency Warning", ICONS.emergencyWarning],
-    ["Watch and Act", ICONS.watchAndAct],
-    ["Advice", ICONS.advice],
-    ["Other", ICONS.other],
-  ]
-    .filter(function(pair) { return categoryCounts[pair[0]] > 0; })
-    .map(function(pair) {
-      return "<tr><td><img src=\"" + pair[1] + "\" alt=\"" + pair[0] + "\" /></td><td>" + categoryCounts[pair[0]] + "</td></tr>";
-    })
-    .join("");
-
-  if (incidentCountCell) {
-    incidentCountCell.innerHTML = total === 0 ? "" : DOMPurify.sanitize("<table>" + rows + "</table>");
-  }
-
-  if (incidentCountLabel) {
-    incidentCountLabel.textContent =
-      total === 0 ? "No active incidents in our area" : "Current incidents in our area";
-  }
-}
-
-function updateEmergencyWidget(incidentsList, categoryCounts) {
-  if (typeof window.updateEmergencyDashboard !== "function") return;
-
-  const total =
-    categoryCounts["Emergency Warning"] +
-    categoryCounts["Watch and Act"] +
-    categoryCounts.Advice +
-    categoryCounts.Other;
-
-  const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
-  const fireDangerMessage = document.getElementById("fireDangerMessage");
-
-  window.updateEmergencyDashboard({
-    dangerLevel: (fireDangerRatingCell && fireDangerRatingCell.textContent) || "MODERATE",
-    message: (fireDangerMessage && fireDangerMessage.textContent) || "Plan and prepare for fires in your area",
-    incidentCount: total,
-    incidents: incidentsList.slice(0, 5),
-  });
-}
-
-// ─── Filtering ────────────────────────────────────────────────────────────────
-
-function filterFeaturesForEnvironment(features) {
-  const hostname = window.location.hostname;
-  const isTest =
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "0.0.0.0" ||
-    hostname.endsWith(".githubpreview.dev") ||
-    hostname.endsWith(".app.github.dev") ||
-    hostname.includes("lively-flower-0577f4700-livedev");
-
-  if (isTest) return features;
-
-  return features.filter(function(feature) {
-    const desc = (feature.properties && feature.properties.description) || "";
-    return desc.includes("COUNCIL AREA: Queanbeyan-Palerang") || desc.includes("COUNCIL AREA: ACT");
-  });
 }
 
 // ─── Error display ────────────────────────────────────────────────────────────

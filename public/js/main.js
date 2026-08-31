@@ -28,6 +28,16 @@ function populateFireInfoTable(data) {
     return;
   }
 
+  // Honest degraded state (roadmap §2.1): a failed fetch must never render as
+  // "no active incidents" — that reads as "all clear" when it actually means
+  // "we don't know". Callers pass data.error instead of an empty features list.
+  if (data?.error) {
+    fireInfoTableContainer.innerHTML = DOMPurify.sanitize(
+      `<p class="data-label data-label--degraded" role="alert"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> ${data.error}</p>`
+    );
+    return;
+  }
+
   if (features.length === 0) {
     fireInfoTableContainer.innerHTML = DOMPurify.sanitize(
       "<p class=\"data-label\">No active incidents in our area.</p>"
@@ -143,6 +153,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // Escalates: Total Fire Ban (no burning at all, any time of year) >
   // BFDP + High+ rating (permit may be suspended) > BFDP alone (permit
   // required) > outside BFDP (notify-only, year-round baseline).
+  // Total Fire Ban is represented by the standard prohibition pictogram (a
+  // flame inside a red "no" circle), not by an invented colour scale — see
+  // .icon-prohibit in main.css. Swapped in only while a ban is actually in
+  // effect; every other state keeps the plain flame icon.
+  function setBurnIcon(isBanned) {
+    const iconSlot = document.getElementById("stripBurnIcon");
+    if (!iconSlot) return;
+    iconSlot.innerHTML = DOMPurify.sanitize(
+      isBanned
+        ? "<span class=\"icon-prohibit\"><i class=\"fas fa-fire\"></i><i class=\"fas fa-ban icon-prohibit__ring\"></i></span>"
+        : "<i class=\"fas fa-fire\"></i>"
+    );
+  }
+
   function updateControlledBurnCell(fireBanToday, dangerLevelToday) {
     const statusEl = document.getElementById("stripBurnStatus");
     const subEl = document.getElementById("stripBurnSub");
@@ -154,12 +178,15 @@ document.addEventListener("DOMContentLoaded", () => {
       statusEl.setAttribute("data-state", "toban");
       subEl.textContent =
         "Total Fire Ban in effect — all permits and exemptions are suspended today.";
+      setBurnIcon(true);
       if (linkEl) {
         linkEl.textContent = "Total Fire Ban info →";
         linkEl.href = "https://www.rfs.nsw.gov.au/fire-information/BFDP";
       }
       return;
     }
+
+    setBurnIcon(false);
 
     if (linkEl) {
       linkEl.textContent = "Notify RFS →";
@@ -261,20 +288,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 fireDangerTableContainer.innerHTML = ""; // Clear out old table if it exists
               }
 
-              // Update emergency dashboard with fire danger data
+              // Update emergency dashboard with fire danger data only — incident
+              // count is emergency-data.js's exclusive responsibility (see
+              // updateEmergencyDashboard's doc comment); asserting a guessed
+              // count here would race with, and can clobber, the real one.
               if (typeof window.updateEmergencyDashboard === "function") {
-                // Get incident count from the page if available
-                const incidentCountCell = document.getElementById("incidentCountCell");
-                let incidentCount = 0;
-                if (incidentCountCell && incidentCountCell.textContent) {
-                  const countMatch = incidentCountCell.textContent.match(/\d+/);
-                  incidentCount = countMatch ? parseInt(countMatch[0], 10) : 0;
-                }
-
                 window.updateEmergencyDashboard({
                   dangerLevel: dangerLevelToday,
                   message: ratingInfo.FireBehaviour || ratingInfo.KeyMessage,
-                  incidentCount: incidentCount,
                 });
               }
             } else {
@@ -298,7 +319,6 @@ document.addEventListener("DOMContentLoaded", () => {
               window.updateEmergencyDashboard({
                 dangerLevel: "NO RATING",
                 message: "Rating information currently unavailable.",
-                incidentCount: 0,
               });
             }
           });

@@ -157,11 +157,16 @@
         </hgroup>
       </div>
 
-      <!-- Live Status Strip (Phase 3): replaces header status bar, dashboard overlay, mobile panel, and fire-info summary card -->
+      <!-- Live Status Strip (Phase 3): replaces header status bar, dashboard overlay, mobile panel, and fire-info summary card.
+           aria-live="polite" (roadmap Workstream 1): screen-reader users must hear
+           escalations (a rating change, a new incident, the warning level moving)
+           without needing to re-visit the strip. -->
       <section
         id="liveStatusStrip"
         class="live-status-strip"
         aria-label="Current fire status for our area"
+        aria-live="polite"
+        aria-atomic="false"
       >
         <!-- Cell 1: Fire Danger Rating -->
         <article
@@ -179,6 +184,7 @@
 
         <!-- Cell 2: Active Incidents -->
         <article
+          id="incidentsStripCell"
           class="strip-cell strip-cell--incidents"
           role="group"
           aria-label="Active Incidents"
@@ -189,21 +195,29 @@
           </p>
           <div class="strip-cell__value tabular-nums"><span id="incidentTotalCount">0</span></div>
           <div id="incidentCountCell" class="strip-cell__breakdown"></div>
-          <p id="incidentCountLabel" class="strip-cell__sub">No active incidents in our area</p>
+          <p id="incidentCountLabel" class="strip-cell__sub">
+            Checking for active incidents&hellip;
+          </p>
         </article>
 
-        <!-- Cell 3: Warning Level -->
+        <!-- Cell 3: Warning Level. data-state and text are wired from live
+             incident data in emergency-data.js (never hard-coded — see
+             WEBSITE_ROADMAP.md §2.2). -->
         <article
+          id="warningStripCell"
           class="strip-cell strip-cell--warning"
           role="group"
           aria-label="Current Warning Level"
           tabindex="0"
+          data-state="none"
         >
           <p class="strip-cell__label">
             <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Warning Level
           </p>
-          <div id="stripWarningLevel" class="strip-cell__value">None</div>
-          <p class="strip-cell__sub">No current warning</p>
+          <div id="stripWarningLevel" class="strip-cell__value">Checking&hellip;</div>
+          <p id="stripWarningLevelSub" class="strip-cell__sub">
+            Checking for current warnings&hellip;
+          </p>
         </article>
 
         <!-- Cell 4: Controlled Burn requirements — dynamic: escalates from
@@ -217,7 +231,10 @@
           tabindex="0"
         >
           <p class="strip-cell__label">
-            <i class="fas fa-fire" aria-hidden="true"></i> Controlled Burn
+            <span id="stripBurnIcon" class="icon-prohibit-slot" aria-hidden="true"
+              ><i class="fas fa-fire"></i
+            ></span>
+            Controlled Burn
           </p>
           <div id="stripBurnStatus" class="strip-cell__value tabular-nums">Loading&hellip;</div>
           <p id="stripBurnSub" class="strip-cell__sub">
@@ -247,6 +264,26 @@
           <p class="strip-cell__sub">Open fire incident map</p>
         </article>
       </section>
+
+      <!-- Freshness + trust line (roadmap Workstream 1): every load-bearing
+           number above came from a live fetch, never assume that; say when it
+           last worked and where the authoritative source is. -->
+      <p id="statusStripMeta" class="strip-meta">
+        <span id="statusStripTimestamp" class="strip-meta__timestamp"
+          >Checking for updates&hellip;</span
+        >
+        <span class="strip-meta__divider" aria-hidden="true">&middot;</span>
+        <span class="strip-meta__trust"
+          >Local summary, may be delayed &mdash; official warnings at
+          <a
+            href="https://www.nsw.gov.au/emergency/hazards-near-me-app"
+            target="_blank"
+            rel="noopener"
+            >Hazards Near Me</a
+          >
+          or call <strong>000</strong> in an emergency.</span
+        >
+      </p>
 
       <!-- Grid section with article cards -->
       <div class="container-fluid content-container">
@@ -688,6 +725,7 @@
   <script src="js/emergency-dashboard.js" defer></script>
   <script src="js/tabs-accordion.js" defer></script>
   <script src="js/main.js" defer></script>
+  <script src="js/emergency-data.js" defer></script>
   <script src="js/map.js" defer></script>
   <script src="js/modal-utils.js" defer></script>
   <script src="js/calendar.js" defer></script>
