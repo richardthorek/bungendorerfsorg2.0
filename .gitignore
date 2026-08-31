@@ -14,6 +14,13 @@ coverage/
 # Claude Code personal/machine-specific overrides (shared .claude/settings.json is tracked)
 .claude/settings.local.json
 
+# Claude Code worktrees — local scratch checkouts, never meant to be committed.
+# Previously three of these landed in the index as broken gitlinks (no
+# .gitmodules entry), which failed `git submodule update --init` in the
+# Azure Static Web Apps deploy workflow on every PR. See WEBSITE_ROADMAP.md
+# PR history if this regresses.
+.claude/worktrees/
+
 # macOS artifacts
 .DS_Store
 __MACOSX/
