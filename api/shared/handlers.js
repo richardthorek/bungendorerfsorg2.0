@@ -524,9 +524,14 @@ async function findMemberByPhone(e164, env) {
 
 /* ------------------------------------------------------- editable site content */
 
+// Content keys whose GET is public (no session required). PUT/POST always
+// stays session-gated below — only add a key here once its content is meant
+// for every visitor, not just signed-in members.
+const PUBLIC_CONTENT_KEYS = ["events", "training", "alertBanner"];
+
 /** Public — returns the plain array (same shape the static JSON files had). */
 async function handleContentGet(key, env = process.env) {
-  if (key !== "events" && key !== "training") {
+  if (!PUBLIC_CONTENT_KEYS.includes(key)) {
     return { status: 404, body: { error: "Not found" } };
   }
   const content = await getContent(key, env);
@@ -547,12 +552,20 @@ async function handleContentSet(key, req, env = process.env) {
   const result = validateContent(key, incoming);
   if (!result.ok) return { status: 400, body: { error: result.error } };
 
-  const saved = await setContent(key, result.items, s.member.email, env);
+  // The alert banner's postedAt is never trusted from the client — stamp it
+  // here, server-side, at the moment of save (roadmap Bet 3).
+  let items = result.items;
+  if (key === "alertBanner" && items.length) {
+    const postedAt = new Date().toISOString();
+    items = [{ ...items[0], postedAt }];
+  }
+
+  const saved = await setContent(key, items, s.member.email, env);
   await audit(
     "content_updated",
     {
       email: s.member.email,
-      detail: `${key} (${result.items.length} items)`,
+      detail: `${key} (${items.length} items)`,
     },
     env
   );
@@ -797,12 +810,9 @@ async function handleClarityInsights(req, env = process.env) {
       history: history.map((h) => ({
         date: h.date,
         sessions: h.summary && h.summary.totals ? h.summary.totals.sessions : 0,
-        pagesPerSession:
-          h.summary && h.summary.totals ? h.summary.totals.pagesPerSession : 0,
-        avgScrollDepth:
-          h.summary && h.summary.totals ? h.summary.totals.avgScrollDepth : 0,
-        avgEngagementTime:
-          h.summary && h.summary.totals ? h.summary.totals.avgEngagementTime : 0,
+        pagesPerSession: h.summary && h.summary.totals ? h.summary.totals.pagesPerSession : 0,
+        avgScrollDepth: h.summary && h.summary.totals ? h.summary.totals.avgScrollDepth : 0,
+        avgEngagementTime: h.summary && h.summary.totals ? h.summary.totals.avgEngagementTime : 0,
       })),
       refresh,
     },

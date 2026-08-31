@@ -1212,6 +1212,33 @@ a:focus {
   margin: 0 0.5em;
 }
 
+/* Admin-published alert banner (roadmap Bet 3) — a short brigade-authored
+   update, published from the members' area, that sits directly under the
+   freshness/trust line. Hidden entirely (via the [hidden] attribute set in
+   JS) when there's no active banner, so it never occupies space or reads as
+   an empty status. Reuses the same neutral/amber tokens as the status strip
+   cells above rather than inventing a new colour language — "info" mirrors
+   the calm neutral-cell tint, "warning" mirrors the strip's degraded/high
+   amber treatment. */
+.alert-banner {
+  margin: 0;
+  padding: 12px 24px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--clear-hairline);
+}
+
+.alert-banner[data-severity="info"] {
+  background-color: var(--clear-neutral-cell-bg);
+  color: var(--clear-neutral-cell-fg);
+}
+
+.alert-banner[data-severity="warning"] {
+  background-color: var(--clear-incident-bg);
+  color: var(--clear-incident-fg);
+}
+
 /* Responsive: ≥ 900 px → full 5-column row */
 @media (min-width: 900px) {
   .live-status-strip {
