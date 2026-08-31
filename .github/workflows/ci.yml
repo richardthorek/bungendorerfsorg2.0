@@ -36,6 +36,18 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
+      # First automated accessibility audit on this codebase (roadmap Workstream 6).
+      # Advisory-only for now: an earlier redesign phase claimed "0 critical
+      # accessibility issues" with no formal audit behind it, and this is how we
+      # find out what's actually true before turning it into a hard gate.
+      - name: Accessibility audit (axe-core, advisory)
+        if: always()
+        continue-on-error: true
+        run: |
+          npm start &
+          npx wait-on http://localhost:3000 --timeout 30000
+          npm run test:a11y
+
       # Tokenless uploads are rejected on protected branches, so this step fails
       # unless CODECOV_TOKEN is set in repo secrets. Coverage reporting must never
       # gate a deploy, so failures here are surfaced but not fatal.

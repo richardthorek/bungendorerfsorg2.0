@@ -17,7 +17,8 @@
     "build": "npm run lint && npm run test:coverage",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:a11y": "axe http://localhost:3000 --exit"
   },
   "dependencies": {
     "@azure/communication-email": "^1.1.0",
@@ -28,6 +29,7 @@
     "marked": "^18.0.7"
   },
   "devDependencies": {
+    "@axe-core/cli": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^7.0.0",
