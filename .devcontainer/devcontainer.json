@@ -19,17 +19,27 @@
 		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
 	},
 
-	// server.js listens on 3000 (npm start).
-	"forwardPorts": [3000],
+	// server.js listens on 3000 (npm start); Azurite emulates the members'-area
+	// Table Storage (BRFS_STORAGE_CONNECTION=UseDevelopmentStorage=true) on
+	// 10000-10002; `func start` (api/) listens on 7071.
+	"forwardPorts": [3000, 7071, 10000, 10001, 10002],
 	"portsAttributes": {
 		"3000": {
 			"label": "RFS website (Express)",
 			"onAutoForward": "notify"
+		},
+		"7071": {
+			"label": "Azure Functions (func start)",
+			"onAutoForward": "silent"
+		},
+		"10002": {
+			"label": "Azurite Table Storage",
+			"onAutoForward": "silent"
 		}
 	},
 
-	// Install root + api dependencies after the container is created.
-	"postCreateCommand": "npm install && npm --prefix api install",
+	// Install root + api deps, and Azurite for local members'-area Table Storage.
+	"postCreateCommand": "npm install && npm --prefix api install && npm install -g azurite",
 
 	// Configure tool-specific properties.
 	"customizations": {
@@ -39,6 +49,7 @@
 				"esbenp.prettier-vscode",
 				"ms-azuretools.vscode-azurefunctions",
 				"ms-azuretools.vscode-bicep",
+				"Azurite.azurite",
 				"orta.vscode-jest",
 				"github.vscode-github-actions"
 			],
