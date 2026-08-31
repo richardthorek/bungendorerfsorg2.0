@@ -166,16 +166,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const tabId = tabPanel?.id?.replace("-tab", "") || "fire-info";
       localStorage.setItem("activeTab", tabId);
 
-      // Scroll to accordion. The header is in normal document flow (not
-      // fixed), so it doesn't overlay content — no need to offset the
-      // scroll target by its height, just leave a little breathing room.
-      const targetPosition = header.getBoundingClientRect().top + window.scrollY - 16;
-      setTimeout(() => {
-        window.scrollTo({
-          top: targetPosition,
-          behavior: "smooth",
-        });
-      }, 100); // Small delay to allow animation to start
+      // No auto-scroll here: the header the visitor just tapped is already
+      // on screen. Scrolling to it anyway — especially once the content
+      // below has expanded/collapsed and the page has reflowed — is what
+      // caused the page to jump around when switching between accordion
+      // panels of different heights.
     }
   }
 
@@ -197,7 +192,10 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const tabId = button.getAttribute("data-tab");
       if (tabId) {
-        switchTab(tabId, { updateUrl: true, scroll: true });
+        // No scroll: the tab bar the visitor just clicked is already on
+        // screen, and re-centring on it after the panel swaps in (panels
+        // vary in height) is what made the page jump around between clicks.
+        switchTab(tabId, { updateUrl: true, scroll: false });
       }
     });
 
