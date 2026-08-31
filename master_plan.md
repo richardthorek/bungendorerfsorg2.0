@@ -38,10 +38,14 @@ tablist, contrast token bump, legacy ID-alias shim removed).
 The programme was closed with the numeric verification never run. If it becomes
 worth doing, file a fresh scoped issue:
 
-- `main.css` is ~20% under baseline vs the 30% target (~7 KB of a dead-CSS sweep left).
+- `main.css` is ~27% under baseline (53.1 KB) vs the 30% target; a second dead-CSS
+  sweep took it there. The last ~2 KB needs markup/JS changes, not CSS deletion —
+  see the note in [`docs/CSS_OPTIMIZATION.md`](docs/CSS_OPTIMIZATION.md).
 - Lighthouse never run against the deployed home page (Perf ≥ 90 mobile,
   A11y ≥ 95, LCP ≤ 2.5 s, CLS ≤ 0.05) — [`docs/current_state/ui-baseline.md`](docs/current_state/ui-baseline.md) §6 still `_TBD_`.
-- axe-core scan never run; WCAG AA contrast never formally measured.
+- axe-core scan never run (needs a browser/CI). A static WCAG AA contrast audit
+  *was* done and its failures fixed (muted-text token, dark-mode link colour,
+  small red CTA/kicker text).
 - 1920 px screenshot missing (360/768/1280 committed); no before/after diff.
 
 Reference specs (target-state, not to be edited without re-verifying against the

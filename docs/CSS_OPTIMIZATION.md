@@ -43,6 +43,42 @@ As part of Phase 6 (Asset dedupe and performance cleanup), the following dead CS
 | File size | ~78.6 KB | ~54.3 KB |
 | Reduction | – | **30.9 %** |
 
+## Dead-CSS Sweep 2 (August 2026)
+
+`main.css` had drifted back up to 58,210 B as later work landed. A second pass
+removed the last cluster of pre-"Clear Skies"-refresh chrome, each block
+confirmed to have **zero references** across `public/index.html`, every
+`public/js/*.js` (static + `classList`/`className`/`innerHTML`/string-built
+names), and `public/Content/`.
+
+### Blocks removed
+
+| Block | Why dead | ~bytes |
+|-------|----------|-------:|
+| `.highlight-box` + `.urgent`/`.warning`/`.info` (light + dark + a duplicate + `.highlight-box .btn`) | Class never used on the public site | ~1,600 |
+| `<details>` / `<summary>` collapsible styling (base + dark `@media`) | No `<details>` in the public DOM (only `admin.html`, which uses `admin.css`) | ~1,455 |
+| `#fireMessages` | Legacy status element removed in the Phase 3 strip refactor | ~374 |
+| `.bg-rfs-core-red` / `.bg-rfs-lime` / `.bg-ui-amber` / `.bg-ui-blue` / `.bg-ui-green` | Colour utility classes, never applied; no `"bg-" +` concatenation anywhere | ~519 |
+| `.custom-button.secondary` / `.tertiary` (+ `:hover`) | Only the base `.custom-button` is used (hero CTA) | ~452 |
+| `.content-section` threaded through `article, .content-section` (5 rules) + the dead `.content-section > h2:first-child` banner block | Class has zero references; the rules keep working via `article` | ~400 |
+| `.map-detail-placeholder`, `.map-detail-panel h5`, `.map-detail-badge.station` | `map.js` never emits these — detail panel markup has no `<h5>`, no placeholder class, and the station badge class isn't rendered | ~225 |
+| `.summaryCard` (`@media` `display:none`) | Summary-card DOM removed in the Phase 3 strip refactor | ~95 |
+| `.whiteText` | Never applied | ~65 |
+| `.icon-category-cell`, `.inline-icon`, `.markdown-icon` (trimmed from shared icon selectors) | No classed icons in markup or rendered content | ~65 |
+
+### File size impact
+
+| Metric | Before | After |
+|--------|--------|-------|
+| File size | 58,210 B | ~53,100 B |
+| vs. the redesign baseline (72,895 B) | 20.1 % smaller | **27.2 % smaller** |
+
+Still short of the 30 % / ≈51 KB target. The remaining candidates need
+markup/JS changes, not just CSS deletion — chiefly the Fire-Info incident cards
+in `main.js` reference classes (`feature-card`, `compact`, `card-content`,
+`three-column-grid`, `cardIcon`, …) that **have no styles at all** in `main.css`;
+that widget's CSS/markup should be reconciled as its own task.
+
 ---
 
 ## CSS Structure

@@ -43,7 +43,7 @@
   /* "Clear Skies" visual refresh tokens (design handoff, homepage refresh) */
   --clear-body-text: #2b2b2b;
   --clear-text-secondary: #6b6b6b;
-  --clear-text-muted: #9a9a9a;
+  --clear-text-muted: #6d6d6d; /* was #9a9a9a — 2.8:1 on white failed WCAG AA */
   --clear-hairline: #ece9e4;
   --clear-hairline-strong: #e6e4e0;
   --clear-card-fill: #f6f5f2;
@@ -134,8 +134,7 @@
   display: none;
 }
 
-article,
-.content-section {
+article {
   animation: fadeIn 0.5s ease-out forwards;
   transition:
     transform 0.3s ease,
@@ -233,7 +232,7 @@ button::after,
     /* "Clear Skies" tokens — dark equivalents */
     --clear-body-text: #e8e6e1;
     --clear-text-secondary: #b0aea8;
-    --clear-text-muted: #8a8a86;
+    --clear-text-muted: #9a9a94; /* was #8a8a86 — 4.0:1 on the dark card failed WCAG AA */
     --clear-hairline: #3a3a38;
     --clear-hairline-strong: #454341;
     --clear-card-fill: #262624;
@@ -244,23 +243,6 @@ button::after,
     --clear-incident-bg: #3a2e10;
     --clear-incident-fg: #f0c04d;
     --clear-toban-active-bg: #3a1210;
-  }
-
-  .highlight-box {
-    background-color: var(--rfs-neutral-medium); /* Darker default background */
-    color: var(--text-color-light);
-  }
-  .highlight-box.urgent {
-    background-color: #5c1f1f; /* Darker red background */
-    border-left-color: var(--rfs-core-red);
-  }
-  .highlight-box.warning {
-    background-color: #5a4b1e; /* Darker amber background */
-    border-left-color: var(--ui-amber);
-  }
-  .highlight-box.info {
-    background-color: #1a3a5c; /* Darker blue background */
-    border-left-color: var(--ui-blue);
   }
 
   .hero .logo {
@@ -310,12 +292,7 @@ body > footer {
   padding-block: 0 !important;
 }
 
-.whiteText {
-  color: var(--text-color-light) !important;
-}
-
-article,
-.content-section {
+article {
   scroll-margin-top: var(--space-lg); /* Header is no longer fixed; small breathing room only */
   padding: var(--pico-card-padding); /* Use the card padding variable */
   margin-bottom: var(--space-lg);
@@ -327,8 +304,7 @@ article,
   overflow: hidden; /* Crucial for the negative margin technique with border-radius */
 }
 
-article:last-child,
-.content-section:last-child {
+article:last-child {
   margin-bottom: 0;
 }
 
@@ -360,20 +336,6 @@ h2 {
   color: var(--text-color-dark);
   padding-bottom: var(--space-sm); /* Optional: if some h2s still need a text-only style */
   border-bottom: 2px solid var(--rfs-light-grey); /* Default subtle border for non-banner h2s */
-}
-
-/* Common style for section title H2s that will get a background */
-.content-section > h2:first-child {
-  font-size: 1.8rem; /* Adjusted size for banner */
-  font-weight: 700;
-  padding: var(--space-md);
-  margin-top: calc(-1 * var(--pico-card-padding)); /* Pull up to top of card */
-  margin-left: calc(-1 * var(--pico-card-padding)); /* Pull to left edge of card */
-  margin-right: calc(-1 * var(--pico-card-padding)); /* Pull to right edge of card */
-  margin-bottom: var(--space-lg); /* Space after the header bar */
-  border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
-  border-bottom: none; /* Ensure no lingering bottom border */
-  /* color will be set by specific sections */
 }
 
 h3 {
@@ -513,7 +475,7 @@ h3 {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--rfs-core-red);
+  color: #c42216; /* darker red — brand red is only 4.1:1 at this size on the tinted fill */
   margin: 0 0 14px;
 }
 
@@ -608,7 +570,7 @@ button.quick-links__row:focus {
   margin-top: var(--space-sm);
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--rfs-core-red);
+  color: #c42216; /* darker red — brand red is a borderline 4.5:1 at this size */
 }
 
 @media (max-width: 768px) {
@@ -650,15 +612,19 @@ a:focus {
   color: var(--rfs-core-red); /* Core red for hover */
 }
 
-.highlight-box.info {
-  /* For general advice */
-  border-left-color: var(--ui-blue);
-  background-color: #e3f2fd; /* Light blue background */
+@media (prefers-color-scheme: dark) {
+  /* --ui-blue (#215e9e) is too dark on the dark card background (2.1:1).
+     Lighten links here only — the token is also used as a fill elsewhere. */
+  a {
+    color: #5b9bd6; /* 4.7:1 on #2c2c2c */
+  }
+  a:hover,
+  a:focus {
+    color: #ff6b5e; /* 5.0:1 on #2c2c2c */
+  }
 }
 
 /* Icon Styling */
-.inline-icon,
-.markdown-icon,
 #incidentCountCell img,
 #fireInfoTableContainer img {
   width: 1.5em; /* Standardized icon size */
@@ -869,28 +835,6 @@ a:focus {
      dark-mode adjustment is needed beyond the existing --hero-bg image swap. */
 }
 
-/* Color Classes & Section Backgrounds */
-.bg-rfs-core-red {
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-}
-.bg-rfs-lime {
-  background-color: var(--rfs-lime);
-  color: var(--text-color-dark);
-} /* Lime might need dark text */
-.bg-ui-amber {
-  background-color: var(--ui-amber);
-  color: var(--text-color-light);
-}
-.bg-ui-blue {
-  background-color: var(--ui-blue);
-  color: var(--text-color-light);
-}
-.bg-ui-green {
-  background-color: var(--ui-green);
-  color: var(--text-color-light);
-}
-
 /* Map Container Style */
 #map {
   height: 400px; /* Default height for the map */
@@ -992,7 +936,7 @@ a:focus {
 }
 
 .strip-map-cta-btn {
-  color: var(--rfs-core-red);
+  color: #c42216; /* darker red — brand red is a borderline 4.5:1 at this size */
   text-decoration: none;
   font-size: 13px;
   font-weight: 700;
@@ -1002,7 +946,7 @@ a:focus {
    the map cell's link but its own class since the two cells vary
    independently. */
 .strip-cell__cta {
-  color: var(--rfs-core-red);
+  color: #c42216; /* darker red — brand red is only 4.0:1 at this size on the tinted fill */
   text-decoration: none;
   font-size: 12.5px;
   font-weight: 700;
@@ -1350,8 +1294,7 @@ a:focus {
     display: block;
   }
 
-  .accordion-content article,
-  .accordion-content .content-section {
+  .accordion-content article {
     animation: none;
     transform: none;
     box-shadow: none;
@@ -1729,25 +1672,6 @@ main {
   transform: translateY(0px); /* Press down effect */
 }
 
-.custom-button.secondary {
-  background-color: var(--ui-blue);
-  color: var(--text-color-light);
-}
-
-.custom-button.secondary:hover {
-  background-color: #1565c0; /* Darken UI Blue on hover */
-}
-
-.custom-button.tertiary {
-  /* New tertiary style */
-  background-color: var(--rfs-lime);
-  color: var(--text-color-dark); /* Dark text on lime for contrast */
-}
-
-.custom-button.tertiary:hover {
-  background-color: #b8c700; /* Darken RFS Lime on hover */
-}
-
 /* Event Styles */
 .event {
   margin-bottom: 10px;
@@ -1837,16 +1761,6 @@ main {
   width: 280px; /* hold size when grid column animates */
 }
 
-.map-detail-panel h5 {
-  margin: 0 0 var(--space-xs);
-  font-size: 0.9rem;
-}
-
-.map-detail-placeholder {
-  margin: 0;
-  color: var(--rfs-dark-grey);
-}
-
 .map-detail-badge {
   display: inline-block;
   font-weight: 700;
@@ -1878,10 +1792,6 @@ main {
 
 .map-detail-badge.other {
   background-color: #666;
-}
-
-.map-detail-badge.station {
-  background-color: #0b5f3b;
 }
 
 .map-detail-panel .detail-row {
@@ -2082,100 +1992,11 @@ body.map-fullscreen-active {
   }
 }
 
-.highlight-box {
-  padding: var(--space-md);
-  margin-bottom: var(--space-lg);
-  border-left-width: 5px;
-  border-left-style: solid;
-  border-radius: var(--pico-border-radius);
-  background-color: var(--rfs-neutral-light); /* Default background */
-  color: var(--text-color-dark);
-}
-
-.highlight-box.urgent {
-  /* For Total Fire Ban, etc. */
-  border-left-color: var(--rfs-core-red);
-  background-color: #ffebee; /* Light red background */
-}
-
-.highlight-box.warning {
-  /* For Fire Danger Rating, etc. */
-  border-left-color: var(--ui-amber);
-  background-color: #fff8e1; /* Light amber background */
-}
-
-.highlight-box.info {
-  /* For general advice */
-  border-left-color: var(--ui-blue);
-  background-color: #e3f2fd; /* Light blue background */
-}
-
-#fireMessages {
-  font-weight: bold;
-  margin-bottom: var(--space-lg);
-  padding: var(--space-md);
-  background-color: var(--rfs-neutral-light); /* Check dark mode equivalent */
-  border-left: 5px solid var(--ui-amber); /* This is for general messages, confirm if it should be amber or other */
-  border-radius: var(--pico-border-radius);
-  color: var(--text-color-dark);
-}
-
-.icon-category-cell,
 .calendar-widget {
   border: 1px solid var(--rfs-neutral-medium);
   padding: var(--space-md);
   margin: var(--space-md) 0;
   border-radius: 4px;
-}
-
-/* Styling for <details> and <summary> for collapsible sections */
-details {
-  background-color: var(--rfs-neutral-light);
-  border: 1px solid var(--rfs-neutral-medium);
-  border-radius: var(--pico-border-radius);
-  margin-bottom: var(--space-md);
-  padding: var(--space-sm);
-}
-
-details summary {
-  font-weight: bold;
-  cursor: pointer;
-  padding: var(--space-sm);
-  background-color: var(--rfs-neutral-medium);
-  color: var(--text-color-dark);
-  border-radius: calc(var(--pico-border-radius) - var(--space-sm)); /* Inner radius */
-  margin: calc(-1 * var(--space-sm)); /* Pull to edges of details padding */
-  margin-bottom: var(--space-sm); /* Space before content */
-  list-style-position: inside; /* Keeps marker flush */
-}
-
-details summary:hover {
-  background-color: var(--rfs-neutral-dark);
-}
-
-details[open] summary {
-  border-bottom: 1px solid var(--rfs-neutral-medium);
-  margin-bottom: var(--space-md);
-}
-
-details > *:not(summary) {
-  padding: var(--space-md);
-}
-
-@media (prefers-color-scheme: dark) {
-  details {
-    background-color: var(--rfs-neutral-dark); /* Use a darker neutral for details bg */
-    border-color: #555; /* Adjust border color for dark mode */
-  }
-
-  details summary {
-    background-color: var(--rfs-neutral-light); /* Lighter summary bg for contrast */
-    color: var(--text-color-dark); /* Dark text on light summary bg */
-  }
-
-  details summary:hover {
-    background-color: #444; /* Darker hover for summary */
-  }
 }
 
 @media (max-width: 500px) {
@@ -2223,11 +2044,6 @@ details > *:not(summary) {
     position: static; /* Reset position from desktop peeking effect */
     z-index: auto; /* Reset z-index */
   }
-
-  /* Hide summary cards on narrow viewports */
-  .summaryCard {
-    display: none !important;
-  }
 }
 
 @media (max-width: 500px) {
@@ -2254,14 +2070,6 @@ details > *:not(summary) {
   font-size: 0.8rem; /* Smaller font for label */
   color: #555;
   margin-bottom: 0.25rem; /* Small space between label and value */
-}
-
-/* Compact styling for buttons within cards, including the "Learn More" button */
-.highlight-box .btn {
-  /* Target buttons within summary cards and highlight boxes */
-  padding: 0.4rem 0.8rem; /* Smaller padding */
-  font-size: 0.9rem; /* Smaller font size */
-  margin-top: 0.5rem; /* Compact top margin */
 }
 
 #pageFoot {
