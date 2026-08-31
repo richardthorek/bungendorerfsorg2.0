@@ -108,7 +108,8 @@ tenant — simpler, no SWA Standard upgrade, and the allow-list is needed either
 | First admin seeded (`richardthorek-vol@rfs.nsw.gov.au`) + SWA settings (`AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`) | Done                               |
 | PR 2 — `/api/duty` (public lookup + members set/status), duty screen, `DUTY_LOOKUP_KEY`; duty seeded `+61488880286`                                                        | Done — branch `feat/duty-line`     |
 | PR 2 cut-over — point the Twilio flow's `phoneNumbers` + `phoneNumbers2` widgets at `/api/duty`, add `X-Duty-Key`; retire `phoneNumberForwarding` + `prod-00` SMS lookup   | Pending — owner, in the Twilio GUI |
-| PR 3 — "duty changed" alert; SMS-PIN handover branch in the Twilio flow (`Split` on message body)                                                                          | Pending                            |
+| PR 3 — brigade-phone change-alert email + `POST /api/duty/claim` (SMS-PIN) + member `phone` field                                                                          | Done — branch `feat/duty-sms`      |
+| PR 3 config — set `DUTY_CLAIM_PIN` / `DUTY_FALLBACK_NUMBER` / `DUTY_ALERT_TO` on the SWA; add the `Split` + claim widgets in the Twilio flow                               | Pending — owner                    |
 | PR 4 — events + training + calendar-link admin in `brfsstorage`; retire `getCalendar`                                                                                      | Pending                            |
 
 Twilio flow notes: inbound calls hit widget `phoneNumbers` → `prod-08` Logic App

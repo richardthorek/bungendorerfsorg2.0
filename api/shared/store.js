@@ -87,6 +87,7 @@ function memberFromEntity(e) {
   return {
     email: e.rowKey,
     displayName: e.displayName || "",
+    phone: e.phone || "",
     role: e.role === "admin" ? "admin" : "member",
     disabled: !!e.disabled,
     tokenVersion: typeof e.tokenVersion === "number" ? e.tokenVersion : 0,
@@ -112,12 +113,13 @@ async function listMembers(env) {
 }
 
 /** Create or update a member. Preserves tokenVersion/addedAt when the row exists. */
-async function upsertMember({ email, displayName, role, disabled, addedBy }, env) {
+async function upsertMember({ email, displayName, phone, role, disabled, addedBy }, env) {
   const existing = await getMember(email, env);
   const entity = {
     partitionKey: "member",
     rowKey: email,
     displayName: displayName != null ? displayName : existing ? existing.displayName : "",
+    phone: phone != null ? phone : existing ? existing.phone : "",
     role: role === "admin" ? "admin" : "member",
     disabled: disabled != null ? !!disabled : existing ? existing.disabled : false,
     tokenVersion: existing ? existing.tokenVersion : 0,

@@ -36,6 +36,7 @@ const {
   listDutyHistory,
 } = require("./store");
 const { normalizeAuPhone, maskPhone } = require("./phone");
+const { sendDutyChangeAlert } = require("./dutyAlert");
 const { normalizeEmail, isAllowedDomain, allowedDomain, sessionMinutes } = require("./identity");
 const { sendSignInCode } = require("./otpEmail");
 
@@ -218,15 +219,20 @@ async function handleMembersUpsert(req, env = process.env) {
     .trim()
     .slice(0, 120);
   const role = (req.body && req.body.role) === "admin" ? "admin" : "member";
+  const rawPhone = (req.body && req.body.phone) || "";
+  const phone = rawPhone ? normalizeAuPhone(rawPhone) : "";
 
   if (!email) return { status: 400, body: { error: "A valid email address is required." } };
   if (!isAllowedDomain(email, env)) {
     return { status: 400, body: { error: `Only @${allowedDomain(env)} addresses can be added.` } };
   }
+  if (rawPhone && !phone) {
+    return { status: 400, body: { error: "That phone number doesn't look right." } };
+  }
 
   const existed = await getMember(email, env);
   const saved = await upsertMember(
-    { email, displayName, role, disabled: false, addedBy: gate.member.email },
+    { email, displayName, phone, role, disabled: false, addedBy: gate.member.email },
     env
   );
   await audit(
@@ -318,23 +324,146 @@ async function handleDutySet(req, env = process.env) {
     return { status: 400, body: { error: "Enter a valid Australian phone number." } };
   }
 
+  const previous = await getDuty(env);
   const saved = await setDuty(
     { number, setBy: s.member.email, setByName: s.member.displayName, method: "web" },
     env
   );
   await audit(
     "duty_changed",
-    {
-      email: s.member.email,
-      detail: `${maskPhone(number)} via web`,
-    },
+    { email: s.member.email, detail: `${maskPhone(number)} via web` },
     env
   );
+  await notifyDutyChange({ ...saved, previous: previous ? previous.number : "" }, env);
 
   return {
     status: 200,
     body: { number: saved.number, masked: maskPhone(saved.number), setAt: saved.setAt },
   };
+}
+
+/* Fire the change alert without ever failing the request. */
+async function notifyDutyChange(change, env) {
+  try {
+    await sendDutyChangeAlert(change, { env });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`duty change alert failed: ${err.message}`);
+  }
+}
+
+/**
+ * Twilio SMS webhook for taking the brigade phone by text. Body forms:
+ *   BRIGADE 4821   (or DUTY 4821)  -> forward calls to the sender's number
+ *   OFF 4821                       -> revert to DUTY_FALLBACK_NUMBER
+ * Anything else -> { handled:false } so the Twilio flow forwards the text as usual.
+ * Requires DUTY_CLAIM_PIN to be configured.
+ */
+async function handleDutyClaim(req, env = process.env) {
+  const key = env.DUTY_LOOKUP_KEY;
+  if (key) {
+    const h = req.headers || {};
+    if ((h["x-duty-key"] || h["X-Duty-Key"]) !== key) {
+      return { status: 401, body: { error: "Unauthorized" } };
+    }
+  }
+  const body = (req.body && (req.body.Body || req.body.body)) || "";
+  const from = normalizeAuPhone((req.body && (req.body.From || req.body.from)) || "");
+
+  const m = String(body)
+    .trim()
+    .match(/^(brigade|duty|off)\b[\s:]*([0-9]{4,8})?/i);
+  if (!m) return { status: 200, body: { handled: false } };
+
+  const command = m[1].toLowerCase();
+  const pin = m[2] || "";
+  const pinOk = env.DUTY_CLAIM_PIN && pin && pin === env.DUTY_CLAIM_PIN;
+
+  const ip = getClientIp(req);
+  const rl = await hitRateLimit(`claim:${from || ip}`, { max: 5, windowSeconds: 900 }, env);
+  if (!rl.allowed) {
+    return { status: 200, body: { handled: true, reply: "Too many attempts. Try again later." } };
+  }
+
+  if (!pinOk) {
+    await audit("duty_claim_rejected", { detail: `${maskPhone(from) || ip} bad/missing PIN` }, env);
+    return {
+      status: 200,
+      body: { handled: true, reply: "Sorry — that PIN wasn't right. No change made." },
+    };
+  }
+
+  const previous = await getDuty(env);
+
+  if (command === "off") {
+    const fallback = normalizeAuPhone(env.DUTY_FALLBACK_NUMBER || "");
+    if (!fallback) {
+      return {
+        status: 200,
+        body: { handled: true, reply: "No backup number is configured. Ask an admin." },
+      };
+    }
+    const saved = await setDuty(
+      { number: fallback, setBy: "", setByName: "SMS: OFF", method: "sms" },
+      env
+    );
+    await audit(
+      "duty_changed",
+      { detail: `${maskPhone(fallback)} via SMS OFF from ${maskPhone(from)}` },
+      env
+    );
+    await notifyDutyChange({ ...saved, previous: previous ? previous.number : "" }, env);
+    return {
+      status: 200,
+      body: {
+        handled: true,
+        reply: `Done. Brigade calls now go to the backup number. — Bungendore RFS`,
+      },
+    };
+  }
+
+  // BRIGADE / DUTY: forward to the sender's own number
+  if (!from) {
+    return {
+      status: 200,
+      body: { handled: true, reply: "Couldn't read your number. Try from an Australian mobile." },
+    };
+  }
+
+  const member = await findMemberByPhone(from, env);
+  const saved = await setDuty(
+    {
+      number: from,
+      setBy: member ? member.email : "",
+      setByName: member ? member.displayName || "" : "",
+      method: "sms",
+    },
+    env
+  );
+  await audit(
+    "duty_changed",
+    {
+      email: member ? member.email : "",
+      detail: `${maskPhone(from)} via SMS`,
+    },
+    env
+  );
+  await notifyDutyChange({ ...saved, previous: previous ? previous.number : "" }, env);
+
+  return {
+    status: 200,
+    body: {
+      handled: true,
+      reply:
+        "You're on. Calls and texts to the brigade now ring this phone. Reply OFF <PIN> to hand back. — Bungendore RFS",
+    },
+  };
+}
+
+async function findMemberByPhone(e164, env) {
+  if (!e164) return null;
+  const members = await listMembers(env);
+  return members.find((m) => m.phone && normalizeAuPhone(m.phone) === e164) || null;
 }
 
 module.exports = {
@@ -344,6 +473,7 @@ module.exports = {
   handleDutyLookup,
   handleDutyStatus,
   handleDutySet,
+  handleDutyClaim,
   handleAuthLogout,
   handleMembersList,
   handleMembersUpsert,

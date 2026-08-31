@@ -159,7 +159,8 @@
             <h2>Members</h2>
             <p class="view__lead">
               Anyone on this list with an <strong>@rfs.nsw.gov.au</strong> address can sign in.
-              Removing someone ends their session immediately.
+              Removing someone ends their session immediately. A mobile number is optional &mdash;
+              it lets a text-in brigade-phone change be attributed to that person.
             </p>
 
             <form id="addMemberForm" class="add-row" novalidate>
@@ -173,6 +174,12 @@
                   required
                 />
                 <input id="newName" type="text" placeholder="Name (optional)" autocomplete="off" />
+                <input
+                  id="newPhone"
+                  type="tel"
+                  placeholder="Mobile (optional)"
+                  autocomplete="off"
+                />
                 <select id="newRole" aria-label="Role">
                   <option value="member">Member</option>
                   <option value="admin">Admin</option>
@@ -188,6 +195,7 @@
                   <tr>
                     <th scope="col">Email</th>
                     <th scope="col">Name</th>
+                    <th scope="col">Mobile</th>
                     <th scope="col">Role</th>
                     <th scope="col">Last sign-in</th>
                     <th scope="col"><span class="sr-only">Actions</span></th>
@@ -195,7 +203,7 @@
                 </thead>
                 <tbody id="membersBody">
                   <tr>
-                    <td colspan="5" class="members-table__empty">Loading&hellip;</td>
+                    <td colspan="6" class="members-table__empty">Loading&hellip;</td>
                   </tr>
                 </tbody>
               </table>

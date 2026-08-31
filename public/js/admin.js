@@ -29,6 +29,7 @@
     addMemberForm: document.getElementById("addMemberForm"),
     newEmail: document.getElementById("newEmail"),
     newName: document.getElementById("newName"),
+    newPhone: document.getElementById("newPhone"),
     newRole: document.getElementById("newRole"),
     membersMsg: document.getElementById("membersMsg"),
     dutyDot: document.getElementById("dutyDot"),
@@ -233,7 +234,7 @@
     el.membersBody.innerHTML = "";
     const loading = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 5;
+    td.colSpan = 6;
     td.className = "members-table__empty";
     td.textContent = "Loading…";
     loading.appendChild(td);
@@ -253,7 +254,7 @@
     el.membersBody.innerHTML = "";
     const tr = document.createElement("tr");
     const td = document.createElement("td");
-    td.colSpan = 5;
+    td.colSpan = 6;
     td.className = "members-table__empty";
     td.textContent = text;
     tr.appendChild(td);
@@ -285,6 +286,8 @@
       nameCell.appendChild(you);
     }
     tr.appendChild(nameCell);
+
+    tr.appendChild(cell(m.phone || "—"));
 
     const roleCell = document.createElement("td");
     const pill = document.createElement("span");
@@ -337,6 +340,7 @@
     const body = {
       email: el.newEmail.value.trim().toLowerCase(),
       displayName: el.newName.value.trim(),
+      phone: el.newPhone.value.trim(),
       role: el.newRole.value === "admin" ? "admin" : "member",
     };
     setMsg(el.membersMsg, "");

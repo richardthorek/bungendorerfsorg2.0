@@ -258,26 +258,39 @@ BRFS_STORAGE_CONNECTION="<brfsstorage connection string>" \
 
 ---
 
-### 7. Duty line (call/SMS forwarding number)
+### 7. Brigade phone (call / SMS forwarding number)
 
 Replaces the SharePoint lookup the Twilio Studio flow used to find the forwarding
 number. Same `{ "Main": "+61…" }` contract, so the Twilio "Make HTTP Request"
-widgets only need their URL changed.
+widgets only need their URL changed. ("Brigade phone" in the UI — "duty" reads as
+the district duty officer; routes and the `duty` table keep the old name.)
 
-| Endpoint                    | Notes                                                                                                                                                                                                                          |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `GET /api/duty`             | Public — the Twilio flow calls this. Returns `{ "Main": "+61…" }`. If `DUTY_LOOKUP_KEY` is set, the caller must send `X-Duty-Key: <value>`. A missing record → 503 so Twilio falls through to its own hardcoded backup number. |
-| `GET /api/duty/status`      | Members only. `{ number, masked, setBy, setByName, method, setAt, history[] }` for the dashboard.                                                                                                                              |
-| `POST /api/duty` `{number}` | Members only, `X-BRFS-Auth: 1`. Validates an AU mobile/landline, stores it, appends a history row, audits `duty_changed`.                                                                                                      |
+| Endpoint                              | Notes                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/duty`                       | Public — the Twilio flow calls this. Returns `{ "Main": "+61…" }`. If `DUTY_LOOKUP_KEY` is set, the caller must send `X-Duty-Key`. Missing record → 503 so Twilio falls through to its own backup number.                                                                                                                               |
+| `GET /api/duty/status`                | Members only. `{ number, masked, setBy, setByName, method, setAt, history[] }` for the dashboard.                                                                                                                                                                                                                                       |
+| `POST /api/duty` `{number}`           | Members only, `X-BRFS-Auth: 1`. Validates an AU number, stores it, history + audit + change-alert email.                                                                                                                                                                                                                                |
+| `POST /api/duty/claim` `{From, Body}` | Twilio SMS webhook. `BRIGADE <pin>` / `DUTY <pin>` → forward to the sender's number; `OFF <pin>` → revert to `DUTY_FALLBACK_NUMBER`. Anything else → `{handled:false}` so Twilio forwards the text normally. Needs `DUTY_CLAIM_PIN`; honours `X-Duty-Key`; rate-limited per sender. Attributed to a member if their `phone` is on file. |
 
-**Storage:** table `duty` in `brfsstorage` — RK `current` holds the number,
-`h:<reverse-ts>` rows hold history.
+**Storage:** table `duty` in `brfsstorage` (RK `current` + `h:<reverse-ts>` history).
+Members may carry an optional `phone` for SMS attribution.
 
-**Seed / cut-over:** `node scripts/seed-duty.js +61…` sets the initial number.
-Then in the Twilio Studio flow point both HTTP widgets (`phoneNumbers` for calls,
-`phoneNumbers2` for SMS) at `https://www.bungendorerfs.org/api/duty` and add the
-header `X-Duty-Key: <DUTY_LOOKUP_KEY>`. `phoneNumberForwarding` and the `prod-00`
-SMS lookup Logic App can then be retired.
+**Config:** `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`,
+`DUTY_ALERT_TO` (defaults to `CONTACT_NOTIFY_TO`).
+
+**Cut-over (Twilio Studio GUI):**
+
+1. `node scripts/seed-duty.js +61…` — set the current number.
+2. Widgets `phoneNumbers` (calls) and `phoneNumbers2` (SMS): **REQUEST URL** →
+   `https://www.bungendorerfs.org/api/duty`, **METHOD** → `GET`, add header
+   `X-Duty-Key: <DUTY_LOOKUP_KEY>`.
+3. SMS-PIN (optional): before `phoneNumbers2`, add a **Split Based On…**
+   `{{trigger.message.Body}}` widget — if it matches `^(?i)(brigade|duty|off)\b`,
+   route to a new **Make HTTP Request** (`POST` to `/api/duty/claim`, body
+   `From={{trigger.message.From}}&Body={{trigger.message.Body}}`, header
+   `X-Duty-Key`), then a **Send Message** with `{{widgets.<name>.parsed.reply}}`;
+   otherwise fall through to the existing forward.
+4. Retire `phoneNumberForwarding` and the `prod-00` SMS-lookup Logic App.
 
 ---
 

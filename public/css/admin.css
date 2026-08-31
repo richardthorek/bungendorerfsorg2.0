@@ -389,7 +389,7 @@ label {
 }
 .add-row__fields {
   display: grid;
-  grid-template-columns: minmax(12rem, 1.4fr) minmax(8rem, 1fr) auto;
+  grid-template-columns: minmax(11rem, 1.3fr) minmax(7rem, 1fr) minmax(7rem, 1fr) auto;
   gap: 0.6rem;
   flex: 1;
   min-width: 16rem;

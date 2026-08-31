@@ -34,11 +34,12 @@ jest.mock("../api/shared/store", () => ({
   async listMembers() {
     return [...mockDb.members.values()].sort((a, b) => a.email.localeCompare(b.email));
   },
-  async upsertMember({ email, displayName, role, disabled, addedBy }) {
+  async upsertMember({ email, displayName, phone, role, disabled, addedBy }) {
     const existing = mockDb.members.get(email);
     const m = {
       email,
       displayName: displayName != null ? displayName : existing ? existing.displayName : "",
+      phone: phone != null ? phone : existing ? existing.phone : "",
       role: role === "admin" ? "admin" : "member",
       disabled: disabled != null ? !!disabled : existing ? existing.disabled : false,
       tokenVersion: existing ? existing.tokenVersion : 0,
@@ -105,6 +106,14 @@ jest.mock("../api/shared/otpEmail", () => ({
   },
 }));
 
+const mockAlerts = [];
+jest.mock("../api/shared/dutyAlert", () => ({
+  async sendDutyChangeAlert(change) {
+    mockAlerts.push(change);
+    return { sent: true };
+  },
+}));
+
 const identity = require("../api/shared/identity");
 const auth = require("../api/shared/auth");
 const handlers = require("../api/shared/handlers");
@@ -112,6 +121,7 @@ const handlers = require("../api/shared/handlers");
 beforeEach(() => {
   resetDb();
   mockSentCodes.length = 0;
+  mockAlerts.length = 0;
 });
 
 /* ---------------------------------------------------------------- identity */
@@ -444,5 +454,96 @@ describe("duty line", () => {
     expect(r.body.number).toBe("+61412345678");
     expect(r.body.masked).toMatch(/5678$/);
     expect(r.body.history.length).toBe(2);
+  });
+
+  test("setting the number over the web fires a change alert", async () => {
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    await handlers.handleDutySet({
+      headers: { cookie: cookieHeader, "x-brfs-auth": "1" },
+      body: { number: "0488880286" },
+    });
+    expect(mockAlerts).toHaveLength(1);
+    expect(mockAlerts[0].number).toBe("+61488880286");
+    expect(mockAlerts[0].method).toBe("web");
+  });
+});
+
+/* -------------------------------------------------------- brigade phone by SMS */
+
+describe("handleDutyClaim", () => {
+  const env = { DUTY_CLAIM_PIN: "4821", DUTY_FALLBACK_NUMBER: "+61419983748" };
+
+  test("non-command text is passed through (handled:false)", async () => {
+    const r = await handlers.handleDutyClaim(
+      { headers: {}, body: { From: "+61488880286", Body: "hi is anyone there" } },
+      env
+    );
+    expect(r.body).toEqual({ handled: false });
+  });
+
+  test("wrong PIN makes no change", async () => {
+    const r = await handlers.handleDutyClaim(
+      { headers: {}, body: { From: "+61488880286", Body: "BRIGADE 0000" } },
+      env
+    );
+    expect(r.body.handled).toBe(true);
+    expect(r.body.reply).toMatch(/PIN/i);
+    expect(await require("../api/shared/store").getDuty(env)).toBeNull();
+  });
+
+  test("BRIGADE <pin> forwards to the sender and alerts", async () => {
+    const r = await handlers.handleDutyClaim(
+      { headers: {}, body: { From: "0488 880 286", Body: "BRIGADE 4821" } },
+      env
+    );
+    expect(r.body.handled).toBe(true);
+    expect(r.body.reply).toMatch(/you're on/i);
+    const duty = await require("../api/shared/store").getDuty(env);
+    expect(duty.number).toBe("+61488880286");
+    expect(duty.method).toBe("sms");
+    expect(mockAlerts).toHaveLength(1);
+  });
+
+  test("attributes the change to a member whose phone is on file", async () => {
+    await require("../api/shared/store").upsertMember({
+      email: "sms@rfs.nsw.gov.au",
+      displayName: "Sam SMS",
+      phone: "+61488880286",
+      role: "member",
+    });
+    await handlers.handleDutyClaim(
+      { headers: {}, body: { From: "+61488880286", Body: "duty 4821" } },
+      env
+    );
+    const duty = await require("../api/shared/store").getDuty(env);
+    expect(duty.setBy).toBe("sms@rfs.nsw.gov.au");
+    expect(duty.setByName).toBe("Sam SMS");
+  });
+
+  test("OFF <pin> reverts to the fallback number", async () => {
+    await handlers.handleDutyClaim(
+      { headers: {}, body: { From: "+61488880286", Body: "BRIGADE 4821" } },
+      env
+    );
+    const r = await handlers.handleDutyClaim(
+      { headers: {}, body: { From: "+61488880286", Body: "OFF 4821" } },
+      env
+    );
+    expect(r.body.reply).toMatch(/backup number/i);
+    expect((await require("../api/shared/store").getDuty(env)).number).toBe("+61419983748");
+  });
+
+  test("honours X-Duty-Key when configured", async () => {
+    const keyed = { ...env, DUTY_LOOKUP_KEY: "s3cr3t" };
+    const bad = await handlers.handleDutyClaim(
+      { headers: {}, body: { From: "+61488880286", Body: "BRIGADE 4821" } },
+      keyed
+    );
+    expect(bad.status).toBe(401);
+    const ok = await handlers.handleDutyClaim(
+      { headers: { "x-duty-key": "s3cr3t" }, body: { From: "+61488880286", Body: "BRIGADE 4821" } },
+      keyed
+    );
+    expect(ok.body.handled).toBe(true);
   });
 });

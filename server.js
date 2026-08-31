@@ -14,6 +14,7 @@ const {
   handleDutyLookup,
   handleDutyStatus,
   handleDutySet,
+  handleDutyClaim,
 } = require("./api/shared/handlers");
 
 const allowedOrigins = [
@@ -273,6 +274,7 @@ app.delete(
 
 app.get("/api/duty/status", mirror(handleDutyStatus));
 app.get("/api/duty", mirror(handleDutyLookup));
+app.post("/api/duty/claim", mirror(handleDutyClaim));
 app.post("/api/duty", mirror(handleDutySet));
 
 const PORT = process.env.PORT || 3000;

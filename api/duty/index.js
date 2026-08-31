@@ -1,5 +1,10 @@
 const { respond } = require("../shared/functionAdapter");
-const { handleDutyLookup, handleDutyStatus, handleDutySet } = require("../shared/handlers");
+const {
+  handleDutyLookup,
+  handleDutyStatus,
+  handleDutySet,
+  handleDutyClaim,
+} = require("../shared/handlers");
 
 module.exports = async function (context, req) {
   try {
@@ -11,6 +16,8 @@ module.exports = async function (context, req) {
       result = await handleDutyStatus(req, process.env);
     } else if (method === "GET") {
       result = await handleDutyLookup(req, process.env);
+    } else if (method === "POST" && action === "claim") {
+      result = await handleDutyClaim(req, process.env);
     } else if (method === "POST" && !action) {
       result = await handleDutySet(req, process.env);
     } else {
