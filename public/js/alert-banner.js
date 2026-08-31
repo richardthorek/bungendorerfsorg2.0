@@ -59,8 +59,15 @@ function loadAlertBanner() {
     });
 }
 
+// Same refresh cadence as emergency-data.js — without this, a visitor who
+// already has the page open would never see a banner published (or cleared)
+// after their page loaded, undermining the whole point of a fast, human
+// update during an active situation.
+const ALERT_BANNER_REFRESH_MS = 3 * 60 * 1000;
+
 document.addEventListener("DOMContentLoaded", function () {
   loadAlertBanner();
+  window.setInterval(loadAlertBanner, ALERT_BANNER_REFRESH_MS);
 });
 
 window.loadAlertBanner = loadAlertBanner;
