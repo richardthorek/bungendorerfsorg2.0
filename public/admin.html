@@ -94,6 +94,9 @@
           <button class="nav__item" data-view="social" type="button">
             Social Studio<span class="nav__note">Instagram &amp; Facebook posts</span>
           </button>
+          <button class="nav__item" data-view="analytics" type="button">
+            Analytics<span class="nav__note">how the site is used</span>
+          </button>
           <button class="nav__item" data-view="members" data-admin="true" type="button" hidden>
             Members<span class="nav__note">who can sign in</span>
           </button>
@@ -412,6 +415,63 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </section>
+
+          <!-- Analytics (Microsoft Clarity) -->
+          <section id="view-analytics" class="view" hidden>
+            <div class="view__head">
+              <div>
+                <h2>Analytics</h2>
+                <p class="view__lead">
+                  Visitor activity on the public website, from Microsoft Clarity. Clarity keeps
+                  only the last few days &mdash; this page stores a daily snapshot so the trend
+                  builds up over time.
+                </p>
+              </div>
+              <button id="clarityRefresh" type="button" class="btn btn--ghost">Refresh</button>
+            </div>
+            <p id="clarityMsg" class="msg" role="status" aria-live="polite" hidden></p>
+
+            <div id="clarityBody" hidden>
+              <p class="clarity-meta" id="clarityMeta"></p>
+
+              <div class="stat-grid" id="clarityStats"></div>
+
+              <h3 class="clarity-h3">Most visited pages</h3>
+              <div class="table-wrap">
+                <table class="clarity-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Page</th>
+                      <th scope="col" class="num">Sessions</th>
+                      <th scope="col" class="num">Views</th>
+                      <th scope="col" class="num">Avg scroll</th>
+                      <th scope="col" class="num">Avg time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="clarityPages"></tbody>
+                </table>
+              </div>
+
+              <h3 class="clarity-h3">Friction signals <span class="clarity-h3__sub">last 3 days</span></h3>
+              <div class="stat-grid stat-grid--compact" id="claritySignals"></div>
+
+              <h3 class="clarity-h3">Daily sessions</h3>
+              <div class="table-wrap">
+                <table class="clarity-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Date (UTC)</th>
+                      <th scope="col" class="num">Sessions</th>
+                      <th scope="col" class="num">Pages/session</th>
+                      <th scope="col" class="num">Avg scroll</th>
+                      <th scope="col" class="num">Avg time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="clarityHistory"></tbody>
+                </table>
+              </div>
             </div>
           </section>
         </main>

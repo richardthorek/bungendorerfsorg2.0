@@ -10,6 +10,9 @@
  *   auditlog   PK <yyyy-mm-dd> RK <ts>-<rand>
  *   duty       PK "duty"   RK "current" — the number the public line forwards to;
  *                          PK "duty"   RK "h:<reverse-ts>" — recent change history
+ *   analytics  PK "clarity" RK "latest" — most recent Clarity insights snapshot;
+ *                          PK "clarity" RK "meta"          — refresh budget/bookkeeping;
+ *                          PK "clarity" RK "day:<yyyy-mm-dd>" — one rollup row per UTC day
  */
 
 const crypto = require("crypto");
@@ -23,6 +26,7 @@ const TABLES = {
   duty: "duty",
   content: "content",
   enquiries: "enquiries",
+  analytics: "analytics",
 };
 
 let clients = null;
@@ -508,9 +512,95 @@ async function setSocialPromptConfig(prompt, updatedBy, env) {
   return { prompt, updatedBy, updatedAt };
 }
 
+/* -------------------------------------------------------- analytics (Clarity) */
+
+function parseSummary(e) {
+  if (!e || !e.summary) return null;
+  try {
+    return JSON.parse(e.summary);
+  } catch {
+    return null;
+  }
+}
+
+/** Latest snapshot + refresh bookkeeping in one round of reads. */
+async function getClarityState(env) {
+  const client = (await db(env)).analytics;
+  const [latest, meta] = await Promise.all([
+    getEntity(client, "clarity", "latest"),
+    getEntity(client, "clarity", "meta"),
+  ]);
+  return {
+    latest: latest
+      ? { summary: parseSummary(latest), fetchedAt: latest.fetchedAt || "" }
+      : null,
+    meta: meta
+      ? {
+          dayKey: meta.dayKey || "",
+          countToday: typeof meta.countToday === "number" ? meta.countToday : 0,
+          lastAttemptAt: typeof meta.lastAttemptAt === "number" ? meta.lastAttemptAt : 0,
+          lastSuccessAt: meta.lastSuccessAt || "",
+        }
+      : null,
+  };
+}
+
+/** Record that a fetch was attempted (called before the network request). */
+async function touchClarityAttempt(dayKey, countToday, env) {
+  await (
+    await db(env)
+  ).analytics.upsertEntity(
+    {
+      partitionKey: "clarity",
+      rowKey: "meta",
+      dayKey,
+      countToday,
+      lastAttemptAt: Date.now(),
+    },
+    "Merge"
+  );
+}
+
+/** Persist a fresh snapshot: the `latest` row plus a per-day rollup row. */
+async function saveClaritySnapshot({ summary, day }, env) {
+  const client = (await db(env)).analytics;
+  const fetchedAt = new Date().toISOString();
+  const json = JSON.stringify(summary || {});
+  await client.upsertEntity(
+    { partitionKey: "clarity", rowKey: "latest", summary: json, fetchedAt },
+    "Replace"
+  );
+  await client.upsertEntity(
+    { partitionKey: "clarity", rowKey: `day:${day}`, summary: json, date: day, fetchedAt },
+    "Replace"
+  );
+  await client.upsertEntity(
+    { partitionKey: "clarity", rowKey: "meta", lastSuccessAt: fetchedAt },
+    "Merge"
+  );
+  return { summary, fetchedAt };
+}
+
+/** Daily rollup history, newest first. One row per UTC day. */
+async function listClarityDaily(limit, env) {
+  const out = [];
+  const iter = (await db(env)).analytics.listEntities({
+    queryOptions: { filter: "PartitionKey eq 'clarity' and RowKey gt 'day:' and RowKey lt 'day;'" },
+  });
+  for await (const e of iter) {
+    out.push({ date: e.date || e.rowKey.slice(4), summary: parseSummary(e), fetchedAt: e.fetchedAt || "" });
+  }
+  out.sort((a, b) => b.date.localeCompare(a.date));
+  return out.slice(0, limit || 60);
+}
+
 module.exports = {
   TABLES,
   _reset,
+  getClarityState,
+  touchClarityAttempt,
+  saveClaritySnapshot,
+  listClarityDaily,
   getSocialPromptConfig,
   setSocialPromptConfig,
   recordEnquiry,

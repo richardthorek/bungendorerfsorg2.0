@@ -76,6 +76,14 @@
     socialPromptReset: document.getElementById("socialPromptReset"),
     socialPromptMeta: document.getElementById("socialPromptMeta"),
     socialPromptMsg: document.getElementById("socialPromptMsg"),
+    clarityRefresh: document.getElementById("clarityRefresh"),
+    clarityMsg: document.getElementById("clarityMsg"),
+    clarityBody: document.getElementById("clarityBody"),
+    clarityMeta: document.getElementById("clarityMeta"),
+    clarityStats: document.getElementById("clarityStats"),
+    clarityPages: document.getElementById("clarityPages"),
+    claritySignals: document.getElementById("claritySignals"),
+    clarityHistory: document.getElementById("clarityHistory"),
   };
 
   const state = {
@@ -230,7 +238,7 @@
     if (currentViewFromHash() !== "enquiries") loadEnquiries(); // for the nav badge
   }
 
-  const VIEWS = ["duty", "enquiries", "events", "social", "members"];
+  const VIEWS = ["duty", "enquiries", "events", "social", "analytics", "members"];
 
   function currentViewFromHash() {
     const h = (location.hash || "").replace("#", "");
@@ -252,6 +260,7 @@
     if (name === "events") loadAllContent();
     if (name === "enquiries") loadEnquiries();
     if (name === "social") initSocialStudio();
+    if (name === "analytics") loadClarity();
   }
 
   el.navItems.forEach(function (b) {
@@ -1857,6 +1866,165 @@
       }
     );
   }
+
+  /* --------------------------------------------------------------- analytics */
+
+  let clarityLoaded = false;
+
+  function loadClarity(opts) {
+    const refresh = opts && opts.refresh;
+    if (!clarityLoaded && !refresh) setMsg(el.clarityMsg, "Loading…");
+    if (refresh) {
+      el.clarityRefresh.disabled = true;
+      el.clarityRefresh.textContent = "Refreshing…";
+    }
+    api("/api/clarity/insights" + (refresh ? "?refresh=1" : "")).then(function (r) {
+      el.clarityRefresh.disabled = false;
+      el.clarityRefresh.textContent = "Refresh";
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.clarityMsg, (r.data && r.data.error) || "Could not load analytics.", "err");
+        return;
+      }
+      clarityLoaded = true;
+      renderClarity(r.data);
+    });
+  }
+
+  function fmtDuration(seconds) {
+    const s = Math.round(Number(seconds) || 0);
+    if (s <= 0) return "0s";
+    if (s < 60) return s + "s";
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return rem ? m + "m " + rem + "s" : m + "m";
+  }
+
+  function statCard(value, label, opts) {
+    const div = document.createElement("div");
+    div.className = "stat" + (opts && opts.flag ? " stat--flag" : "");
+    if (opts && opts.flag && (!value || value === "0")) div.classList.add("is-zero");
+    const v = document.createElement("div");
+    v.className = "stat__value";
+    v.textContent = value;
+    const l = document.createElement("div");
+    l.className = "stat__label";
+    l.textContent = label;
+    div.appendChild(v);
+    div.appendChild(l);
+    return div;
+  }
+
+  function renderClarity(data) {
+    if (!data.configured) {
+      setMsg(
+        el.clarityMsg,
+        "Analytics isn’t connected yet — the Clarity API token hasn’t been set on the server.",
+        "err"
+      );
+      el.clarityBody.hidden = true;
+      return;
+    }
+
+    const snap = data.snapshot;
+    if (!snap || !snap.totals || (!snap.hasData && !(data.history && data.history.length))) {
+      setMsg(
+        el.clarityMsg,
+        data.fetchedAt
+          ? "Connected — no visitor data yet. Clarity needs a day or so of traffic after going live."
+          : "Connected — waiting for the first data pull.",
+        null
+      );
+      el.clarityBody.hidden = true;
+      return;
+    }
+    setMsg(el.clarityMsg, "");
+    el.clarityBody.hidden = false;
+
+    const t = snap.totals;
+    el.clarityMeta.textContent =
+      "Last " +
+      (snap.windowDays || 3) +
+      " days · pulled " +
+      relTime(data.fetchedAt) +
+      (data.lastSuccessAt && data.lastSuccessAt !== data.fetchedAt
+        ? " · last change " + relTime(data.lastSuccessAt)
+        : "");
+
+    el.clarityStats.replaceChildren(
+      statCard(String(t.sessions || 0), "Sessions"),
+      statCard(String(t.distinctUsers || 0), "Distinct visitors"),
+      statCard(String(t.pagesPerSession || 0), "Pages / session"),
+      statCard(String(t.avgScrollDepth || 0) + "%", "Avg scroll depth"),
+      statCard(fmtDuration(t.avgEngagementTime), "Avg time on page"),
+      statCard(String(t.botSessions || 0), "Bot sessions")
+    );
+
+    const pages = snap.pages || [];
+    el.clarityPages.replaceChildren();
+    if (!pages.length) {
+      el.clarityPages.appendChild(clarityEmptyRow(5, "No page data in this window."));
+    } else {
+      pages.forEach(function (p) {
+        const tr = document.createElement("tr");
+        tr.appendChild(clarityCell(p.url || "(unknown)", "clarity-url"));
+        tr.appendChild(clarityCell(String(p.sessions || 0), "num"));
+        tr.appendChild(clarityCell(String(p.pageViews || 0), "num"));
+        tr.appendChild(clarityCell((p.scrollDepth || 0) + "%", "num"));
+        tr.appendChild(clarityCell(fmtDuration(p.engagementTime), "num"));
+        el.clarityPages.appendChild(tr);
+      });
+    }
+
+    const sig = snap.signals || {};
+    el.claritySignals.replaceChildren(
+      statCard(String(sig.rageClicks || 0), "Rage clicks", { flag: true }),
+      statCard(String(sig.deadClicks || 0), "Dead clicks", { flag: true }),
+      statCard(String(sig.quickbacks || 0), "Quick backs", { flag: true }),
+      statCard(String(sig.excessiveScroll || 0), "Excessive scroll", { flag: true }),
+      statCard(String(sig.scriptErrors || 0), "Script errors", { flag: true }),
+      statCard(String(sig.errorClicks || 0), "Error clicks", { flag: true })
+    );
+
+    const history = (data.history || []).filter(function (h) {
+      return h.sessions || h.pagesPerSession || h.avgScrollDepth;
+    });
+    el.clarityHistory.replaceChildren();
+    if (!history.length) {
+      el.clarityHistory.appendChild(clarityEmptyRow(5, "The daily trend builds up from here."));
+    } else {
+      history.forEach(function (h) {
+        const tr = document.createElement("tr");
+        tr.appendChild(clarityCell(h.date || "—"));
+        tr.appendChild(clarityCell(String(h.sessions || 0), "num"));
+        tr.appendChild(clarityCell(String(h.pagesPerSession || 0), "num"));
+        tr.appendChild(clarityCell((h.avgScrollDepth || 0) + "%", "num"));
+        tr.appendChild(clarityCell(fmtDuration(h.avgEngagementTime), "num"));
+        el.clarityHistory.appendChild(tr);
+      });
+    }
+  }
+
+  function clarityCell(text, cls) {
+    const td = document.createElement("td");
+    if (cls) td.className = cls;
+    td.textContent = text;
+    return td;
+  }
+
+  function clarityEmptyRow(span, text) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = span;
+    td.className = "clarity-table__empty";
+    td.textContent = text;
+    tr.appendChild(td);
+    return tr;
+  }
+
+  el.clarityRefresh.addEventListener("click", function () {
+    loadClarity({ refresh: true });
+  });
 
   /* --------------------------------------------------------------- utility */
 

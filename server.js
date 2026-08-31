@@ -24,6 +24,7 @@ const {
   handleSocialChat,
   handleSocialPromptGet,
   handleSocialPromptSet,
+  handleClarityInsights,
 } = require("./api/shared/handlers");
 
 const allowedOrigins = [
@@ -294,6 +295,8 @@ app.delete(
 app.post("/api/social/chat", mirror(handleSocialChat));
 app.get("/api/social/prompt", mirror(handleSocialPromptGet));
 app.put("/api/social/prompt", mirror(handleSocialPromptSet));
+
+app.get("/api/clarity/insights", mirror(handleClarityInsights));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

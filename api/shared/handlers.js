@@ -44,9 +44,12 @@ const {
   deleteEnquiry,
   getSocialPromptConfig,
   setSocialPromptConfig,
+  getClarityState,
+  listClarityDaily,
 } = require("./store");
 const { validateContent } = require("./contentSchema");
 const { chatTurn, DEFAULT_SYSTEM_PROMPT } = require("./aiCopy");
+const { maybeRefreshClarity } = require("./clarityInsights");
 
 const ENQUIRY_STATUSES = ["new", "in-progress", "resolved"];
 const { normalizeAuPhone, maskPhone } = require("./phone");
@@ -187,6 +190,9 @@ async function handleAuthVerify(req, env = process.env) {
 async function handleAuthMe(req, env = process.env) {
   const s = await resolveSession(req, {}, env);
   if (!s.ok) return { status: s.status, body: { error: s.error } };
+  // Opportunistic, non-blocking: piggy-back a Clarity refresh on members'-area
+  // page loads instead of running a timer. Rate-limited inside the helper.
+  maybeRefreshClarity(env).catch(() => {});
   return {
     status: 200,
     body: {
@@ -754,6 +760,53 @@ async function handleSocialPromptSet(req, env = process.env) {
   };
 }
 
+/* ------------------------------------------------ site analytics (Clarity) */
+
+/**
+ * Members only. Returns the stored Clarity snapshot plus the daily-rollup
+ * history. `?refresh=1` forces a fresh pull (still bounded by the daily
+ * budget); otherwise a stale snapshot triggers an opportunistic refresh.
+ */
+async function handleClarityInsights(req, env = process.env) {
+  const s = await resolveSession(req, {}, env);
+  if (!s.ok) return { status: s.status, body: { error: s.error } };
+
+  const wantsRefresh =
+    req && req.query && (req.query.refresh === "1" || req.query.refresh === "true");
+
+  let refresh = { refreshed: false, reason: "skipped" };
+  if (wantsRefresh) {
+    refresh = await maybeRefreshClarity(env, { force: true });
+  } else {
+    // fire-and-forget; the snapshot returned may be the pre-refresh one
+    maybeRefreshClarity(env).catch(() => {});
+  }
+
+  const [state, history] = await Promise.all([getClarityState(env), listClarityDaily(60, env)]);
+
+  const configured = !!env.CLARITY_API_TOKEN;
+  return {
+    status: 200,
+    body: {
+      configured,
+      snapshot: state.latest ? state.latest.summary : null,
+      fetchedAt: state.latest ? state.latest.fetchedAt : "",
+      lastSuccessAt: state.meta ? state.meta.lastSuccessAt : "",
+      history: history.map((h) => ({
+        date: h.date,
+        sessions: h.summary && h.summary.totals ? h.summary.totals.sessions : 0,
+        pagesPerSession:
+          h.summary && h.summary.totals ? h.summary.totals.pagesPerSession : 0,
+        avgScrollDepth:
+          h.summary && h.summary.totals ? h.summary.totals.avgScrollDepth : 0,
+        avgEngagementTime:
+          h.summary && h.summary.totals ? h.summary.totals.avgEngagementTime : 0,
+      })),
+      refresh,
+    },
+  };
+}
+
 module.exports = {
   handleAuthRequest,
   handleAuthVerify,
@@ -774,4 +827,5 @@ module.exports = {
   handleSocialChat,
   handleSocialPromptGet,
   handleSocialPromptSet,
+  handleClarityInsights,
 };

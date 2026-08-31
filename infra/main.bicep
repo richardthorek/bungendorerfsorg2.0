@@ -34,6 +34,10 @@ param azureFireDangerWebhookUrl string
 @description('Optional comma-separated origin allow-list for mapbox token endpoint')
 param allowedOrigins string = ''
 
+@secure()
+@description('Microsoft Clarity Data Export API token (members-area analytics). Optional.')
+param clarityApiToken string = ''
+
 resource staticSite 'Microsoft.Web/staticSites@2023-12-01' = {
   name: staticWebAppName
   location: location
@@ -56,6 +60,7 @@ resource staticSiteAppSettings 'Microsoft.Web/staticSites/config@2023-12-01' = {
     AZURE_INCIDENTS_WEBHOOK_URL: azureIncidentsWebhookUrl
     AZURE_FIRE_DANGER_WEBHOOK_URL: azureFireDangerWebhookUrl
     ALLOWED_ORIGINS: allowedOrigins
+    CLARITY_API_TOKEN: clarityApiToken
   }
 }
 
