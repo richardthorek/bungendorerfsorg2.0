@@ -821,11 +821,18 @@ label {
 }
 .recur {
   display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
   gap: 0.4rem;
 }
 .recur select {
   width: auto;
-  flex: 1;
+  flex: 1 1 6rem;
+}
+.recur__next {
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
 }
 .editor__empty {
   color: var(--ink-faint);

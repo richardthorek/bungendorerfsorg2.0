@@ -662,6 +662,52 @@
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
+  // Next occurrence of a "<ordinal>-<weekday>" rule — mirrors calendar.js so the
+  // editor shows the same date the public Membership page will.
+  function isoWeekday(d) {
+    return d.getDay() === 0 ? 7 : d.getDay();
+  }
+  function nthWeekday(year, month1, weekday, ordinal) {
+    if (ordinal === -1) {
+      const d = new Date(year, month1, 0);
+      while (isoWeekday(d) !== weekday) d.setDate(d.getDate() - 1);
+      return d;
+    }
+    const d = new Date(year, month1 - 1, 1);
+    let count = 0;
+    while (d.getMonth() === month1 - 1) {
+      if (isoWeekday(d) === weekday && ++count === ordinal) return new Date(d);
+      d.setDate(d.getDate() + 1);
+    }
+    return null;
+  }
+  function nextRecurrenceDate(ordName, dayName) {
+    const weekday = WEEKDAYS.indexOf(dayName) + 1;
+    if (!weekday) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (ordName === "every") {
+      const d = new Date(today);
+      while (isoWeekday(d) !== weekday) d.setDate(d.getDate() + 1);
+      return d;
+    }
+    const ords = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5, last: -1 };
+    const ordinal = ords[ordName];
+    if (!ordinal) return null;
+    let cand = nthWeekday(today.getFullYear(), today.getMonth() + 1, weekday, ordinal);
+    if (!cand || cand < today) {
+      const nm = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      cand = nthWeekday(nm.getFullYear(), nm.getMonth() + 1, weekday, ordinal);
+    }
+    return cand;
+  }
+  function fmtNext(d) {
+    return d
+      ? "next " +
+          d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })
+      : "";
+  }
+
   function makeField(field, value) {
     if (field.type === "recurrence") {
       const wrap = document.createElement("div");
@@ -685,8 +731,17 @@
         if (d === parts[1]) opt.selected = true;
         day.appendChild(opt);
       });
+      const next = document.createElement("span");
+      next.className = "recur__next";
+      const refresh = function () {
+        next.textContent = fmtNext(nextRecurrenceDate(ord.value, day.value));
+      };
+      ord.addEventListener("change", refresh);
+      day.addEventListener("change", refresh);
+      refresh();
       wrap.appendChild(ord);
       wrap.appendChild(day);
+      wrap.appendChild(next);
       return wrap;
     }
     const input = document.createElement(field.type === "textarea" ? "textarea" : "input");
