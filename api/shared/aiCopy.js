@@ -18,7 +18,7 @@
 
 const HEADLINE_MAX = 90;
 const CAPTION_MAX = 900;
-const HASHTAG_MAX = 12;
+const HASHTAG_MAX = 30; // brigade's own #BungendoreRFS is 13 chars; keep a sane cap without amputating real tags
 const MAX_HASHTAGS = 8;
 
 /**

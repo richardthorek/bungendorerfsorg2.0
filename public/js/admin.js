@@ -131,6 +131,7 @@
 
   function showSignin(message) {
     state.me = null;
+    resetSocialSession();
     el.appView.hidden = true;
     el.signinView.hidden = false;
     el.verifyForm.hidden = true;
@@ -138,6 +139,24 @@
     el.requestForm.reset();
     el.verifyForm.reset();
     setMsg(el.signinMsg, message || "", message ? "err" : null);
+  }
+
+  /**
+   * Wipe per-user Social Studio state on sign-out so the next person on a
+   * shared station device can't see — or unknowingly re-send — the previous
+   * user's draft chat. Keeps `social.started` true: the one-time event wiring
+   * in initSocialStudio stays bound and must not be double-added.
+   */
+  function resetSocialSession() {
+    state.socialMessages = [];
+    state.socialDraft = null;
+    social.pendingImage = null;
+    if (el.socialChat) el.socialChat.innerHTML = "";
+    if (el.socialAiResult) el.socialAiResult.hidden = true;
+    if (el.socialAttachPreview) el.socialAttachPreview.hidden = true;
+    if (el.socialAttachThumb) el.socialAttachThumb.src = "";
+    if (el.socialAttachInput) el.socialAttachInput.value = "";
+    if (el.socialDraftBtn) el.socialDraftBtn.disabled = true;
   }
 
   el.requestForm.addEventListener("submit", function (e) {
@@ -1707,11 +1726,18 @@
       el.socialAttachInput.value = "";
       return;
     }
-    resizeImageForChat(file, function (dataUrl) {
-      social.pendingImage = dataUrl;
-      el.socialAttachThumb.src = dataUrl;
-      el.socialAttachPreview.hidden = false;
-    });
+    resizeImageForChat(
+      file,
+      function (dataUrl) {
+        social.pendingImage = dataUrl;
+        el.socialAttachThumb.src = dataUrl;
+        el.socialAttachPreview.hidden = false;
+      },
+      function () {
+        setMsg(el.socialAiMsg, "That photo couldn't be read. Try a different image.", "err");
+        el.socialAttachInput.value = "";
+      }
+    );
   }
 
   function clearSocialAttachment() {
@@ -1722,10 +1748,13 @@
   }
 
   /** Downscale to a max 1024px edge before sending, to keep payloads small. */
-  function resizeImageForChat(file, cb) {
+  function resizeImageForChat(file, cb, onErr) {
+    const fail = typeof onErr === "function" ? onErr : function () {};
     const reader = new FileReader();
+    reader.onerror = fail;
     reader.onload = function () {
       const img = new Image();
+      img.onerror = fail;
       img.onload = function () {
         const maxDim = 1024;
         const scale = Math.min(1, maxDim / Math.max(img.width, img.height));

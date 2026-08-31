@@ -620,6 +620,7 @@ async function handleEnquiryDelete(id, req, env = process.env) {
 const MAX_TRANSCRIPT_MESSAGES = 24;
 const MAX_CHAT_TEXT_LEN = 2000;
 const MAX_IMAGE_DATA_URL_LEN = 3_000_000; // ~2.2MB decoded; client downsizes before sending
+const MAX_SOCIAL_PROMPT_LEN = 6000;
 
 function str300(v, max) {
   return typeof v === "string" ? v.trim().slice(0, max) : "";
@@ -729,7 +730,14 @@ async function handleSocialPromptSet(req, env = process.env) {
   if (gate.error) return gate.error;
   if (!hasCsrfHeader(req)) return { status: 403, body: { error: "Bad request" } };
 
-  const prompt = str300(req.body && req.body.prompt, 6000);
+  const rawPrompt = req.body && req.body.prompt;
+  if (typeof rawPrompt === "string" && rawPrompt.trim().length > MAX_SOCIAL_PROMPT_LEN) {
+    return {
+      status: 400,
+      body: { error: `Guidelines are too long (max ${MAX_SOCIAL_PROMPT_LEN} characters).` },
+    };
+  }
+  const prompt = str300(rawPrompt, MAX_SOCIAL_PROMPT_LEN);
   if (!prompt) return { status: 400, body: { error: "Guidelines can't be empty." } };
 
   const saved = await setSocialPromptConfig(prompt, gate.member.email, env);

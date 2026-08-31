@@ -33,8 +33,10 @@ const allowedOrigins = [
   "https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net",
 ];
 
-// Middleware to parse JSON bodies
-app.use(express.json());
+// Middleware to parse JSON bodies. 5mb ceiling matches the shared handlers'
+// contract: /api/social/chat accepts image data URLs up to ~3mb (plus the
+// transcript envelope). Every endpoint still length-checks its own inputs.
+app.use(express.json({ limit: "5mb" }));
 
 // Basic CORS handling for API requests when routed via redirects
 app.use((req, res, next) => {
