@@ -65,6 +65,31 @@ current DOM): [`docs/current_state/ui-baseline.md`](docs/current_state/ui-baseli
 
 ---
 
+## Active programme: Contact form email — migrate off the retiring M365 tenant
+
+**Target outcome:** the website contact form no longer depends on the
+`bungendorerfs.onmicrosoft.com` tenant (SharePoint list + Office 365 mail +
+Teams, all orchestrated by the `formHandler` Logic App). Instead `/api/contact`
+sends a rich HTML notification straight to the RFS leadership distribution list
+via Azure Communication Services Email, with an acknowledgement back to the
+enquirer.
+
+### Status
+
+| Step | State |
+|------|-------|
+| Root cause of "no enquiry details" found — proxy sent `message`, Logic App read `enquiry`; SharePoint `Description` always null | Done |
+| `api/contact` + `server.js` rewritten to send via ACS (`api/contact/notify.js`), SharePoint/Teams/Logic App dropped from the path | Done — this branch |
+| Jest coverage for the notify helper | Done — `__tests__/contact-notify.test.js` |
+| ACS Email domain `notify.bungendorerfs.org` created under `stationkit-email` | Done |
+| DNS records for `notify.bungendorerfs.org` added in Cloudflare (TXT verify, SPF, 2× DKIM CNAME) | **Pending — owner** |
+| Domain verified + linked to `stationkit-comm`, sender username created | Pending (blocked on DNS) |
+| SWA app settings set: `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS`, `CONTACT_NOTIFY_TO=Leadership-Bungendore-vol@rfs.nsw.gov.au` | Pending |
+| Retire `formHandler` Logic App + `office365`, `office365-1`, `sharepointonline`, `teams` connections | Pending (after cutover verified) |
+| Historical enquiries #1–#28 recovered from the SharePoint list before the tenant closes | Pending — needs sign-in to the old tenant |
+
+---
+
 ## Adding a new programme
 
 Add a section above with: tracking issue, target outcome, scope in/out, phase table

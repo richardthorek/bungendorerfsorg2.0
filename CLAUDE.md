@@ -41,7 +41,7 @@ Before reworking layout, skim the design specs in `docs/` (see index below).
 | Vendored libs | `public/js/vendor/` | Luxon, Marked, DOMPurify (minified — **don't read/edit**) |
 | Styles | `public/css/main.css` | One stylesheet; design tokens in `:root` |
 | Content | `public/Content/` | Markdown + JSON rendered client-side |
-| Prod API | `api/<fn>/index.js` | Azure Functions proxy layer (security boundary) |
+| Prod API | `api/<fn>/index.js` | Azure Functions proxy layer (security boundary). `api/contact` emails the committee DL via Azure Communication Services (`api/contact/notify.js`, shared with `server.js`) — no Logic App |
 | Local dev server | `server.js` | Express mirror of the API for local dev — keep in sync with `api/` |
 | Tests | `__tests__/` | Jest + jsdom |
 | Infra | `infra/main.bicep` | Azure Static Web Apps IaC |

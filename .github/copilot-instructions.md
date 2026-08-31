@@ -101,7 +101,9 @@ Copy `.env.example` to `.env`. Required for full local function:
 
 ```
 MAPBOX_ACCESS_TOKEN=...
-AZURE_CONTACT_WEBHOOK_URL=...
+ACS_CONNECTION_STRING=...        # contact form: Azure Communication Services
+ACS_SENDER_ADDRESS=contact@notify.bungendorerfs.org
+CONTACT_NOTIFY_TO=...           # committee distribution list (comma-separated ok)
 AZURE_CALENDAR_WEBHOOK_URL=...
 AZURE_INCIDENTS_WEBHOOK_URL=...
 AZURE_FIRE_DANGER_WEBHOOK_URL=...
@@ -123,7 +125,7 @@ Local dev for the Azure Functions in `api/` uses `api/local.settings.json` (temp
 
 ### Backend — two deployment targets, one codebase
 
-1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`, `fire-danger`, `fire-incidents`, `calendar-events`, `contact`) act as the proxy layer between the static site and Azure Logic Apps webhooks. This is where the security boundary lives.
+1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`, `fire-danger`, `fire-incidents`, `calendar-events`, `contact`) act as the proxy layer between the static site and upstream services — Azure Logic Apps webhooks for fire data, Azure Communication Services Email for the contact form (`api/contact/notify.js`, shared with `server.js`). This is where the security boundary lives.
 2. **Local dev:** `server.js` (Express) serves `public/` and re-implements the same proxy endpoints by reading from `.env`. Keep the two surfaces semantically identical — when an `api/<fn>/index.js` changes its contract, mirror the change in `server.js`.
 
 ### Infrastructure

@@ -33,7 +33,9 @@ stylesheet, markdown content rendered client-side.
 - **Luxon** — timezone-aware date handling (`Australia/Sydney`).
 - **Azure Static Web Apps** (integrated HTTP-trigger Functions) — production proxy
   layer between the site and upstream data sources.
-- **Azure Logic Apps** — backend workflows for the contact form and live fire data.
+- **Azure Communication Services Email** — the contact form emails the committee
+  distribution list directly (sender domain `notify.bungendorerfs.org`).
+- **Azure Logic Apps** — backend workflows for live fire data.
 
 ## Project structure
 
@@ -90,7 +92,10 @@ Create `.env` from `.env.example`:
 ```bash
 MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
 
-AZURE_CONTACT_WEBHOOK_URL=https://prod-...
+ACS_CONNECTION_STRING=endpoint=https://stationkit-comm.australia.communication.azure.com/;accesskey=...
+ACS_SENDER_ADDRESS=contact@notify.bungendorerfs.org
+CONTACT_NOTIFY_TO=committee@example-distribution-list.org
+
 AZURE_INCIDENTS_WEBHOOK_URL=https://prod-...
 AZURE_FIRE_DANGER_WEBHOOK_URL=https://prod-...
 
@@ -218,8 +223,9 @@ Two backend targets share one contract:
 
 1. **Production (Azure Static Web Apps):** `api/<fn>/index.js` functions
    (`mapbox-token`, `fire-danger`, `fire-incidents`, `calendar-events`, `contact`) act
-   as the proxy layer between the static site and Azure Logic Apps webhooks. This is
-   the security boundary — credentials never reach the browser.
+   as the proxy layer between the static site and upstream services (Azure Logic Apps
+   webhooks for fire data, Azure Communication Services for contact-form email). This
+   is the security boundary — credentials never reach the browser.
 2. **Local dev:** `server.js` (Express) re-implements the same endpoints by reading
    `.env`. When an `api/<fn>/index.js` endpoint's contract changes, mirror the change
    in `server.js`.
@@ -257,8 +263,9 @@ gate on every push/PR into `main` or `liveDev`.
 **Map not loading** — verify `MAPBOX_ACCESS_TOKEN` in `.env` and that the token
 hasn't been revoked in your Mapbox account; check the browser console.
 
-**Form submission fails** — check `AZURE_CONTACT_WEBHOOK_URL` in `.env` and that the
-Azure Logic App is running; check server logs.
+**Form submission fails** — check `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS` and
+`CONTACT_NOTIFY_TO` in `.env`, and that the `notify.bungendorerfs.org` domain is
+Verified in the `stationkit-comm` Communication Services resource; check server logs.
 
 **Events/training not showing** — validate the JSON in `public/Content/*.json`; a
 malformed file will fail to parse and the section will show its empty-state message.

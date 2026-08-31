@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const path = require("path");
+const { sendContactNotifications } = require("./api/contact/notify");
 
 const allowedOrigins = [
   "https://bungendorerfs.org",
@@ -101,25 +102,20 @@ function validateContactFormData(data) {
   return errors;
 }
 
-// Proxy endpoint for contact form submission
+// Contact form submission — emails the committee distribution list via ACS
 app.post("/api/contact", async (req, res) => {
   try {
-    const webhookUrl = process.env.AZURE_CONTACT_WEBHOOK_URL;
-
-    if (!webhookUrl) {
-      console.error("AZURE_CONTACT_WEBHOOK_URL not configured");
-      return res.status(500).json({ error: "Server configuration error" });
-    }
+    const body = req.body || {};
 
     // Honeypot spam check - if website field is filled, reject silently
-    if (req.body.website) {
+    if (body.website) {
       console.warn("Potential spam submission detected (honeypot filled)");
       // Return success to not alert spammers
       return res.json({ success: true, message: "Thank you for your submission" });
     }
 
     // Validate form data
-    const validationErrors = validateContactFormData(req.body);
+    const validationErrors = validateContactFormData(body);
     if (validationErrors.length > 0) {
       return res.status(400).json({
         error: "Validation failed",
@@ -127,35 +123,18 @@ app.post("/api/contact", async (req, res) => {
       });
     }
 
-    // Sanitize data before sending to webhook
     const sanitizedData = {
-      name: req.body.name.trim(),
-      email: req.body.email.trim().toLowerCase(),
-      phone: req.body.phone ? req.body.phone.trim() : "",
-      message: req.body.message.trim(),
+      name: body.name.trim(),
+      email: body.email.trim().toLowerCase(),
+      phone: body.phone ? body.phone.trim() : "",
+      message: body.message.trim(),
     };
 
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sanitizedData),
-    });
+    await sendContactNotifications(sanitizedData);
 
-    if (!response.ok) {
-      console.error(`Azure webhook returned status ${response.status}`);
-      return res.status(response.status).json({ error: "Failed to submit form" });
-    }
-
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      const data = await response.json();
-      res.json(data);
-    } else {
-      const text = await response.text();
-      res.send(text);
-    }
+    res.json({ success: true, message: "Thank you for your enquiry" });
   } catch (error) {
-    console.error("Error submitting contact form:", error);
+    console.error("Error handling contact form:", error);
     res.status(500).json({ error: "Failed to submit form" });
   }
 });

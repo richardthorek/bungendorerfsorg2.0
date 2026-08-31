@@ -6,6 +6,8 @@
     "start": "func start",
     "test": "echo \"No tests yet\" && exit 0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@azure/communication-email": "^1.1.0"
+  },
   "devDependencies": {}
 }

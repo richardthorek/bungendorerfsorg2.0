@@ -40,7 +40,9 @@ All API calls from the frontend go through server-side proxy endpoints to protec
 
 **Endpoint:** `POST /api/contact`
 
-**Purpose:** Submit contact form data to Azure Logic Apps workflow
+**Purpose:** Validate a contact-form submission and email the committee
+distribution list (plus an acknowledgement to the enquirer) via Azure
+Communication Services Email.
 
 **Request Body:**
 
@@ -81,11 +83,19 @@ All API calls from the frontend go through server-side proxy endpoints to protec
 
 **Backend Logic:**
 
-1. Validates form data
-2. Checks honeypot field for spam
+1. Checks honeypot field for spam (silently returns success if `website` is set)
+2. Validates form data
 3. Sanitizes data (trims whitespace, lowercase email)
-4. Forwards to Azure Logic Apps webhook
-5. Returns response to client
+4. Sends a rich HTML notification to `CONTACT_NOTIFY_TO` via ACS Email, with the
+   enquirer set as `Reply-To` so the committee can reply directly
+5. Best-effort: sends the enquirer an acknowledgement email (skipped when
+   `CONTACT_NOTIFY_CONFIRM=false`; a failure here does not fail the request)
+6. Returns `{ success: true }` to the client
+
+Mail plumbing lives in `api/contact/notify.js`, which `server.js` also imports so
+both backends send identical messages. There is no longer any SharePoint, Teams,
+or Logic App in this path — the `formHandler` Logic App and its Office 365 /
+SharePoint connections are retired.
 
 ---
 
@@ -214,9 +224,11 @@ Allowed origins:
 
 Azure Logic Apps provides the serverless backend for:
 
-1. Contact form email notifications
-2. Fire incident data aggregation
-3. Fire danger rating XML feed
+1. Fire incident data aggregation
+2. Fire danger rating XML feed
+
+(The contact form no longer uses Logic Apps — it sends email directly via Azure
+Communication Services. See [Contact Form Submission](#1-contact-form-submission).)
 
 (A calendar-events workflow still exists for backward compatibility — see
 [Community events & training schedule](#2-community-events--training-schedule-static-content-not-a-live-endpoint)
@@ -240,7 +252,10 @@ https://prod-XX.australiaeast.logic.azure.com/workflows/[WORKFLOW_ID]/triggers/W
 
 See `.env.example` for complete list:
 
-- `AZURE_CONTACT_WEBHOOK_URL`
+- `ACS_CONNECTION_STRING` — Azure Communication Services connection string (contact form)
+- `ACS_SENDER_ADDRESS` — verified MailFrom on `notify.bungendorerfs.org` (contact form)
+- `CONTACT_NOTIFY_TO` — committee distribution list; comma-separated for several recipients
+- `CONTACT_NOTIFY_CONFIRM` — optional; `false` disables the enquirer acknowledgement (default `true`)
 - `AZURE_INCIDENTS_WEBHOOK_URL`
 - `AZURE_FIRE_DANGER_WEBHOOK_URL`
 - `AZURE_CALENDAR_WEBHOOK_URL` — optional; kept for backward compatibility, unused by the current frontend
@@ -282,8 +297,12 @@ Create a `.env` file based on `.env.example`:
 # Mapbox Configuration
 MAPBOX_ACCESS_TOKEN=pk.ey...
 
+# Contact form → Azure Communication Services Email
+ACS_CONNECTION_STRING=endpoint=https://stationkit-comm.australia.communication.azure.com/;accesskey=...
+ACS_SENDER_ADDRESS=contact@notify.bungendorerfs.org
+CONTACT_NOTIFY_TO=committee@example-distribution-list.org
+
 # Azure Logic Apps Webhook URLs
-AZURE_CONTACT_WEBHOOK_URL=https://prod-...
 AZURE_CALENDAR_WEBHOOK_URL=https://prod-...
 AZURE_INCIDENTS_WEBHOOK_URL=https://prod-...
 AZURE_FIRE_DANGER_WEBHOOK_URL=https://prod-...
@@ -486,7 +505,9 @@ For production:
 **Form submission fails**
 
 - Check validation rules
-- Verify `AZURE_CONTACT_WEBHOOK_URL` is set
+- Verify `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS` and `CONTACT_NOTIFY_TO` are set
+- Confirm the `notify.bungendorerfs.org` domain is Verified in the ACS resource and
+  linked to `stationkit-comm`
 - Test honeypot isn't being filled
 
 ---

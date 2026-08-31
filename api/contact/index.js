@@ -1,7 +1,12 @@
 /**
  * Azure Function: Contact Form
- * Handles contact form submissions with validation and spam prevention
+ *
+ * Validates a contact-form submission and emails the committee distribution
+ * list (plus an acknowledgement to the enquirer) via Azure Communication
+ * Services. See `notify.js` for the mail plumbing and required configuration.
  */
+
+const { sendContactNotifications } = require("./notify");
 
 /**
  * Validates contact form data
@@ -65,45 +70,32 @@ module.exports = async function (context, req) {
     return;
   }
 
-  try {
-    const webhookUrl = process.env.AZURE_CONTACT_WEBHOOK_URL;
+  const jsonHeaders = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+  };
 
-    if (!webhookUrl) {
-      context.log.error("AZURE_CONTACT_WEBHOOK_URL not configured");
-      context.res = {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: { error: "Server configuration error" },
-      };
-      return;
-    }
+  try {
+    const body = req.body || {};
 
     // Honeypot spam check - if website field is filled, reject silently
-    if (req.body.website) {
+    if (body.website) {
       context.log.warn("Potential spam submission detected (honeypot filled)");
       // Return success to not alert spammers
       context.res = {
         status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: jsonHeaders,
         body: { success: true, message: "Thank you for your submission" },
       };
       return;
     }
 
     // Validate form data
-    const validationErrors = validateContactFormData(req.body);
+    const validationErrors = validateContactFormData(body);
     if (validationErrors.length > 0) {
       context.res = {
         status: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: jsonHeaders,
         body: {
           error: "Validation failed",
           details: validationErrors,
@@ -112,58 +104,33 @@ module.exports = async function (context, req) {
       return;
     }
 
-    // Sanitize data before sending to webhook
     const sanitizedData = {
-      name: req.body.name.trim(),
-      email: req.body.email.trim().toLowerCase(),
-      phone: req.body.phone ? req.body.phone.trim() : "",
-      message: req.body.message.trim(),
+      name: body.name.trim(),
+      email: body.email.trim().toLowerCase(),
+      phone: body.phone ? body.phone.trim() : "",
+      message: body.message.trim(),
     };
 
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sanitizedData),
-    });
-
-    if (!response.ok) {
-      context.log.error(`Azure webhook returned status ${response.status}`);
-      context.res = {
-        status: response.status,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: { error: "Failed to submit form" },
-      };
-      return;
-    }
-
-    const contentType = response.headers.get("content-type");
-    let responseData;
-    if (contentType && contentType.includes("application/json")) {
-      responseData = await response.json();
-    } else {
-      responseData = await response.text();
-    }
+    const logger = {
+      log: (msg) => context.log(msg),
+      warn: (msg) => context.log.warn(msg),
+      error: (msg) => context.log.error(msg),
+    };
+    await sendContactNotifications(sanitizedData, { logger });
 
     context.res = {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: responseData,
+      headers: jsonHeaders,
+      body: { success: true, message: "Thank you for your enquiry" },
     };
   } catch (error) {
-    context.log.error("Error submitting contact form:", error);
+    context.log.error("Error handling contact form:", error);
     context.res = {
       status: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: jsonHeaders,
       body: { error: "Failed to submit form" },
     };
   }
 };
+
+module.exports.validateContactFormData = validateContactFormData;
