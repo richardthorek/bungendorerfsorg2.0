@@ -31,7 +31,7 @@ Each function is its own directory with `index.js` + `function.json`.
 | `auth-logout/` | `POST /api/auth/logout` | Clear the session, bump `tokenVersion` |
 | `members/` | `GET/POST /api/members`, `DELETE /api/members/{email}` | Allow-list admin (admins only) |
 | `duty/` | `GET /api/duty`, `GET /api/duty/status`, `POST /api/duty`, `POST /api/duty/claim` | Brigade-phone forwarding number (public lookup + members set/claim) |
-| `content/` | `GET/PUT /api/content/{key}` | Editable home-page content (`events`, `training`) in the `content` table |
+| `content/` | `GET/PUT /api/content/{key}` | Editable home-page content (`events`, `training`, `alertBanner`) in the `content` table. GET is public for all three keys; PUT always requires a session — see "Content keys" below |
 | `enquiries/` | `GET /api/enquiries`, `PATCH`/`DELETE /api/enquiries/{id}` | Contact-form submissions list (members only) |
 | `social-chat/` | `POST /api/social/chat` | Social Studio AI copy assistant — one `chatTurn` per message, returns `{message, draft}` |
 | `social-prompt/` | `GET/PUT /api/social/prompt` | Admin-editable voice/rules prompt (`content` table, `settings` partition) |
@@ -46,6 +46,23 @@ rules), `fireDataProxy.js` (fire-danger/fire-incidents fetch + cache), `health.j
 (the `/api/health` check), `externalFeeds.js` (Workstream 7: BOM Fire Weather
 Warning, BOM wind observations, DEA hotspots, TfNSW traffic hazards — reuses
 `fireDataProxy.js`'s `fetchWithFallback` cache-tier helper).
+
+### Content keys (`contentSchema.js`)
+
+`GET /api/content/{key}` is public only for keys on `handlers.js`'s
+`PUBLIC_CONTENT_KEYS` allow-list (`events`, `training`, `alertBanner`); any
+other key 404s. `PUT /api/content/{key}` is always session-gated regardless of
+key — only the read side has a public/private split.
+
+`alertBanner` (roadmap "Bet 3" — see `docs/WEBSITE_ROADMAP.md` §4) is the
+admin-published homepage banner. It reuses the same items-array shape as
+`events`/`training` but only ever holds 0 or 1 items: `[]` means no active
+banner, one item `{ message, severity, postedAt }` means it's live.
+`postedAt` is stamped server-side in `handleContentSet` on every save — the
+client can't set or backdate it. The real cost of this feature is
+governance (who's authorised to post, how it's worded, how it's taken
+down), not the plumbing — see the non-dismissible notice in the admin UI
+(`public/admin.html` → `.alert-banner-editor__notice`).
 
 ### Fire-data caching (`fireDataProxy.js`)
 

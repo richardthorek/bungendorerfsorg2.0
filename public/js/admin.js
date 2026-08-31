@@ -84,6 +84,13 @@
     clarityPages: document.getElementById("clarityPages"),
     claritySignals: document.getElementById("claritySignals"),
     clarityHistory: document.getElementById("clarityHistory"),
+    alertBannerMessage: document.getElementById("alertBannerMessage"),
+    alertBannerSeverity: document.getElementById("alertBannerSeverity"),
+    alertBannerCount: document.getElementById("alertBannerCount"),
+    alertBannerMeta: document.getElementById("alertBannerMeta"),
+    alertBannerSave: document.getElementById("alertBannerSave"),
+    alertBannerClear: document.getElementById("alertBannerClear"),
+    alertBannerMsg: document.getElementById("alertBannerMsg"),
   };
 
   const state = {
@@ -246,7 +253,7 @@
     if (currentViewFromHash() !== "enquiries") loadEnquiries(); // for the nav badge
   }
 
-  const VIEWS = ["duty", "enquiries", "events", "social", "analytics", "members"];
+  const VIEWS = ["duty", "alertBanner", "enquiries", "events", "social", "analytics", "members"];
 
   function currentViewFromHash() {
     const h = (location.hash || "").replace("#", "");
@@ -265,6 +272,7 @@
     if (location.hash.replace("#", "") !== name) history.replaceState(null, "", "#" + name);
     if (name === "members") loadMembers();
     if (name === "duty") loadDuty();
+    if (name === "alertBanner") loadAlertBanner();
     if (name === "events") loadAllContent();
     if (name === "enquiries") loadEnquiries();
     if (name === "social") initSocialStudio();
@@ -1032,6 +1040,81 @@
   });
   document.getElementById("trainSave").addEventListener("click", function (e) {
     saveContent("training", e.currentTarget);
+  });
+
+  /* ------------------------------------------------------------ alert banner */
+  // Roadmap Bet 3: one admin-published banner shown on the public homepage.
+  // Uses the same generic /api/content/:key contract as events/training, but
+  // as a single-item (0 or 1) form rather than a repeatable-rows list.
+
+  function fmtPostedAt(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString(undefined, {
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function renderAlertBanner(items) {
+    const current = Array.isArray(items) && items.length ? items[0] : null;
+    el.alertBannerMessage.value = current ? current.message : "";
+    el.alertBannerSeverity.value = current && current.severity ? current.severity : "info";
+    el.alertBannerCount.textContent = el.alertBannerMessage.value.length + " / 280";
+    el.alertBannerMeta.textContent = current
+      ? "Live now" + (current.postedAt ? " — posted " + fmtPostedAt(current.postedAt) : "")
+      : "No banner currently live.";
+  }
+
+  function loadAlertBanner() {
+    setMsg(el.alertBannerMsg, "");
+    api("/api/content/alertBanner").then(function (r) {
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.alertBannerMsg, (r.data && r.data.error) || "Could not load the banner.", "err");
+        return;
+      }
+      renderAlertBanner(Array.isArray(r.data) ? r.data : []);
+    });
+  }
+
+  function saveAlertBanner(items, btn, successMsg) {
+    setMsg(el.alertBannerMsg, "");
+    btn.disabled = true;
+    api("/api/content/alertBanner", { method: "PUT", body: { items: items } }).then(function (r) {
+      btn.disabled = false;
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.alertBannerMsg, (r.data && r.data.error) || "Could not save.", "err");
+        return;
+      }
+      setMsg(el.alertBannerMsg, successMsg, "ok");
+      renderAlertBanner(r.data.items);
+    });
+  }
+
+  el.alertBannerMessage.addEventListener("input", function () {
+    el.alertBannerCount.textContent = el.alertBannerMessage.value.length + " / 280";
+  });
+
+  el.alertBannerSave.addEventListener("click", function (e) {
+    const message = el.alertBannerMessage.value.trim();
+    if (!message) {
+      setMsg(el.alertBannerMsg, "Write a message before publishing.", "err");
+      return;
+    }
+    saveAlertBanner(
+      [{ message: message, severity: el.alertBannerSeverity.value }],
+      e.currentTarget,
+      "Published. Live on the homepage within a few minutes."
+    );
+  });
+
+  el.alertBannerClear.addEventListener("click", function (e) {
+    saveAlertBanner([], e.currentTarget, "Banner cleared.");
   });
 
   /* ------------------------------------------------------------ social studio */

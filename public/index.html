@@ -308,6 +308,16 @@
         >
       </p>
 
+      <!-- Admin-published alert banner (roadmap Bet 3): a short, human-written
+           update from the brigade — additive to the strip above, not part of
+           the honest-failure-state system, so it's hidden entirely when
+           there's no active banner rather than showing an empty/error state.
+           Populated by public/js/alert-banner.js from a public GET on
+           /api/content/alertBanner. -->
+      <p id="alertBanner" class="alert-banner" hidden>
+        <span id="alertBannerText" class="alert-banner__text"></span>
+      </p>
+
       <!-- Grid section with article cards -->
       <div class="container-fluid content-container">
         <!-- Tabbed Content Navigation -->
@@ -882,6 +892,7 @@
   <script src="js/emergency-data.js" defer></script>
   <script src="js/fire-weather-warning.js" defer></script>
   <script src="js/wind-observations.js" defer></script>
+  <script src="js/alert-banner.js" defer></script>
   <script src="js/map.js" defer></script>
   <script src="js/modal-utils.js" defer></script>
   <script src="js/calendar.js" defer></script>

@@ -767,6 +767,37 @@ describe("content schema", () => {
   test("unknown key is refused", () => {
     expect(validateContent("random", []).ok).toBe(false);
   });
+
+  test("alert banner: empty array clears it, one item is accepted with defaults", () => {
+    expect(validateContent("alertBanner", []).items).toEqual([]);
+
+    const r = validateContent("alertBanner", [
+      { message: "  Crews backburning off Bungendore Rd  " },
+    ]);
+    expect(r.ok).toBe(true);
+    expect(r.items).toEqual([{ message: "Crews backburning off Bungendore Rd", severity: "info" }]);
+  });
+
+  test("alert banner: rejects more than one item, blank message, and bad severity", () => {
+    expect(validateContent("alertBanner", [{ message: "a" }, { message: "b" }]).ok).toBe(false);
+    expect(validateContent("alertBanner", [{ message: "  " }]).ok).toBe(false);
+    expect(validateContent("alertBanner", [{ message: "x", severity: "danger" }]).ok).toBe(false);
+  });
+
+  test("alert banner: message is capped at 280 chars and severity accepts warning", () => {
+    const long = "x".repeat(400);
+    const r = validateContent("alertBanner", [{ message: long, severity: "WARNING" }]);
+    expect(r.ok).toBe(true);
+    expect(r.items[0].message).toHaveLength(280);
+    expect(r.items[0].severity).toBe("warning");
+  });
+
+  test("alert banner: never trusts a client-supplied postedAt", () => {
+    const r = validateContent("alertBanner", [
+      { message: "hello", postedAt: "2000-01-01T00:00:00.000Z" },
+    ]);
+    expect(r.items[0].postedAt).toBeUndefined();
+  });
 });
 
 describe("content handlers", () => {
@@ -811,6 +842,87 @@ describe("content handlers", () => {
     });
     expect(ok.status).toBe(200);
     expect(mockDb.audit.some((a) => a.event === "content_updated")).toBe(true);
+  });
+
+  test("a content key not on the public allow-list stays 404 on GET", async () => {
+    const got = await handlers.handleContentGet("somePrivateKeyThatIsntListed");
+    expect(got.status).toBe(404);
+  });
+});
+
+describe("alert banner content handler (roadmap Bet 3)", () => {
+  const CSRF = { "x-brfs-auth": "1" };
+
+  test("GET is public with no session and defaults to an empty (no banner) array", async () => {
+    const got = await handlers.handleContentGet("alertBanner");
+    expect(got).toMatchObject({ status: 200, body: [] });
+  });
+
+  test("PUT stamps postedAt server-side and ignores any client-supplied value", async () => {
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const before = Date.now();
+
+    const res = await handlers.handleContentSet("alertBanner", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: {
+        items: [
+          {
+            message: "Crews backburning off Bungendore Rd, road remains open.",
+            severity: "warning",
+            postedAt: "2000-01-01T00:00:00.000Z", // must be ignored
+          },
+        ],
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.items).toHaveLength(1);
+    const [saved] = res.body.items;
+    expect(saved.severity).toBe("warning");
+    expect(saved.postedAt).not.toBe("2000-01-01T00:00:00.000Z");
+    expect(new Date(saved.postedAt).getTime()).toBeGreaterThanOrEqual(before);
+
+    const got = await handlers.handleContentGet("alertBanner");
+    expect(got.body).toEqual(res.body.items);
+  });
+
+  test("PUT with an empty array clears the banner", async () => {
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    await handlers.handleContentSet("alertBanner", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { items: [{ message: "Still active" }] },
+    });
+
+    const cleared = await handlers.handleContentSet("alertBanner", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { items: [] },
+    });
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.items).toEqual([]);
+
+    const got = await handlers.handleContentGet("alertBanner");
+    expect(got.body).toEqual([]);
+  });
+
+  test("PUT is refused without a session or the CSRF header, and rejects invalid input", async () => {
+    const anon = await handlers.handleContentSet("alertBanner", {
+      headers: {},
+      body: { items: [{ message: "x" }] },
+    });
+    expect(anon.status).toBe(401);
+
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const noCsrf = await handlers.handleContentSet("alertBanner", {
+      headers: { cookie: cookieHeader },
+      body: { items: [{ message: "x" }] },
+    });
+    expect(noCsrf.status).toBe(403);
+
+    const bad = await handlers.handleContentSet("alertBanner", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { items: [{ message: "" }] },
+    });
+    expect(bad.status).toBe(400);
   });
 });
 

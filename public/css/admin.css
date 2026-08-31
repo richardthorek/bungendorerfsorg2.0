@@ -876,6 +876,40 @@ label {
   font-size: 0.78rem;
   color: var(--ink-faint);
 }
+.editor__field {
+  margin-bottom: 0.9rem;
+  max-width: 100%;
+}
+.editor__field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.editor__field textarea.editor__input {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+.editor__field .editor__meta {
+  display: block;
+  margin-top: 0.3rem;
+  text-align: right;
+}
+
+/* Alert banner governance notice (roadmap Bet 3) — always visible whenever an
+   admin is editing this field, never collapsible/dismissible. Reuses the
+   existing warn/warn-bg tokens rather than inventing a new colour. */
+.alert-banner-editor__notice {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 0 0 1.1rem;
+  max-width: 44rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
 
 @media (max-width: 40rem) {
   .shell {
