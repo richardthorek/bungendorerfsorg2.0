@@ -1,26 +1,52 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/debian
 {
-	"name": "Debian",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"name": "Bungendore RFS Website",
 	"image": "mcr.microsoft.com/devcontainers/base:trixie",
-	"features": {
-		"ghcr.io/devcontainers/features/azure-cli:1": {},
-		"ghcr.io/devcontainers/features/node:1": {
-			"version": "22"
-		}
-	},
-	"postCreateCommand": "npm install && npm --prefix api install"
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
+	"features": {
+		// Node.js — project requires >=18; server.js, Jest, ESLint, Prettier all run on it.
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "20"
+		},
+		// Azure CLI + Azure Functions tooling for the api/ proxy layer and infra/main.bicep.
+		"ghcr.io/devcontainers/features/azure-cli:1": {},
+		"ghcr.io/jlaundry/devcontainer-features/azure-functions-core-tools:1": {},
+		// GitHub CLI — topic-branch -> PR workflow into liveDev.
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		// Claude Code CLI.
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+	},
 
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	// server.js listens on 3000 (npm start).
+	"forwardPorts": [3000],
+	"portsAttributes": {
+		"3000": {
+			"label": "RFS website (Express)",
+			"onAutoForward": "notify"
+		}
+	},
+
+	// Install root + api dependencies after the container is created.
+	"postCreateCommand": "npm install && npm --prefix api install",
 
 	// Configure tool-specific properties.
-	// "customizations": {},
-
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"ms-azuretools.vscode-azurefunctions",
+				"ms-azuretools.vscode-bicep",
+				"orta.vscode-jest",
+				"github.vscode-github-actions"
+			],
+			"settings": {
+				"editor.formatOnSave": true,
+				"editor.defaultFormatter": "esbenp.prettier-vscode",
+				"eslint.validate": ["javascript"]
+			}
+		}
+	}
 }

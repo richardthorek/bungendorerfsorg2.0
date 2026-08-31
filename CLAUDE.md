@@ -74,6 +74,10 @@ npm run build        # lint + test:coverage — the local pre-merge gate
 Topic branch off `liveDev` → PR into `liveDev` → owner promotes to `main`.
 `main` and `liveDev` are protected. Run `npm run build` locally before pushing.
 
+**Never write a `Claude-Session:` trailer or a "session" / claude.ai link into
+commit messages or PR descriptions** — these are public and leak internal session
+URLs. A `Co-Authored-By:` trailer is fine.
+
 ## Where to look for more
 
 - Conventions & quirks → [`.github/copilot-instructions.md`](.github/copilot-instructions.md)
