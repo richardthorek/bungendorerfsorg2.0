@@ -17,8 +17,9 @@ Each function is its own directory with `index.js` + `function.json`.
 | Directory | Route | Purpose |
 | --- | --- | --- |
 | `mapbox-token/` | `GET /api/mapbox-token` | Returns the Mapbox token, origin-validated |
-| `fire-danger/` | `GET /api/fire-danger` | Proxies the fire-danger XML feed (Logic App) |
-| `fire-incidents/` | `GET /api/fire-incidents` | Proxies the incidents GeoJSON (Logic App) |
+| `fire-danger/` | `GET /api/fire-danger` | Proxies the fire-danger XML feed (Logic App). Last-known-good in-memory cache with stale-while-revalidate — see `fireDataProxy.js` below |
+| `fire-incidents/` | `GET /api/fire-incidents` | Proxies the incidents GeoJSON (Logic App). Same cache/staleness policy as `fire-danger/` |
+| `health/` | `GET /api/health` | Public liveness check for external uptime monitoring: `{ status: "ok" \| "degraded", timestamp }` |
 | `contact/` | `POST /api/contact` | Contact-form submit: validates, records to the `enquiries` table, emails the committee DL via ACS (`submit.js` + `notify.js`) |
 | `auth-request/` | `POST /api/auth/request` | Members' area: email a one-time sign-in code (ACS) |
 | `auth-verify/` | `POST /api/auth/verify` | Verify the code, issue the 60-min session cookie |
@@ -36,7 +37,34 @@ Each function is its own directory with `index.js` + `function.json`.
 handlers), `auth.js` / `identity.js` (sessions, allow-list), `store.js` (Table
 Storage), `otpEmail.js` (ACS sign-in code), `aiCopy.js` (Azure OpenAI),
 `clarityInsights.js` (Clarity export API), `phone.js`, `dutyAlert.js`,
-`contentSchema.js`, `functionAdapter.js`.
+`contentSchema.js`, `functionAdapter.js`, `contactValidation.js` (contact-form
+rules), `fireDataProxy.js` (fire-danger/fire-incidents fetch + cache), `health.js`
+(the `/api/health` check).
+
+### Fire-data caching (`fireDataProxy.js`)
+
+`fire-danger` and `fire-incidents` keep an in-memory "last known good" copy of
+the most recent successful upstream response, per process:
+
+- Younger than **90s** ("fresh"): served straight from cache, no upstream call.
+- Upstream fetch fails but the cache is younger than **30 minutes** ("stale"):
+  the cached body is served anyway, marked with an `X-Data-Freshness: stale`
+  header and an `X-Data-Age-Seconds` header (fresh responses send
+  `X-Data-Freshness: fresh` and `X-Data-Age-Seconds: 0`) — never silently
+  presented as live.
+- Older than 30 minutes, or no cache at all: the existing honest error
+  response is returned (see `public/js/emergency-data.js`'s degraded state) —
+  an hours-old incident count during an active fire is worse than admitting
+  the feed is down.
+
+In-memory only (a plain `Map`, no Redis/new dependency): a cold start just
+costs one extra upstream round-trip, and surviving a restart isn't needed for
+the failure mode this guards against. `store.js` (Table Storage) is available
+if that tradeoff ever needs revisiting.
+
+`/api/health` reuses `fireDataProxy`'s own fetch/cache path (rather than a
+second independent probe) to decide `ok` vs `degraded`, so it never doubles
+load on the upstream webhook.
 
 ## Environment variables
 
