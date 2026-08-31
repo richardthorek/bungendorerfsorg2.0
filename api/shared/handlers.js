@@ -5,6 +5,7 @@
  * can share one implementation.
  */
 
+const crypto = require("crypto");
 const {
   generateCode,
   hashCode,
@@ -52,6 +53,14 @@ const { sendSignInCode } = require("./otpEmail");
 
 const GENERIC_OK = { status: 200, body: { ok: true } };
 const CODE_MINUTES = 10;
+
+/** Length-safe, constant-time string comparison for shared secrets / PINs. */
+function safeEqual(a, b) {
+  const ab = Buffer.from(String(a == null ? "" : a));
+  const bb = Buffer.from(String(b == null ? "" : b));
+  if (ab.length !== bb.length || ab.length === 0) return false;
+  return crypto.timingSafeEqual(ab, bb);
+}
 
 /* ------------------------------------------------------------- POST /auth/request */
 
@@ -187,6 +196,9 @@ async function handleAuthMe(req, env = process.env) {
 }
 
 async function handleAuthLogout(req, env = process.env) {
+  if (!hasCsrfHeader(req || { headers: {} })) {
+    return { status: 403, body: { error: "Bad request" } };
+  }
   // Bump the member's tokenVersion so the just-issued JWT can't be replayed
   // after sign-out (sessions are otherwise stateless).
   try {
@@ -292,7 +304,7 @@ function dutyKeyOk(req, env) {
   const h = req.headers || {};
   const q = req.query || {};
   const provided = h["x-duty-key"] || h["X-Duty-Key"] || q.key || q.Key;
-  return provided === key;
+  return safeEqual(provided, key);
 }
 
 /**
@@ -317,13 +329,15 @@ async function handleDutyStatus(req, env = process.env) {
   const contacts = (await listDutyContacts(10, env)).filter(
     (c) => !duty || c.number !== duty.number
   );
+  // Only admins see the setter's email address; every member sees the name.
+  const isAdmin = s.member.role === "admin";
   return {
     status: 200,
     body: {
       number: duty ? duty.number : "",
       label: duty ? duty.label : "",
       masked: duty ? maskPhone(duty.number) : "",
-      setBy: duty ? duty.setBy : "",
+      setBy: duty && isAdmin ? duty.setBy : "",
       setByName: duty ? duty.setByName : "",
       method: duty ? duty.method : "",
       setAt: duty ? duty.setAt : "",
@@ -397,7 +411,7 @@ async function handleDutyClaim(req, env = process.env) {
 
   const command = m[1].toLowerCase();
   const pin = m[2] || "";
-  const pinOk = env.DUTY_CLAIM_PIN && pin && pin === env.DUTY_CLAIM_PIN;
+  const pinOk = Boolean(env.DUTY_CLAIM_PIN) && safeEqual(pin, env.DUTY_CLAIM_PIN);
 
   const ip = getClientIp(req);
   const rl = await hitRateLimit(`claim:${from || ip}`, { max: 5, windowSeconds: 900 }, env);

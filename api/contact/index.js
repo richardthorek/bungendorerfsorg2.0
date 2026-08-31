@@ -7,6 +7,7 @@
  */
 
 const { handleContactSubmission } = require("./submit");
+const { getClientIp } = require("../shared/auth");
 
 /**
  * Validates contact form data
@@ -116,7 +117,19 @@ module.exports = async function (context, req) {
       warn: (msg) => context.log.warn(msg),
       error: (msg) => context.log.error(msg),
     };
-    await handleContactSubmission(sanitizedData, { logger });
+    const result = await handleContactSubmission(sanitizedData, {
+      logger,
+      ip: getClientIp(req),
+    });
+
+    if (result.rateLimited) {
+      context.res = {
+        status: 429,
+        headers: { ...jsonHeaders, "Retry-After": String(result.retryAfter || 60) },
+        body: { error: "Too many submissions. Please try again later." },
+      };
+      return;
+    }
 
     context.res = {
       status: 200,

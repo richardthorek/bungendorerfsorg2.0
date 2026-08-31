@@ -225,11 +225,34 @@ async function hitRateLimit(key, { max, windowSeconds }, env) {
     "Replace"
   );
 
+  // Table Storage has no TTL, so IP-keyed counters would accumulate forever.
+  // Opportunistically sweep stale rows on a small fraction of calls.
+  if (Math.random() < 0.02) {
+    purgeExpiredRateLimits(env).catch(() => {});
+  }
+
   if (count > max) {
     const retryAfterSeconds = Math.ceil((windowStart + windowSeconds * 1000 - now) / 1000);
     return { allowed: false, remaining: 0, retryAfterSeconds: Math.max(retryAfterSeconds, 1) };
   }
   return { allowed: true, remaining: max - count, retryAfterSeconds: 0 };
+}
+
+/**
+ * Delete rate-limit rows whose window closed more than `olderThanMs` ago
+ * (default 24h). Bounded per pass so it never turns into a long scan.
+ */
+async function purgeExpiredRateLimits(env, olderThanMs = 86_400_000) {
+  const client = (await db(env)).rate;
+  const cutoff = Date.now() - olderThanMs;
+  const dead = [];
+  const iter = client.listEntities({ queryOptions: { filter: "PartitionKey eq 'rl'" } });
+  for await (const e of iter) {
+    if (!e.windowStartMs || e.windowStartMs < cutoff) dead.push(e.rowKey);
+    if (dead.length >= 200) break;
+  }
+  await Promise.all(dead.map((rowKey) => client.deleteEntity("rl", rowKey).catch(() => {})));
+  return dead.length;
 }
 
 /* --------------------------------------------------------------------- audit */
@@ -484,5 +507,6 @@ module.exports = {
   updateAuthCode,
   deleteAuthCode,
   hitRateLimit,
+  purgeExpiredRateLimits,
   audit,
 };

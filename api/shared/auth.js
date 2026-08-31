@@ -103,9 +103,17 @@ function clearCookie() {
 function getClientIp(req) {
   const xff =
     (req.headers && (req.headers["x-forwarded-for"] || req.headers["X-Forwarded-For"])) || "";
-  const first = String(xff).split(",")[0].trim();
-  // strip a trailing :port that some proxies add
-  return first.replace(/:\d+$/, "") || "unknown";
+  const parts = String(xff)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  // Azure Front Door / Static Web Apps appends the real client IP as the LAST
+  // entry; any earlier entries are attacker-supplied and must not be trusted
+  // (taking the first entry lets a client forge its rate-limit identity).
+  const ip = parts.length ? parts[parts.length - 1] : "";
+  // strip a trailing :port that some proxies add (only for IPv4 — IPv6 has colons)
+  const hasPort = (ip.match(/:/g) || []).length === 1;
+  return (hasPort ? ip.replace(/:\d+$/, "") : ip) || "unknown";
 }
 
 /** Mutating requests must carry the custom header a cross-site form can't set. */

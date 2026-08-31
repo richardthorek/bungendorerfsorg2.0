@@ -364,9 +364,17 @@ describe("handleAuthMe", () => {
 
   test("signing out invalidates the token server-side", async () => {
     const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
-    await handlers.handleAuthLogout({ headers: { cookie: cookieHeader } });
+    await handlers.handleAuthLogout({ headers: { cookie: cookieHeader, "x-brfs-auth": "1" } });
     const res = await handlers.handleAuthMe({ headers: { cookie: cookieHeader } });
     expect(res.status).toBe(401);
+  });
+
+  test("logout without the CSRF header is refused and keeps the session", async () => {
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const out = await handlers.handleAuthLogout({ headers: { cookie: cookieHeader } });
+    expect(out.status).toBe(403);
+    const res = await handlers.handleAuthMe({ headers: { cookie: cookieHeader } });
+    expect(res.status).toBe(200);
   });
 });
 
@@ -530,6 +538,23 @@ describe("duty line", () => {
     expect(r.body.contacts).toEqual([
       expect.objectContaining({ number: "+61488880286", label: "Sandi" }),
     ]);
+  });
+
+  test("status hides the setter's email from members but shows it to admins", async () => {
+    const setter = await signIn("setter@rfs.nsw.gov.au");
+    await handlers.handleDutySet({
+      headers: { cookie: setter.cookieHeader, ...CSRF },
+      body: { number: "0488880286", label: "Sandi" },
+    });
+
+    const member = await signIn("viewer@rfs.nsw.gov.au");
+    const asMember = await handlers.handleDutyStatus({ headers: { cookie: member.cookieHeader } });
+    expect(asMember.body.setBy).toBe("");
+    expect(asMember.body.setByName).toBe("T");
+
+    const admin = await signIn("chief@rfs.nsw.gov.au", "admin");
+    const asAdmin = await handlers.handleDutyStatus({ headers: { cookie: admin.cookieHeader } });
+    expect(asAdmin.body.setBy).toBe("setter@rfs.nsw.gov.au");
   });
 
   test("one-click set from a saved contact carries its label", async () => {
@@ -799,5 +824,36 @@ describe("contact submission stores AND emails", () => {
     const list = await store.listEnquiries();
     expect(list[0].name).toBe("Jane");
     expect(list[0].source).toBe("website");
+  });
+
+  test("throttles repeated submissions from the same email", async () => {
+    const silent = { log() {}, warn() {}, error() {} };
+    const send = (n) =>
+      handleContactSubmission(
+        { name: "Spammer", email: "flood@x.org", phone: "", message: `attempt ${n} here` },
+        { logger: silent }
+      );
+
+    for (let i = 0; i < 4; i++) {
+      expect((await send(i)).rateLimited).toBeFalsy();
+    }
+    const blocked = await send(99);
+    expect(blocked.rateLimited).toBe(true);
+    expect(blocked.stored).toBe(false);
+    expect(blocked.retryAfter).toBeGreaterThan(0);
+  });
+
+  test("throttles a flood of submissions from one IP", async () => {
+    const silent = { log() {}, warn() {}, error() {} };
+    const send = (n) =>
+      handleContactSubmission(
+        { name: "Bot", email: `bot${n}@x.org`, phone: "", message: `message number ${n}` },
+        { logger: silent, ip: "203.0.113.7" }
+      );
+
+    for (let i = 0; i < 6; i++) {
+      expect((await send(i)).rateLimited).toBeFalsy();
+    }
+    expect((await send(99)).rateLimited).toBe(true);
   });
 });

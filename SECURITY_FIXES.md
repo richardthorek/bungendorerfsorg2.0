@@ -6,6 +6,22 @@ This document details the security fixes and improvements implemented to address
 
 ---
 
+## Members' area review — August 2026
+
+Full security/performance/UX review of the members' area, brigade-phone,
+enquiries and contact→ACS work (PRs #90–#101). No backdoors found. Fixes applied:
+
+| # | Severity | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | High | `/api/contact` had no rate limiting — an open relay for the confirmation email (bomb any address) and a way to flood the leadership DL / `enquiries` table | `handleContactSubmission` now throttles per-IP (6/hr) and per-submitted-email (4/hr) via the existing `hitRateLimit`; both backends pass the client IP and return `429` + `Retry-After`. Fails open on limiter error. |
+| 2 | Low | `getClientIp` trusted the **first** `X-Forwarded-For` entry, which is client-supplied → IP rate-limits were spoofable | Takes the **last** entry (appended by Azure Front Door / SWA); IPv6-safe port strip |
+| 3 | Low | `handleAuthLogout` skipped the `X-BRFS-Auth` CSRF-header check every other mutating handler enforces | Added the check (`403` without it); the admin client already sends it |
+| 4 | Low | `handleDutyStatus` returned the setter's full email to every member | `setBy` now admin-only; members still get `setByName` |
+| 5 | Low | `dutyKeyOk` and the SMS-claim PIN compared secrets with `===` | Constant-time `crypto.timingSafeEqual` via a length-safe `safeEqual` helper |
+| 6 | Nit | `ratelimits` rows accumulated forever (Table Storage has no TTL) | `purgeExpiredRateLimits` sweeps rows >24h old, run opportunistically (~2% of `hitRateLimit` calls), capped at 200/pass |
+
+---
+
 ## Critical Security Fixes Implemented
 
 ### 1. ✅ Removed Token Logging (CRITICAL)

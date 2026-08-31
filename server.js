@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const path = require("path");
 const { handleContactSubmission } = require("./api/contact/submit");
+const { getClientIp } = require("./api/shared/auth");
 const {
   handleAuthRequest,
   handleAuthVerify,
@@ -148,7 +149,16 @@ app.post("/api/contact", async (req, res) => {
       message: body.message.trim(),
     };
 
-    await handleContactSubmission(sanitizedData);
+    const result = await handleContactSubmission(sanitizedData, {
+      ip: getClientIp(req),
+    });
+
+    if (result.rateLimited) {
+      return res
+        .status(429)
+        .set("Retry-After", String(result.retryAfter || 60))
+        .json({ error: "Too many submissions. Please try again later." });
+    }
 
     res.json({ success: true, message: "Thank you for your enquiry" });
   } catch (error) {
