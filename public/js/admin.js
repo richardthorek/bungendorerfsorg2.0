@@ -31,6 +31,14 @@
     newName: document.getElementById("newName"),
     newRole: document.getElementById("newRole"),
     membersMsg: document.getElementById("membersMsg"),
+    dutyDot: document.getElementById("dutyDot"),
+    dutyState: document.getElementById("dutyState"),
+    dutyNumber: document.getElementById("dutyNumber"),
+    dutyMeta: document.getElementById("dutyMeta"),
+    dutyForm: document.getElementById("dutyForm"),
+    dutyInput: document.getElementById("dutyInput"),
+    dutyMsg: document.getElementById("dutyMsg"),
+    dutyHistory: document.getElementById("dutyHistory"),
   };
 
   const state = { me: null, expiresAt: null, timer: null };
@@ -176,6 +184,7 @@
     });
     if (location.hash.replace("#", "") !== name) history.replaceState(null, "", "#" + name);
     if (name === "members") loadMembers();
+    if (name === "duty") loadDuty();
   }
 
   el.navItems.forEach(function (b) {
@@ -340,6 +349,77 @@
       setMsg(el.membersMsg, "Saved " + body.email + ".", "ok");
       el.addMemberForm.reset();
       loadMembers();
+    });
+  });
+
+  /* ------------------------------------------------------------- duty line UI */
+
+  function loadDuty() {
+    api("/api/duty/status").then(function (r) {
+      if (!r) return;
+      if (!r.ok) {
+        el.dutyState.textContent = r.data.error || "Could not load the duty line.";
+        return;
+      }
+      renderDuty(r.data);
+    });
+  }
+
+  function renderDuty(d) {
+    const has = !!d.number;
+    el.dutyDot.className = "duty-dot " + (has ? "is-ok" : "is-warn");
+    el.dutyState.textContent = has ? "Duty line active" : "No duty number set";
+    el.dutyNumber.textContent = d.number || "—";
+    el.dutyMeta.textContent = has
+      ? "Set " +
+        (d.setAt ? relTime(d.setAt) : "—") +
+        (d.setByName || d.setBy ? " by " + (d.setByName || d.setBy) : "") +
+        (d.method ? " (" + d.method + ")" : "")
+      : "Calls fall through to the Twilio backup number.";
+
+    el.dutyHistory.innerHTML = "";
+    const rows = d.history || [];
+    if (!rows.length) {
+      const li = document.createElement("li");
+      li.className = "duty-history__empty";
+      li.textContent = "No changes recorded yet.";
+      el.dutyHistory.appendChild(li);
+      return;
+    }
+    rows.forEach(function (h) {
+      const li = document.createElement("li");
+      const num = document.createElement("span");
+      num.className = "duty-history__num";
+      num.textContent = h.number + (h.setByName ? " — " + h.setByName : "");
+      const when = document.createElement("span");
+      when.className = "duty-history__when";
+      when.textContent = h.setAt ? relTime(h.setAt) : "";
+      li.appendChild(num);
+      li.appendChild(when);
+      el.dutyHistory.appendChild(li);
+    });
+  }
+
+  el.dutyForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const number = el.dutyInput.value.trim();
+    if (!number) {
+      setMsg(el.dutyMsg, "Enter a phone number.", "err");
+      return;
+    }
+    setMsg(el.dutyMsg, "");
+    const btn = el.dutyForm.querySelector("button");
+    btn.disabled = true;
+    api("/api/duty", { method: "POST", body: { number: number } }).then(function (r) {
+      btn.disabled = false;
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.dutyMsg, r.data.error || "Could not set the duty line.", "err");
+        return;
+      }
+      setMsg(el.dutyMsg, "Duty line is now " + r.data.number + ".", "ok");
+      el.dutyForm.reset();
+      loadDuty();
     });
   });
 

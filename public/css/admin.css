@@ -473,9 +473,111 @@ label {
   margin-left: 0.4rem;
 }
 
+/* -------------------------------------------------- duty line */
+
+.duty-card {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 1.1rem 1.25rem;
+  max-width: 32rem;
+  box-shadow: var(--shadow);
+}
+.duty-card__row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+}
+.duty-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  flex: none;
+}
+.duty-dot.is-ok {
+  background: var(--ok);
+}
+.duty-dot.is-warn {
+  background: var(--warn);
+}
+.duty-card__num {
+  font-family: var(--mono);
+  font-size: 1.55rem;
+  letter-spacing: 0.05em;
+  margin: 0.55rem 0 0.2rem;
+}
+.duty-card__meta {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.duty-form {
+  margin-top: 1.5rem;
+  max-width: 32rem;
+}
+.duty-form__row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: stretch;
+}
+.duty-form__row input {
+  flex: 1;
+}
+.duty-form__row .btn {
+  flex: none;
+}
+.duty-form__hint {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  margin: 0.4rem 0 0;
+}
+
+.duty-history__h {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1rem;
+}
+.duty-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 32rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.duty-history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.duty-history li:last-child {
+  border-bottom: none;
+}
+.duty-history__num {
+  font-family: var(--mono);
+  color: var(--ink);
+}
+.duty-history__when {
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.duty-history__empty {
+  color: var(--ink-faint);
+  justify-content: center;
+}
+
 @media (max-width: 40rem) {
   .shell {
     grid-template-columns: 1fr;
+  }
+  .duty-form__row {
+    flex-direction: column;
   }
   .nav {
     flex-direction: row;

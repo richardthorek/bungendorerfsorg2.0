@@ -8,6 +8,8 @@
  *   authcodes  PK "code"    RK <email>  — one pending sign-in code per person
  *   ratelimits PK "rl"      RK <key>    — sliding-ish windows for abuse control
  *   auditlog   PK <yyyy-mm-dd> RK <ts>-<rand>
+ *   duty       PK "duty"   RK "current" — the number the public line forwards to;
+ *                          PK "duty"   RK "h:<reverse-ts>" — recent change history
  */
 
 const crypto = require("crypto");
@@ -18,9 +20,11 @@ const TABLES = {
   codes: "authcodes",
   rate: "ratelimits",
   audit: "auditlog",
+  duty: "duty",
 };
 
 let clients = null;
+let ready = null;
 
 function connectionString(env) {
   const cs = (env || process.env).BRFS_STORAGE_CONNECTION;
@@ -28,28 +32,43 @@ function connectionString(env) {
   return cs;
 }
 
-/** Lazily build (and memoize) a TableClient per table, creating the table once. */
+/** Build (and memoize) a TableClient per table. */
 function tables(env) {
   if (clients) return clients;
   const cs = connectionString(env);
   clients = {};
   for (const [key, name] of Object.entries(TABLES)) {
-    const client = TableClient.fromConnectionString(cs, name, { allowInsecureConnection: true });
-    clients[key] = client;
-    client.createTable().catch((err) => {
-      // 409 TableAlreadyExists is the normal path
-      if (err && err.statusCode !== 409) {
-        // eslint-disable-next-line no-console
-        console.error(`createTable(${name}) failed: ${err.message}`);
-      }
-    });
+    clients[key] = TableClient.fromConnectionString(cs, name, { allowInsecureConnection: true });
   }
   return clients;
+}
+
+/**
+ * Resolve once every table exists, then hand back the clients. Every public
+ * function awaits this first so operations never race table creation.
+ */
+async function db(env) {
+  const t = tables(env);
+  if (!ready) {
+    ready = Promise.all(
+      Object.entries(TABLES).map(([key, name]) =>
+        t[key].createTable().catch((err) => {
+          if (err && err.statusCode !== 409) {
+            // eslint-disable-next-line no-console
+            console.error(`createTable(${name}) failed: ${err.message}`);
+          }
+        })
+      )
+    );
+  }
+  await ready;
+  return t;
 }
 
 /** For tests / connection changes. */
 function _reset() {
   clients = null;
+  ready = null;
 }
 
 async function getEntity(client, partitionKey, rowKey) {
@@ -78,13 +97,13 @@ function memberFromEntity(e) {
 }
 
 async function getMember(email, env) {
-  const e = await getEntity(tables(env).members, "member", email);
+  const e = await getEntity((await db(env)).members, "member", email);
   return memberFromEntity(e);
 }
 
 async function listMembers(env) {
   const out = [];
-  const iter = tables(env).members.listEntities({
+  const iter = (await db(env)).members.listEntities({
     queryOptions: { filter: "PartitionKey eq 'member'" },
   });
   for await (const e of iter) out.push(memberFromEntity(e));
@@ -105,13 +124,13 @@ async function upsertMember({ email, displayName, role, disabled, addedBy }, env
     addedBy: existing ? existing.addedBy : addedBy || "",
     addedAt: existing ? existing.addedAt : new Date().toISOString(),
   };
-  await tables(env).members.upsertEntity(entity, "Replace");
+  await (await db(env)).members.upsertEntity(entity, "Replace");
   return memberFromEntity(entity);
 }
 
 async function deleteMember(email, env) {
   try {
-    await tables(env).members.deleteEntity("member", email);
+    await (await db(env)).members.deleteEntity("member", email);
   } catch (err) {
     if (!err || err.statusCode !== 404) throw err;
   }
@@ -121,7 +140,9 @@ async function deleteMember(email, env) {
 async function bumpTokenVersion(email, env) {
   const m = await getMember(email, env);
   if (!m) return;
-  await tables(env).members.updateEntity(
+  await (
+    await db(env)
+  ).members.updateEntity(
     { partitionKey: "member", rowKey: email, tokenVersion: m.tokenVersion + 1 },
     "Merge"
   );
@@ -129,7 +150,9 @@ async function bumpTokenVersion(email, env) {
 
 async function touchMemberLogin(email, env) {
   try {
-    await tables(env).members.updateEntity(
+    await (
+      await db(env)
+    ).members.updateEntity(
       { partitionKey: "member", rowKey: email, lastLoginAt: new Date().toISOString() },
       "Merge"
     );
@@ -141,7 +164,7 @@ async function touchMemberLogin(email, env) {
 /* --------------------------------------------------------------- sign-in codes */
 
 async function getAuthCode(email, env) {
-  const e = await getEntity(tables(env).codes, "code", email);
+  const e = await getEntity((await db(env)).codes, "code", email);
   if (!e) return null;
   return {
     email,
@@ -155,19 +178,20 @@ async function getAuthCode(email, env) {
 }
 
 async function putAuthCode(email, fields, env) {
-  await tables(env).codes.upsertEntity(
-    { partitionKey: "code", rowKey: email, ...fields },
-    "Replace"
-  );
+  await (
+    await db(env)
+  ).codes.upsertEntity({ partitionKey: "code", rowKey: email, ...fields }, "Replace");
 }
 
 async function updateAuthCode(email, fields, env) {
-  await tables(env).codes.updateEntity({ partitionKey: "code", rowKey: email, ...fields }, "Merge");
+  await (
+    await db(env)
+  ).codes.updateEntity({ partitionKey: "code", rowKey: email, ...fields }, "Merge");
 }
 
 async function deleteAuthCode(email, env) {
   try {
-    await tables(env).codes.deleteEntity("code", email);
+    await (await db(env)).codes.deleteEntity("code", email);
   } catch (err) {
     if (!err || err.statusCode !== 404) throw err;
   }
@@ -181,7 +205,7 @@ async function deleteAuthCode(email, env) {
  */
 async function hitRateLimit(key, { max, windowSeconds }, env) {
   const now = Date.now();
-  const client = tables(env).rate;
+  const client = (await db(env)).rate;
   const existing = await getEntity(client, "rl", key);
   let count = 0;
   let windowStart = now;
@@ -210,7 +234,9 @@ async function audit(event, { email = "", ip = "", detail = "" } = {}, env) {
   const now = new Date();
   const rowKey = `${now.toISOString()}-${crypto.randomBytes(4).toString("hex")}`;
   try {
-    await tables(env).audit.createEntity({
+    await (
+      await db(env)
+    ).audit.createEntity({
       partitionKey: now.toISOString().slice(0, 10),
       rowKey,
       event,
@@ -225,9 +251,79 @@ async function audit(event, { email = "", ip = "", detail = "" } = {}, env) {
   }
 }
 
+/* ---------------------------------------------------------------------- duty */
+
+function dutyFromEntity(e) {
+  if (!e) return null;
+  return {
+    number: e.number || "",
+    setBy: e.setBy || "",
+    setByName: e.setByName || "",
+    method: e.method || "",
+    setAt: e.setAt || "",
+  };
+}
+
+async function getDuty(env) {
+  return dutyFromEntity(await getEntity((await db(env)).duty, "duty", "current"));
+}
+
+/**
+ * Set the forwarding number and append a history row.
+ * @param {{number:string, setBy:string, setByName?:string, method:string}} entry
+ */
+async function setDuty(entry, env) {
+  const setAt = new Date().toISOString();
+  const record = {
+    partitionKey: "duty",
+    rowKey: "current",
+    number: entry.number,
+    setBy: entry.setBy || "",
+    setByName: entry.setByName || "",
+    method: entry.method || "",
+    setAt,
+  };
+  await (await db(env)).duty.upsertEntity(record, "Replace");
+  // reverse-timestamp row key so listing is newest-first
+  const reverse = String(1e15 - Date.now()).padStart(16, "0");
+  await (
+    await db(env)
+  ).duty.createEntity({
+    partitionKey: "duty",
+    rowKey: `h:${reverse}`,
+    number: entry.number,
+    setBy: entry.setBy || "",
+    setByName: entry.setByName || "",
+    method: entry.method || "",
+    setAt,
+  });
+  return dutyFromEntity(record);
+}
+
+async function listDutyHistory(limit, env) {
+  const out = [];
+  const iter = (await db(env)).duty.listEntities({
+    queryOptions: { filter: "PartitionKey eq 'duty' and RowKey gt 'h:' and RowKey lt 'h;'" },
+  });
+  for await (const e of iter) {
+    out.push({
+      number: e.number || "",
+      setBy: e.setBy || "",
+      setByName: e.setByName || "",
+      method: e.method || "",
+      setAt: e.setAt || "",
+    });
+    if (out.length >= (limit || 20)) break;
+  }
+  return out;
+}
+
 module.exports = {
   TABLES,
   _reset,
+  getDuty,
+  setDuty,
+  listDutyHistory,
   getMember,
   listMembers,
   upsertMember,

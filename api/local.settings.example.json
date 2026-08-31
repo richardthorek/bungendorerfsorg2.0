@@ -12,6 +12,7 @@
     "BRFS_STORAGE_CONNECTION": "UseDevelopmentStorage=true",
     "AUTH_ALLOWED_EMAIL_DOMAIN": "rfs.nsw.gov.au",
     "AUTH_SESSION_MINUTES": "60",
+    "DUTY_LOOKUP_KEY": "",
     "AZURE_CALENDAR_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
     "AZURE_INCIDENTS_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
     "AZURE_FIRE_DANGER_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",

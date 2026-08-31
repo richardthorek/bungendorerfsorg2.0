@@ -11,6 +11,9 @@ const {
   handleMembersList,
   handleMembersUpsert,
   handleMembersDelete,
+  handleDutyLookup,
+  handleDutyStatus,
+  handleDutySet,
 } = require("./api/shared/handlers");
 
 const allowedOrigins = [
@@ -267,6 +270,10 @@ app.delete(
   "/api/members/:email",
   mirror((req) => handleMembersDelete(req, req.params.email, process.env))
 );
+
+app.get("/api/duty/status", mirror(handleDutyStatus));
+app.get("/api/duty", mirror(handleDutyLookup));
+app.post("/api/duty", mirror(handleDutySet));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

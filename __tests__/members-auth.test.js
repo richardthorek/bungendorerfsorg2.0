@@ -10,13 +10,21 @@ process.env.AUTH_SESSION_MINUTES = "60";
 
 /* ------------------------------------------------------------ in-memory store */
 
-const mockDb = { members: new Map(), codes: new Map(), rate: new Map(), audit: [] };
+const mockDb = {
+  members: new Map(),
+  codes: new Map(),
+  rate: new Map(),
+  audit: [],
+  duty: { current: null, history: [] },
+};
 
 function resetDb() {
   mockDb.members.clear();
   mockDb.codes.clear();
   mockDb.rate.clear();
   mockDb.audit.length = 0;
+  mockDb.duty.current = null;
+  mockDb.duty.history.length = 0;
 }
 
 jest.mock("../api/shared/store", () => ({
@@ -74,6 +82,18 @@ jest.mock("../api/shared/store", () => ({
   },
   async audit(event, meta) {
     mockDb.audit.push({ event, ...meta });
+  },
+  async getDuty() {
+    return mockDb.duty.current || null;
+  },
+  async setDuty(entry) {
+    const setAt = new Date().toISOString();
+    mockDb.duty.current = { ...entry, setAt };
+    mockDb.duty.history.unshift({ ...entry, setAt });
+    return mockDb.duty.current;
+  },
+  async listDutyHistory(limit) {
+    return mockDb.duty.history.slice(0, limit || 20);
   },
 }));
 
@@ -327,5 +347,92 @@ describe("members management", () => {
     );
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/last admin/i);
+  });
+});
+
+/* ------------------------------------------------------------------- phone */
+
+describe("normalizeAuPhone", () => {
+  const { normalizeAuPhone, maskPhone } = require("../api/shared/phone");
+
+  test("accepts local, spaced, and +61 forms", () => {
+    expect(normalizeAuPhone("0488880286")).toBe("+61488880286");
+    expect(normalizeAuPhone("0488 880 286")).toBe("+61488880286");
+    expect(normalizeAuPhone("+61 488 880 286")).toBe("+61488880286");
+    expect(normalizeAuPhone("(02) 6238 1234")).toBe("+61262381234");
+  });
+
+  test("rejects junk", () => {
+    expect(normalizeAuPhone("12345")).toBe("");
+    expect(normalizeAuPhone("+1 555 0100")).toBe("");
+    expect(normalizeAuPhone("")).toBe("");
+  });
+
+  test("maskPhone shows only the last four", () => {
+    expect(maskPhone("+61488880286")).toMatch(/0286$/);
+    expect(maskPhone("+61488880286")).not.toContain("4888");
+  });
+});
+
+/* -------------------------------------------------------------- duty line */
+
+describe("duty line", () => {
+  const CSRF = { "x-brfs-auth": "1" };
+
+  test("lookup 503s when nothing is set, 200s with { Main } once set", async () => {
+    let r = await handlers.handleDutyLookup({ headers: {} });
+    expect(r.status).toBe(503);
+
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    await handlers.handleDutySet({
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { number: "0488880286" },
+    });
+
+    r = await handlers.handleDutyLookup({ headers: {} });
+    expect(r).toEqual({ status: 200, body: { Main: "+61488880286" } });
+  });
+
+  test("lookup enforces X-Duty-Key when configured", async () => {
+    process.env.DUTY_LOOKUP_KEY = "s3cr3t";
+    try {
+      const noKey = await handlers.handleDutyLookup({ headers: {} });
+      expect(noKey.status).toBe(401);
+      const badKey = await handlers.handleDutyLookup({ headers: { "x-duty-key": "nope" } });
+      expect(badKey.status).toBe(401);
+    } finally {
+      delete process.env.DUTY_LOOKUP_KEY;
+    }
+  });
+
+  test("set requires a session and the CSRF header, and validates the number", async () => {
+    const anon = await handlers.handleDutySet({ headers: {}, body: { number: "0488880286" } });
+    expect(anon.status).toBe(401);
+
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const noCsrf = await handlers.handleDutySet({
+      headers: { cookie: cookieHeader },
+      body: { number: "0488880286" },
+    });
+    expect(noCsrf.status).toBe(403);
+
+    const bad = await handlers.handleDutySet({
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { number: "nope" },
+    });
+    expect(bad.status).toBe(400);
+  });
+
+  test("status returns the current number, masked, plus history", async () => {
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const hdr = { cookie: cookieHeader, ...CSRF };
+    await handlers.handleDutySet({ headers: hdr, body: { number: "0488880286" } });
+    await handlers.handleDutySet({ headers: hdr, body: { number: "0412345678" } });
+
+    const r = await handlers.handleDutyStatus({ headers: { cookie: cookieHeader } });
+    expect(r.status).toBe(200);
+    expect(r.body.number).toBe("+61412345678");
+    expect(r.body.masked).toMatch(/5678$/);
+    expect(r.body.history.length).toBe(2);
   });
 });

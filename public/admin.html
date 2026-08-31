@@ -96,18 +96,45 @@
         </nav>
 
         <main id="main" class="content">
-          <!-- Duty line (built in a later change) -->
+          <!-- Duty line -->
           <section id="view-duty" class="view">
             <h2>Duty line</h2>
-            <div class="placeholder">
-              <p class="placeholder__lead">The call-forwarding switch will live here.</p>
-              <p>
-                Today the public number is forwarded using a lookup that depends on the old
-                Microsoft&nbsp;365 tenant. This screen will show which phone is on duty, when it
-                last changed, and let an authorised member take the line.
-              </p>
-              <p class="placeholder__tag">Coming in the next update</p>
+            <p class="view__lead">
+              Calls and texts to the brigade&rsquo;s public number are forwarded to whichever phone
+              is set here.
+            </p>
+
+            <div id="dutyCard" class="duty-card" aria-live="polite">
+              <div class="duty-card__row">
+                <span class="duty-dot" id="dutyDot"></span>
+                <span id="dutyState">Loading&hellip;</span>
+              </div>
+              <p class="duty-card__num" id="dutyNumber">&mdash;</p>
+              <p class="duty-card__meta" id="dutyMeta"></p>
             </div>
+
+            <form id="dutyForm" class="duty-form" novalidate>
+              <label for="dutyInput">Change the duty number</label>
+              <div class="duty-form__row">
+                <input
+                  id="dutyInput"
+                  type="tel"
+                  inputmode="tel"
+                  autocomplete="off"
+                  placeholder="0488 880 286"
+                />
+                <button type="submit" class="btn btn--primary">Set duty line</button>
+              </div>
+              <p class="duty-form__hint">
+                Australian mobile or landline. This takes effect on the next incoming call.
+              </p>
+            </form>
+            <p id="dutyMsg" class="msg" role="status" aria-live="polite" hidden></p>
+
+            <h3 class="duty-history__h">Recent changes</h3>
+            <ul id="dutyHistory" class="duty-history">
+              <li class="duty-history__empty">&mdash;</li>
+            </ul>
           </section>
 
           <!-- Events & training (built in a later change) -->

@@ -258,6 +258,29 @@ BRFS_STORAGE_CONNECTION="<brfsstorage connection string>" \
 
 ---
 
+### 7. Duty line (call/SMS forwarding number)
+
+Replaces the SharePoint lookup the Twilio Studio flow used to find the forwarding
+number. Same `{ "Main": "+61…" }` contract, so the Twilio "Make HTTP Request"
+widgets only need their URL changed.
+
+| Endpoint                    | Notes                                                                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/duty`             | Public — the Twilio flow calls this. Returns `{ "Main": "+61…" }`. If `DUTY_LOOKUP_KEY` is set, the caller must send `X-Duty-Key: <value>`. A missing record → 503 so Twilio falls through to its own hardcoded backup number. |
+| `GET /api/duty/status`      | Members only. `{ number, masked, setBy, setByName, method, setAt, history[] }` for the dashboard.                                                                                                                              |
+| `POST /api/duty` `{number}` | Members only, `X-BRFS-Auth: 1`. Validates an AU mobile/landline, stores it, appends a history row, audits `duty_changed`.                                                                                                      |
+
+**Storage:** table `duty` in `brfsstorage` — RK `current` holds the number,
+`h:<reverse-ts>` rows hold history.
+
+**Seed / cut-over:** `node scripts/seed-duty.js +61…` sets the initial number.
+Then in the Twilio Studio flow point both HTTP widgets (`phoneNumbers` for calls,
+`phoneNumbers2` for SMS) at `https://www.bungendorerfs.org/api/duty` and add the
+header `X-Duty-Key: <DUTY_LOOKUP_KEY>`. `phoneNumberForwarding` and the `prod-00`
+SMS lookup Logic App can then be retired.
+
+---
+
 ## Azure Logic Apps Integration
 
 Azure Logic Apps provides the serverless backend for:

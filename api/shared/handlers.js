@@ -31,7 +31,11 @@ const {
   deleteAuthCode,
   hitRateLimit,
   audit,
+  getDuty,
+  setDuty,
+  listDutyHistory,
 } = require("./store");
+const { normalizeAuPhone, maskPhone } = require("./phone");
 const { normalizeEmail, isAllowedDomain, allowedDomain, sessionMinutes } = require("./identity");
 const { sendSignInCode } = require("./otpEmail");
 
@@ -263,10 +267,83 @@ async function handleMembersDelete(req, email, env = process.env) {
   return { status: 200, body: { ok: true } };
 }
 
+/* ----------------------------------------------------------------- duty line */
+
+/**
+ * Public lookup used by the Twilio flow. Returns { Main: "+61…" } which Twilio
+ * parses into widgets.<name>.parsed.Main. If DUTY_LOOKUP_KEY is configured the
+ * caller must send it as the X-Duty-Key header. A missing duty record 503s so
+ * Twilio takes its own failure branch to the hardcoded fallback number.
+ */
+async function handleDutyLookup(req, env = process.env) {
+  const key = env.DUTY_LOOKUP_KEY;
+  if (key) {
+    const h = req.headers || {};
+    const provided = h["x-duty-key"] || h["X-Duty-Key"];
+    if (provided !== key) return { status: 401, body: { error: "Unauthorized" } };
+  }
+  const duty = await getDuty(env);
+  if (!duty || !duty.number) {
+    return { status: 503, body: { error: "No duty number set" } };
+  }
+  return { status: 200, body: { Main: duty.number } };
+}
+
+async function handleDutyStatus(req, env = process.env) {
+  const s = await resolveSession(req, {}, env);
+  if (!s.ok) return { status: s.status, body: { error: s.error } };
+  const duty = await getDuty(env);
+  const history = await listDutyHistory(15, env);
+  return {
+    status: 200,
+    body: {
+      number: duty ? duty.number : "",
+      masked: duty ? maskPhone(duty.number) : "",
+      setBy: duty ? duty.setBy : "",
+      setByName: duty ? duty.setByName : "",
+      method: duty ? duty.method : "",
+      setAt: duty ? duty.setAt : "",
+      history,
+    },
+  };
+}
+
+async function handleDutySet(req, env = process.env) {
+  const s = await resolveSession(req, {}, env);
+  if (!s.ok) return { status: s.status, body: { error: s.error } };
+  if (!hasCsrfHeader(req)) return { status: 403, body: { error: "Bad request" } };
+
+  const number = normalizeAuPhone(req.body && req.body.number);
+  if (!number) {
+    return { status: 400, body: { error: "Enter a valid Australian phone number." } };
+  }
+
+  const saved = await setDuty(
+    { number, setBy: s.member.email, setByName: s.member.displayName, method: "web" },
+    env
+  );
+  await audit(
+    "duty_changed",
+    {
+      email: s.member.email,
+      detail: `${maskPhone(number)} via web`,
+    },
+    env
+  );
+
+  return {
+    status: 200,
+    body: { number: saved.number, masked: maskPhone(saved.number), setAt: saved.setAt },
+  };
+}
+
 module.exports = {
   handleAuthRequest,
   handleAuthVerify,
   handleAuthMe,
+  handleDutyLookup,
+  handleDutyStatus,
+  handleDutySet,
   handleAuthLogout,
   handleMembersList,
   handleMembersUpsert,

@@ -102,14 +102,14 @@ tenant — simpler, no SWA Standard upgrade, and the allow-list is needed either
 
 ### Status
 
-| Step                                                                                                                                                                                         | State                                                        |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| PR 1 — auth core: sign-in codes, sessions, `members` allow-list + admin screen, audit log, seed script, tests                                                                                | Done — branch `feat/members-auth`                            |
-| First admin seeded (`richardthorek-vol@rfs.nsw.gov.au`)                                                                                                                                      | Pending — run `scripts/seed-member.js` against `brfsstorage` |
-| SWA app settings: `AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`                                                                          | Pending                                                      |
-| PR 2 — `/api/duty` reads `brfsstorage`; repoint the Twilio Studio flow's two HTTP widgets (`phoneNumbers`, `phoneNumbers2`) at it; retire `phoneNumberForwarding` + the `prod-00` SMS lookup | Pending                                                      |
-| PR 3 — duty screen (set / history) + "duty changed" alert; SMS-PIN handover branch in the Twilio flow                                                                                        | Pending                                                      |
-| PR 4 — events + training + calendar-link admin in `brfsstorage`; retire `getCalendar`                                                                                                        | Pending                                                      |
+| Step                                                                                                                                                                       | State                              |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| PR 1 — auth core: sign-in codes, sessions, `members` allow-list + admin screen, audit log, seed script, tests                                                              | Done — branch `feat/members-auth`  |
+| First admin seeded (`richardthorek-vol@rfs.nsw.gov.au`) + SWA settings (`AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`) | Done                               |
+| PR 2 — `/api/duty` (public lookup + members set/status), duty screen, `DUTY_LOOKUP_KEY`; duty seeded `+61488880286`                                                        | Done — branch `feat/duty-line`     |
+| PR 2 cut-over — point the Twilio flow's `phoneNumbers` + `phoneNumbers2` widgets at `/api/duty`, add `X-Duty-Key`; retire `phoneNumberForwarding` + `prod-00` SMS lookup   | Pending — owner, in the Twilio GUI |
+| PR 3 — "duty changed" alert; SMS-PIN handover branch in the Twilio flow (`Split` on message body)                                                                          | Pending                            |
+| PR 4 — events + training + calendar-link admin in `brfsstorage`; retire `getCalendar`                                                                                      | Pending                            |
 
 Twilio flow notes: inbound calls hit widget `phoneNumbers` → `prod-08` Logic App
 `32aded0a…`; inbound SMS hit `phoneNumbers2` → `prod-00` Logic App `86da0e0d…` and
