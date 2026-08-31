@@ -87,6 +87,10 @@
           <button class="nav__item is-active" data-view="duty" type="button">
             Brigade phone<span class="nav__note">where public calls go</span>
           </button>
+          <button class="nav__item" data-view="enquiries" type="button">
+            Enquiries<span class="nav__note">contact form</span
+            ><span class="nav__badge" id="enqBadge" hidden></span>
+          </button>
           <button class="nav__item" data-view="events" type="button">
             Events &amp; training<span class="nav__note">community &amp; drill calendar</span>
           </button>
@@ -96,6 +100,24 @@
         </nav>
 
         <main id="main" class="content">
+          <!-- Enquiries -->
+          <section id="view-enquiries" class="view" hidden>
+            <h2>Enquiries</h2>
+            <p class="view__lead">
+              Everything submitted through the website contact form. Newest first.
+            </p>
+            <div class="enq-filter" id="enqFilter" role="tablist">
+              <button type="button" class="enq-filter__btn is-active" data-filter="all">All</button>
+              <button type="button" class="enq-filter__btn" data-filter="new">New</button>
+              <button type="button" class="enq-filter__btn" data-filter="in-progress">
+                In progress
+              </button>
+              <button type="button" class="enq-filter__btn" data-filter="resolved">Resolved</button>
+            </div>
+            <p id="enqMsg" class="msg" role="status" aria-live="polite" hidden></p>
+            <div id="enqList" class="enq-list"></div>
+          </section>
+
           <!-- Brigade phone -->
           <section id="view-duty" class="view">
             <h2>Brigade phone</h2>

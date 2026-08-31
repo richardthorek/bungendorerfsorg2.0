@@ -92,10 +92,10 @@ Communication Services Email.
    `CONTACT_NOTIFY_CONFIRM=false`; a failure here does not fail the request)
 6. Returns `{ success: true }` to the client
 
-Mail plumbing lives in `api/contact/notify.js`, which `server.js` also imports so
-both backends send identical messages. There is no longer any SharePoint, Teams,
-or Logic App in this path — the `formHandler` Logic App and its Office 365 /
-SharePoint connections are retired.
+`api/contact/submit.js` (shared with `server.js`) does two things with each
+validated submission: **records it in the `enquiries` table** and emails
+`CONTACT_NOTIFY_TO`. It succeeds if at least one worked. Members action the list
+at `/admin → Enquiries`. No SharePoint, Teams, or Logic App in this path.
 
 ---
 
@@ -221,10 +221,10 @@ Allowed origins:
 ### 6. Members' area (sign-in + allow-list)
 
 **Page:** `/admin` (served from `public/admin.html`; `noindex`). Plain-JS dashboard
-shell — sign-in, then **Brigade phone** (§7), **Events & training** (§2) and
-**Members** (admin only). Backend logic is shared: `api/shared/handlers.js` is used
-by `api/auth-*` / `api/members` / `api/duty` / `api/content` and mirrored in
-`server.js`.
+shell — sign-in, then **Brigade phone** (§7), **Enquiries** (§1), **Events &
+training** (§2) and **Members** (admin only). Backend logic is shared:
+`api/shared/handlers.js` is used by `api/{auth-*,members,duty,content,enquiries}`
+and mirrored in `server.js`.
 
 **Sign-in** is passwordless. A person may sign in only if BOTH:
 
@@ -242,10 +242,17 @@ by `api/auth-*` / `api/members` / `api/duty` / `api/content` and mirrored in
 | `DELETE /api/members/{email}`                   | Admin only. Ends the member's session and removes them. Refuses to remove the last admin. Requires `X-BRFS-Auth: 1`.                                                                          |
 | `GET /api/content/{events\|training}`           | Public. Returns the plain array the home-page widgets consume.                                                                                                                                |
 | `PUT /api/content/{events\|training}` `{items}` | Members only, `X-BRFS-Auth: 1`. Validates and replaces the whole list; audits `content_updated`.                                                                                              |
+| `GET /api/enquiries`                            | Members only. All contact-form submissions, newest first, with status + notes.                                                                                                                |
+| `PATCH /api/enquiries/{id}` `{status?, note?}`  | Members only, `X-BRFS-Auth: 1`. `status` ∈ new / in-progress / resolved; a note is appended with the member's name + time; first move off `new` records `handledBy`.                          |
+| `DELETE /api/enquiries/{id}`                    | Admin only, `X-BRFS-Auth: 1`. For spam.                                                                                                                                                       |
 
 **Storage:** Azure Storage tables in `brfsstorage` (`BRFS_STORAGE_CONNECTION`),
 created on first use — `members`, `authcodes`, `ratelimits`, `auditlog`, `duty`,
-`content`.
+`content`, `enquiries`.
+
+**Seeding old enquiries:** `node scripts/seed-enquiries.js <file.json>` — an array
+of `{name, message, email?, phone?, receivedAt?, legacyRef?}`, de-duplicated by
+`legacyRef`. Starter file at `scripts/data/enquiries-seed.example.json`.
 
 **First admin:** there's no self-serve bootstrap. Seed it once:
 

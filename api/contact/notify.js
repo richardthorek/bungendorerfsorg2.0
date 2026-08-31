@@ -55,20 +55,20 @@ function emailShell({ preheader, heading, subheading, bodyHtml }) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.pageBg};">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${
-  C.white
-};border:1px solid ${C.hairline};border-radius:8px;overflow:hidden;font-family:${FONT};">
+    C.white
+  };border:1px solid ${C.hairline};border-radius:8px;overflow:hidden;font-family:${FONT};">
 <tr><td style="background:${C.red};padding:20px 28px;">
 <img src="${LOGO_URL}" width="150" alt="${escapeHtml(BRIGADE_NAME)}" style="display:block;border:0;height:auto;width:150px;max-width:60%;">
 </td></tr>
 <tr><td style="padding:28px 28px 8px 28px;">
 <h1 style="margin:0;font-family:${FONT};font-size:20px;line-height:1.3;color:${C.ink};font-weight:700;">${escapeHtml(
-  heading
-)}</h1>
+    heading
+  )}</h1>
 ${
   subheading
     ? `<p style="margin:6px 0 0 0;font-family:${FONT};font-size:13px;color:${C.secondary};">${escapeHtml(
-      subheading
-    )}</p>`
+        subheading
+      )}</p>`
     : ""
 }
 </td></tr>
@@ -90,8 +90,8 @@ ${escapeHtml(BRIGADE_NAME)}<br>
 function messageBlock(message) {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:4px 0 0 0;">
 <tr><td style="border-left:3px solid ${C.red};background:${C.cardFill};border-radius:0 6px 6px 0;padding:12px 16px;font-family:${FONT};font-size:15px;line-height:1.6;color:${C.ink};white-space:normal;">${escapeHtml(
-  message
-).replace(/\r?\n/g, "<br>")}</td></tr>
+    message
+  ).replace(/\r?\n/g, "<br>")}</td></tr>
 </table>`;
 }
 
@@ -163,8 +163,8 @@ function buildNotification(data, receivedAt) {
 <p style="margin:20px 0 6px 0;font-family:${FONT};font-size:13px;font-weight:700;color:${C.darkGrey};">Enquiry</p>
 ${messageBlock(data.message)}
 <p style="margin:20px 0 0 0;font-family:${FONT};font-size:13px;color:${C.secondary};">Reply to this email to respond to ${escapeHtml(
-  data.name
-)} directly &mdash; their address is set as the reply-to.</p>`;
+    data.name
+  )} directly &mdash; their address is set as the reply-to.</p>`;
 
   const html = emailShell({
     preheader: `${data.name}: ${data.message.slice(0, 120)}`,

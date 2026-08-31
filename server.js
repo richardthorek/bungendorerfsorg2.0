@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const path = require("path");
-const { sendContactNotifications } = require("./api/contact/notify");
+const { handleContactSubmission } = require("./api/contact/submit");
 const {
   handleAuthRequest,
   handleAuthVerify,
@@ -17,6 +17,9 @@ const {
   handleDutyClaim,
   handleContentGet,
   handleContentSet,
+  handleEnquiriesList,
+  handleEnquiryUpdate,
+  handleEnquiryDelete,
 } = require("./api/shared/handlers");
 
 const allowedOrigins = [
@@ -145,7 +148,7 @@ app.post("/api/contact", async (req, res) => {
       message: body.message.trim(),
     };
 
-    await sendContactNotifications(sanitizedData);
+    await handleContactSubmission(sanitizedData);
 
     res.json({ success: true, message: "Thank you for your enquiry" });
   } catch (error) {
@@ -261,6 +264,16 @@ app.get(
 app.put(
   "/api/content/:key",
   mirror((req) => handleContentSet(req.params.key, req, process.env))
+);
+
+app.get("/api/enquiries", mirror(handleEnquiriesList));
+app.patch(
+  "/api/enquiries/:id",
+  mirror((req) => handleEnquiryUpdate(req.params.id, req, process.env))
+);
+app.delete(
+  "/api/enquiries/:id",
+  mirror((req) => handleEnquiryDelete(req.params.id, req, process.env))
 );
 
 const PORT = process.env.PORT || 3000;

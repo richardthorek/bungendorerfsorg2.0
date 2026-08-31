@@ -22,6 +22,7 @@ const TABLES = {
   audit: "auditlog",
   duty: "duty",
   content: "content",
+  enquiries: "enquiries",
 };
 
 let clients = null;
@@ -356,9 +357,103 @@ async function setContent(key, items, updatedBy, env) {
   return { items, updatedBy, updatedAt };
 }
 
+/* ----------------------------------------------------------------- enquiries */
+
+function enquiryFromEntity(e) {
+  if (!e) return null;
+  let notes = [];
+  try {
+    notes = e.notes ? JSON.parse(e.notes) : [];
+  } catch {
+    notes = [];
+  }
+  return {
+    id: e.rowKey,
+    name: e.name || "",
+    email: e.email || "",
+    phone: e.phone || "",
+    message: e.message || "",
+    source: e.source || "website",
+    legacyRef: e.legacyRef || "",
+    receivedAt: e.receivedAt || "",
+    status: e.status || "new",
+    handledBy: e.handledBy || "",
+    notes: Array.isArray(notes) ? notes : [],
+    updatedAt: e.updatedAt || "",
+  };
+}
+
+/** Newest-first row key: reverse timestamp of when the enquiry came in. */
+function enquiryRowKey(receivedMs) {
+  const reverse = String(1e15 - receivedMs).padStart(16, "0");
+  return `${reverse}-${crypto.randomBytes(3).toString("hex")}`;
+}
+
+async function recordEnquiry(data, env) {
+  const receivedAt = data.receivedAt || new Date().toISOString();
+  const receivedMs = Date.parse(receivedAt) || Date.now();
+  const id = enquiryRowKey(receivedMs);
+  await (
+    await db(env)
+  ).enquiries.createEntity({
+    partitionKey: "enquiry",
+    rowKey: id,
+    name: String(data.name || "").slice(0, 200),
+    email: String(data.email || "").slice(0, 254),
+    phone: String(data.phone || "").slice(0, 40),
+    message: String(data.message || "").slice(0, 4000),
+    source: data.source || "website",
+    legacyRef: data.legacyRef ? String(data.legacyRef).slice(0, 40) : "",
+    receivedAt,
+    status: "new",
+    handledBy: "",
+    notes: "[]",
+    updatedAt: receivedAt,
+  });
+  return id;
+}
+
+async function listEnquiries(limit, env) {
+  const out = [];
+  const iter = (await db(env)).enquiries.listEntities({
+    queryOptions: { filter: "PartitionKey eq 'enquiry'" },
+  });
+  for await (const e of iter) {
+    out.push(enquiryFromEntity(e));
+    if (out.length >= (limit || 500)) break;
+  }
+  return out;
+}
+
+async function getEnquiry(id, env) {
+  return enquiryFromEntity(await getEntity((await db(env)).enquiries, "enquiry", id));
+}
+
+async function updateEnquiry(id, patch, env) {
+  const merge = { partitionKey: "enquiry", rowKey: id, updatedAt: new Date().toISOString() };
+  if (patch.status) merge.status = patch.status;
+  if (patch.handledBy != null) merge.handledBy = patch.handledBy;
+  if (patch.notes) merge.notes = JSON.stringify(patch.notes);
+  await (await db(env)).enquiries.updateEntity(merge, "Merge");
+  return getEnquiry(id, env);
+}
+
+async function deleteEnquiry(id, env) {
+  try {
+    await (await db(env)).enquiries.deleteEntity("enquiry", id);
+  } catch (err) {
+    if (!err || err.statusCode !== 404) throw err;
+  }
+}
+
 module.exports = {
   TABLES,
   _reset,
+  recordEnquiry,
+  listEnquiries,
+  getEnquiry,
+  updateEnquiry,
+  deleteEnquiry,
   getDuty,
   setDuty,
   listDutyHistory,

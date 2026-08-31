@@ -36,8 +36,14 @@ const {
   listDutyHistory,
   getContent,
   setContent,
+  listEnquiries,
+  getEnquiry,
+  updateEnquiry,
+  deleteEnquiry,
 } = require("./store");
 const { validateContent } = require("./contentSchema");
+
+const ENQUIRY_STATUSES = ["new", "in-progress", "resolved"];
 const { normalizeAuPhone, maskPhone } = require("./phone");
 const { sendDutyChangeAlert } = require("./dutyAlert");
 const { normalizeEmail, isAllowedDomain, allowedDomain, sessionMinutes } = require("./identity");
@@ -509,10 +515,74 @@ async function handleContentSet(key, req, env = process.env) {
   };
 }
 
+/* --------------------------------------------------------------- enquiries */
+
+async function handleEnquiriesList(req, env = process.env) {
+  const s = await resolveSession(req, {}, env);
+  if (!s.ok) return { status: s.status, body: { error: s.error } };
+  return { status: 200, body: { enquiries: await listEnquiries(500, env) } };
+}
+
+async function handleEnquiryUpdate(id, req, env = process.env) {
+  const s = await resolveSession(req, {}, env);
+  if (!s.ok) return { status: s.status, body: { error: s.error } };
+  if (!hasCsrfHeader(req)) return { status: 403, body: { error: "Bad request" } };
+
+  const existing = await getEnquiry(id, env);
+  if (!existing) return { status: 404, body: { error: "That enquiry no longer exists." } };
+
+  const body = req.body || {};
+  const patch = {};
+
+  if (body.status != null) {
+    if (!ENQUIRY_STATUSES.includes(body.status)) {
+      return { status: 400, body: { error: "Unknown status." } };
+    }
+    patch.status = body.status;
+    if (body.status !== "new" && !existing.handledBy) patch.handledBy = s.member.email;
+  }
+
+  const noteText = typeof body.note === "string" ? body.note.trim().slice(0, 2000) : "";
+  if (noteText) {
+    patch.notes = existing.notes.concat({
+      by: s.member.displayName || s.member.email,
+      at: new Date().toISOString(),
+      text: noteText,
+    });
+  }
+
+  if (!patch.status && !patch.notes) {
+    return { status: 400, body: { error: "Nothing to update." } };
+  }
+
+  const updated = await updateEnquiry(id, patch, env);
+  await audit(
+    "enquiry_updated",
+    {
+      email: s.member.email,
+      detail: `${id} ${patch.status ? "→ " + patch.status : ""}${noteText ? " +note" : ""}`,
+    },
+    env
+  );
+  return { status: 200, body: { enquiry: updated } };
+}
+
+async function handleEnquiryDelete(id, req, env = process.env) {
+  const gate = await requireAdmin(req, env);
+  if (gate.error) return gate.error;
+  if (!hasCsrfHeader(req)) return { status: 403, body: { error: "Bad request" } };
+  await deleteEnquiry(id, env);
+  await audit("enquiry_deleted", { email: gate.member.email, detail: id }, env);
+  return { status: 200, body: { ok: true } };
+}
+
 module.exports = {
   handleAuthRequest,
   handleAuthVerify,
   handleAuthMe,
+  handleEnquiriesList,
+  handleEnquiryUpdate,
+  handleEnquiryDelete,
   handleDutyLookup,
   handleDutyStatus,
   handleDutySet,

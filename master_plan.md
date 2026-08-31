@@ -76,14 +76,14 @@ enquirer.
 
 ### Status
 
-| Step                                                                                                                            | State                                     |
-| ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Root cause of "no enquiry details" found — proxy sent `message`, Logic App read `enquiry`; SharePoint `Description` always null | Done                                      |
-| `api/contact` + `server.js` rewritten to send via ACS, SharePoint/Teams/Logic App dropped                                       | Done — merged (#90)                       |
-| ACS Email domain `notify.bungendorerfs.org` created, DNS added, verified + linked to `stationkit-comm`                          | Done                                      |
-| SWA app settings + `formHandler` Logic App disabled + deploy verified                                                           | Done                                      |
-| Delete the disabled `formHandler` Logic App + `office365` / `office365-1` / `sharepointonline` / `teams` connections            | Pending — after a few days' confidence    |
-| Historical enquiries #1–#28 recovered from the SharePoint list before the tenant closes                                         | Pending — needs sign-in to the old tenant |
+| Step                                                                                                                                                              | State                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Root cause of "no enquiry details" found — proxy sent `message`, Logic App read `enquiry`; SharePoint `Description` always null                                   | Done                                   |
+| `api/contact` + `server.js` rewritten to send via ACS, SharePoint/Teams/Logic App dropped                                                                         | Done — merged (#90)                    |
+| ACS Email domain `notify.bungendorerfs.org` created, DNS added, verified + linked to `stationkit-comm`                                                            | Done                                   |
+| SWA app settings + `formHandler` Logic App disabled + deploy verified                                                                                             | Done                                   |
+| Delete the disabled `formHandler` Logic App + `office365` / `office365-1` / `sharepointonline` / `teams` connections                                              | Pending — after a few days' confidence |
+| Historical enquiries #1–#28 seeded into the `enquiries` table via `scripts/seed-enquiries.js` (3 recovered in `scripts/data/…`; the rest need old-tenant sign-in) | Pending — owner                        |
 
 ---
 
@@ -112,6 +112,7 @@ tenant — simpler, no SWA Standard upgrade, and the allow-list is needed either
 | PR 3 config — set `DUTY_CLAIM_PIN` / `DUTY_FALLBACK_NUMBER` / `DUTY_ALERT_TO` on the SWA; add the `Split` + claim widgets in the Twilio flow                                                                               | Pending — owner                    |
 | PR 4 — events + training editing in the members' area (`/api/content/*`, `content` table); home page reads it via `calendar.js` with a bundled-JSON fallback; `api/calendar-events` + `AZURE_CALENDAR_WEBHOOK_URL` removed | Done — branch `feat/content-admin` |
 | PR 4 config — `node scripts/seed-content.js` against `brfsstorage`; remove `AZURE_CALENDAR_WEBHOOK_URL` from the SWA; retire the `getCalendar` Logic App                                                                   | Pending — owner                    |
+| PR 5 — enquiries list in the members' area; contact form records to the `enquiries` table (still emails); `scripts/seed-enquiries.js` for #1–#28                                                                           | Done — branch `feat/enquiries`     |
 
 Twilio flow notes: inbound calls hit widget `phoneNumbers` → `prod-08` Logic App
 `32aded0a…`; inbound SMS hit `phoneNumbers2` → `prod-00` Logic App `86da0e0d…` and

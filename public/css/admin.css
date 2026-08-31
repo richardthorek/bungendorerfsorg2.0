@@ -340,6 +340,179 @@ label {
   font-size: 0.75rem;
   color: var(--ink-faint);
 }
+.nav__badge {
+  align-self: flex-start;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--rfs-red);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+  min-width: 1.1rem;
+  text-align: center;
+}
+
+/* -------------------------------------------------- enquiries */
+
+.enq-filter {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.enq-filter__btn {
+  font: inherit;
+  font-size: 0.82rem;
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+}
+.enq-filter__btn.is-active {
+  background: var(--ink);
+  color: var(--ground);
+  border-color: var(--ink);
+}
+.enq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 44rem;
+}
+.enq {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.enq__sum {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  list-style: none;
+}
+.enq__sum::-webkit-details-marker {
+  display: none;
+}
+.enq__name {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.enq__when {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.enq__chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  flex: none;
+}
+.enq__chip.is-new {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.enq__chip.is-in-progress {
+  background: #e7effa;
+  color: var(--focus);
+}
+.enq__chip.is-resolved {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.enq__body {
+  padding: 0 0.9rem 0.9rem;
+  border-top: 1px solid var(--hairline);
+}
+.enq__contact {
+  margin: 0.7rem 0 0.5rem;
+  font-size: 0.88rem;
+  font-family: var(--mono);
+}
+.enq__contact a {
+  color: var(--focus);
+  text-decoration: none;
+}
+.enq__msg {
+  white-space: pre-wrap;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  background: var(--ground);
+  border-radius: 6px;
+  padding: 0.65rem 0.8rem;
+}
+.enq__notes {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+.enq__note-meta {
+  color: var(--ink-faint);
+  font-size: 0.75rem;
+}
+.enq__actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+}
+.enq__set {
+  font: inherit;
+  font-size: 0.8rem;
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+.enq__set.is-current {
+  background: var(--ink);
+  color: var(--ground);
+  border-color: var(--ink);
+}
+.enq__set:disabled {
+  cursor: default;
+}
+.enq__del {
+  font: inherit;
+  font-size: 0.8rem;
+  border: 1px solid var(--hairline-strong);
+  background: none;
+  color: var(--ink-faint);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+.enq__del:hover {
+  color: var(--err);
+  border-color: var(--err);
+}
+.enq__noteform {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+.enq__noteform input {
+  flex: 1;
+}
 
 .content {
   padding: 1.75rem 1.75rem 3rem;

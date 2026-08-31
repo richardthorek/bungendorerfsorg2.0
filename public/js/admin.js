@@ -40,9 +40,13 @@
     dutyInput: document.getElementById("dutyInput"),
     dutyMsg: document.getElementById("dutyMsg"),
     dutyHistory: document.getElementById("dutyHistory"),
+    enqList: document.getElementById("enqList"),
+    enqMsg: document.getElementById("enqMsg"),
+    enqBadge: document.getElementById("enqBadge"),
+    enqFilter: document.getElementById("enqFilter"),
   };
 
-  const state = { me: null, expiresAt: null, timer: null };
+  const state = { me: null, expiresAt: null, timer: null, enqFilter: "all", enquiries: [] };
 
   /* ---------------------------------------------------------------- helpers */
 
@@ -167,11 +171,12 @@
     });
     startTimer();
     switchView(currentViewFromHash() || "duty");
+    if (currentViewFromHash() !== "enquiries") loadEnquiries(); // for the nav badge
   }
 
   function currentViewFromHash() {
     const h = (location.hash || "").replace("#", "");
-    return ["duty", "events", "members"].indexOf(h) >= 0 ? h : null;
+    return ["duty", "enquiries", "events", "members"].indexOf(h) >= 0 ? h : null;
   }
 
   function switchView(name) {
@@ -179,7 +184,7 @@
     el.navItems.forEach(function (b) {
       b.classList.toggle("is-active", b.dataset.view === name);
     });
-    ["duty", "events", "members"].forEach(function (v) {
+    ["duty", "enquiries", "events", "members"].forEach(function (v) {
       const section = document.getElementById("view-" + v);
       if (section) section.hidden = v !== name;
     });
@@ -187,6 +192,7 @@
     if (name === "members") loadMembers();
     if (name === "duty") loadDuty();
     if (name === "events") loadAllContent();
+    if (name === "enquiries") loadEnquiries();
   }
 
   el.navItems.forEach(function (b) {
@@ -355,6 +361,210 @@
       el.addMemberForm.reset();
       loadMembers();
     });
+  });
+
+  /* ----------------------------------------------------------------- enquiries */
+
+  const ENQ_STATUS = ["new", "in-progress", "resolved"];
+  const ENQ_LABEL = { new: "New", "in-progress": "In progress", resolved: "Resolved" };
+
+  function loadEnquiries() {
+    setMsg(el.enqMsg, "");
+    api("/api/enquiries").then(function (r) {
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.enqMsg, (r.data && r.data.error) || "Could not load enquiries.", "err");
+        return;
+      }
+      state.enquiries = (r.data && r.data.enquiries) || [];
+      updateEnqBadge();
+      renderEnquiries();
+    });
+  }
+
+  function updateEnqBadge() {
+    const n = state.enquiries.filter(function (e) {
+      return e.status === "new";
+    }).length;
+    if (n > 0) {
+      el.enqBadge.hidden = false;
+      el.enqBadge.textContent = String(n);
+    } else {
+      el.enqBadge.hidden = true;
+    }
+  }
+
+  function renderEnquiries() {
+    el.enqList.innerHTML = "";
+    const rows = state.enquiries.filter(function (e) {
+      return state.enqFilter === "all" || e.status === state.enqFilter;
+    });
+    if (!rows.length) {
+      const p = document.createElement("p");
+      p.className = "editor__empty";
+      p.textContent = "Nothing here.";
+      el.enqList.appendChild(p);
+      return;
+    }
+    rows.forEach(function (e) {
+      el.enqList.appendChild(enquiryCard(e));
+    });
+  }
+
+  function enquiryCard(e) {
+    const box = document.createElement("details");
+    box.className = "enq";
+    if (e.status === "new") box.open = true;
+
+    const sum = document.createElement("summary");
+    sum.className = "enq__sum";
+    const nm = document.createElement("span");
+    nm.className = "enq__name";
+    nm.textContent = e.name + (e.legacyRef ? "  #" + e.legacyRef : "");
+    const when = document.createElement("span");
+    when.className = "enq__when";
+    when.textContent = e.receivedAt ? relTime(e.receivedAt) : "";
+    const chip = document.createElement("span");
+    chip.className = "enq__chip is-" + e.status;
+    chip.textContent = ENQ_LABEL[e.status] || e.status;
+    sum.appendChild(chip);
+    sum.appendChild(nm);
+    sum.appendChild(when);
+    box.appendChild(sum);
+
+    const body = document.createElement("div");
+    body.className = "enq__body";
+
+    const contact = document.createElement("p");
+    contact.className = "enq__contact";
+    if (e.email) {
+      const a = document.createElement("a");
+      a.href = "mailto:" + e.email;
+      a.textContent = e.email;
+      contact.appendChild(a);
+    }
+    if (e.phone) {
+      contact.appendChild(document.createTextNode(e.email ? "  ·  " : ""));
+      const a = document.createElement("a");
+      a.href = "tel:" + e.phone.replace(/[^\d+]/g, "");
+      a.textContent = e.phone;
+      contact.appendChild(a);
+    }
+    body.appendChild(contact);
+
+    const msg = document.createElement("div");
+    msg.className = "enq__msg";
+    msg.textContent = e.message;
+    body.appendChild(msg);
+
+    if (e.notes && e.notes.length) {
+      const notes = document.createElement("ul");
+      notes.className = "enq__notes";
+      e.notes.forEach(function (n) {
+        const li = document.createElement("li");
+        const meta = document.createElement("span");
+        meta.className = "enq__note-meta";
+        meta.textContent = n.by + " · " + relTime(n.at);
+        li.appendChild(meta);
+        li.appendChild(document.createTextNode(" " + n.text));
+        notes.appendChild(li);
+      });
+      body.appendChild(notes);
+    }
+
+    // actions
+    const actions = document.createElement("div");
+    actions.className = "enq__actions";
+    ENQ_STATUS.forEach(function (st) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "enq__set" + (e.status === st ? " is-current" : "");
+      b.textContent = ENQ_LABEL[st];
+      b.disabled = e.status === st;
+      b.addEventListener("click", function () {
+        patchEnquiry(e.id, { status: st });
+      });
+      actions.appendChild(b);
+    });
+    if (state.me && state.me.role === "admin") {
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "enq__del";
+      del.textContent = "Delete";
+      del.addEventListener("click", function () {
+        if (window.confirm("Delete this enquiry permanently?")) deleteEnquiry(e.id);
+      });
+      actions.appendChild(del);
+    }
+    body.appendChild(actions);
+
+    const noteForm = document.createElement("form");
+    noteForm.className = "enq__noteform";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Add a note…";
+    input.className = "editor__input";
+    const send = document.createElement("button");
+    send.type = "submit";
+    send.className = "btn btn--ghost";
+    send.textContent = "Add note";
+    noteForm.appendChild(input);
+    noteForm.appendChild(send);
+    noteForm.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      const text = input.value.trim();
+      if (text) patchEnquiry(e.id, { note: text });
+    });
+    body.appendChild(noteForm);
+
+    box.appendChild(body);
+    return box;
+  }
+
+  function patchEnquiry(id, patch) {
+    setMsg(el.enqMsg, "");
+    api("/api/enquiries/" + encodeURIComponent(id), { method: "PATCH", body: patch }).then(
+      function (r) {
+        if (!r) return;
+        if (!r.ok) {
+          setMsg(el.enqMsg, (r.data && r.data.error) || "Could not update.", "err");
+          return;
+        }
+        const idx = state.enquiries.findIndex(function (x) {
+          return x.id === id;
+        });
+        if (idx >= 0) state.enquiries[idx] = r.data.enquiry;
+        updateEnqBadge();
+        renderEnquiries();
+      }
+    );
+  }
+
+  function deleteEnquiry(id) {
+    api("/api/enquiries/" + encodeURIComponent(id), { method: "DELETE", body: {} }).then(
+      function (r) {
+        if (!r) return;
+        if (!r.ok) {
+          setMsg(el.enqMsg, (r.data && r.data.error) || "Could not delete.", "err");
+          return;
+        }
+        state.enquiries = state.enquiries.filter(function (x) {
+          return x.id !== id;
+        });
+        updateEnqBadge();
+        renderEnquiries();
+      }
+    );
+  }
+
+  el.enqFilter.addEventListener("click", function (e) {
+    const btn = e.target.closest(".enq-filter__btn");
+    if (!btn) return;
+    state.enqFilter = btn.dataset.filter;
+    Array.prototype.forEach.call(el.enqFilter.children, function (b) {
+      b.classList.toggle("is-active", b === btn);
+    });
+    renderEnquiries();
   });
 
   /* --------------------------------------------------------- brigade phone UI */

@@ -6,7 +6,7 @@
  * Services. See `notify.js` for the mail plumbing and required configuration.
  */
 
-const { sendContactNotifications } = require("./notify");
+const { handleContactSubmission } = require("./submit");
 
 /**
  * Validates contact form data
@@ -116,7 +116,7 @@ module.exports = async function (context, req) {
       warn: (msg) => context.log.warn(msg),
       error: (msg) => context.log.error(msg),
     };
-    await sendContactNotifications(sanitizedData, { logger });
+    await handleContactSubmission(sanitizedData, { logger });
 
     context.res = {
       status: 200,

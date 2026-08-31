@@ -2,9 +2,8 @@
  * Tests for the ACS email notification helper used by the contact form.
  */
 
-// The real SDK isn't needed for these tests — every send path is exercised
-// through the injectable clientFactory. Stub the module so `require` resolves.
-jest.mock("@azure/communication-email", () => ({ EmailClient: jest.fn() }), { virtual: true });
+// The ACS SDK is stubbed by __mocks__/@azure/communication-email.js; every send
+// path here is exercised through the injectable clientFactory anyway.
 
 const {
   escapeHtml,

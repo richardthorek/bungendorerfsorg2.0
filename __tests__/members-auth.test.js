@@ -17,6 +17,7 @@ const mockDb = {
   audit: [],
   duty: { current: null, history: [] },
   content: {},
+  enquiries: [],
 };
 
 function resetDb() {
@@ -27,6 +28,7 @@ function resetDb() {
   mockDb.duty.current = null;
   mockDb.duty.history.length = 0;
   mockDb.content = {};
+  mockDb.enquiries.length = 0;
 }
 
 jest.mock("../api/shared/store", () => ({
@@ -105,6 +107,40 @@ jest.mock("../api/shared/store", () => ({
     const rec = { items, updatedBy, updatedAt: new Date().toISOString() };
     mockDb.content[key] = rec;
     return rec;
+  },
+  async recordEnquiry(data) {
+    const id = "e" + (mockDb.enquiries.length + 1);
+    mockDb.enquiries.unshift({
+      id,
+      name: data.name || "",
+      email: data.email || "",
+      phone: data.phone || "",
+      message: data.message || "",
+      source: data.source || "website",
+      legacyRef: data.legacyRef || "",
+      receivedAt: data.receivedAt || new Date().toISOString(),
+      status: "new",
+      handledBy: "",
+      notes: [],
+    });
+    return id;
+  },
+  async listEnquiries() {
+    return mockDb.enquiries.slice();
+  },
+  async getEnquiry(id) {
+    return mockDb.enquiries.find((e) => e.id === id) || null;
+  },
+  async updateEnquiry(id, patch) {
+    const e = mockDb.enquiries.find((x) => x.id === id);
+    if (!e) return null;
+    if (patch.status) e.status = patch.status;
+    if (patch.handledBy != null) e.handledBy = patch.handledBy;
+    if (patch.notes) e.notes = patch.notes;
+    return e;
+  },
+  async deleteEnquiry(id) {
+    mockDb.enquiries = mockDb.enquiries.filter((e) => e.id !== id);
   },
 }));
 
@@ -629,5 +665,97 @@ describe("content handlers", () => {
     });
     expect(ok.status).toBe(200);
     expect(mockDb.audit.some((a) => a.event === "content_updated")).toBe(true);
+  });
+});
+
+/* -------------------------------------------------------------- enquiries */
+
+describe("enquiry handlers", () => {
+  const CSRF = { "x-brfs-auth": "1" };
+  const store = () => require("../api/shared/store");
+
+  async function seedOne() {
+    return store().recordEnquiry({
+      name: "Tony",
+      email: "t@x.org",
+      message: "burn pile at 39 Lake Rd",
+    });
+  }
+
+  test("list requires a session", async () => {
+    expect((await handlers.handleEnquiriesList({ headers: {} })).status).toBe(401);
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    await seedOne();
+    const r = await handlers.handleEnquiriesList({ headers: { cookie: cookieHeader } });
+    expect(r.status).toBe(200);
+    expect(r.body.enquiries).toHaveLength(1);
+  });
+
+  test("update sets status, records who picked it up, and appends notes", async () => {
+    const id = await seedOne();
+    const { cookieHeader } = await signIn("jo@rfs.nsw.gov.au");
+    const hdr = { cookie: cookieHeader, ...CSRF };
+
+    const bad = await handlers.handleEnquiryUpdate(id, {
+      headers: hdr,
+      body: { status: "banana" },
+    });
+    expect(bad.status).toBe(400);
+
+    const noCsrf = await handlers.handleEnquiryUpdate(id, {
+      headers: { cookie: cookieHeader },
+      body: { status: "in-progress" },
+    });
+    expect(noCsrf.status).toBe(403);
+
+    const upd = await handlers.handleEnquiryUpdate(id, {
+      headers: hdr,
+      body: { status: "in-progress", note: "Called Tony, booking a date" },
+    });
+    expect(upd.status).toBe(200);
+    expect(upd.body.enquiry.status).toBe("in-progress");
+    expect(upd.body.enquiry.handledBy).toBe("jo@rfs.nsw.gov.au");
+    expect(upd.body.enquiry.notes[0].text).toMatch(/booking a date/);
+
+    const missing = await handlers.handleEnquiryUpdate("nope", {
+      headers: hdr,
+      body: { status: "resolved" },
+    });
+    expect(missing.status).toBe(404);
+  });
+
+  test("delete is admin only", async () => {
+    const id = await seedOne();
+    const asMember = await signIn("plain@rfs.nsw.gov.au", "member");
+    expect(
+      (
+        await handlers.handleEnquiryDelete(id, {
+          headers: { cookie: asMember.cookieHeader, ...CSRF },
+        })
+      ).status
+    ).toBe(403);
+
+    const asAdmin = await signIn("boss@rfs.nsw.gov.au", "admin");
+    const del = await handlers.handleEnquiryDelete(id, {
+      headers: { cookie: asAdmin.cookieHeader, ...CSRF },
+    });
+    expect(del.status).toBe(200);
+    expect(await store().getEnquiry(id)).toBeNull();
+  });
+});
+
+describe("contact submission stores AND emails", () => {
+  const { handleContactSubmission } = require("../api/contact/submit");
+
+  test("records the enquiry and sends the alert", async () => {
+    const store = require("../api/shared/store");
+    const res = await handleContactSubmission(
+      { name: "Jane", email: "jane@x.org", phone: "", message: "hello there team" },
+      { logger: { log() {}, warn() {}, error() {} } }
+    );
+    expect(res.stored).toBe(true);
+    const list = await store.listEnquiries();
+    expect(list[0].name).toBe("Jane");
+    expect(list[0].source).toBe("website");
   });
 });
