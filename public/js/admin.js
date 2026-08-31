@@ -60,7 +60,7 @@
     socialAttachBtn: document.getElementById("socialAttachBtn"),
     socialAttachInput: document.getElementById("socialAttachInput"),
     socialChatSend: document.getElementById("socialChatSend"),
-    socialDraftBtn: document.getElementById("socialDraftBtn"),
+    socialDraftEmpty: document.getElementById("socialDraftEmpty"),
     socialAiResult: document.getElementById("socialAiResult"),
     socialFlags: document.getElementById("socialFlags"),
     socialHeadlineOut: document.getElementById("socialHeadlineOut"),
@@ -153,10 +153,10 @@
     social.pendingImage = null;
     if (el.socialChat) el.socialChat.innerHTML = "";
     if (el.socialAiResult) el.socialAiResult.hidden = true;
+    if (el.socialDraftEmpty) el.socialDraftEmpty.hidden = false;
     if (el.socialAttachPreview) el.socialAttachPreview.hidden = true;
     if (el.socialAttachThumb) el.socialAttachThumb.src = "";
     if (el.socialAttachInput) el.socialAttachInput.value = "";
-    if (el.socialDraftBtn) el.socialDraftBtn.disabled = true;
   }
 
   el.requestForm.addEventListener("submit", function (e) {
@@ -1319,7 +1319,6 @@
     });
     el.socialAttachInput.addEventListener("change", onSocialAttachChange);
     el.socialAttachRemove.addEventListener("click", clearSocialAttachment);
-    el.socialDraftBtn.addEventListener("click", requestSocialDraft);
     el.socialUseHeadline.addEventListener("click", useSocialHeadline);
     el.socialCopyCaption.addEventListener("click", copySocialCaption);
     el.socialReviewCheck.addEventListener("change", function () {
@@ -1672,23 +1671,9 @@
       img.className = "social__bubble-img";
       wrap.appendChild(img);
     }
-    if (msg.text) {
-      const p = document.createElement("p");
-      p.textContent = msg.text;
-      wrap.appendChild(p);
-    }
-    if (msg.proposedCopy) {
-      const copyBlock = document.createElement("div");
-      copyBlock.className = "social__bubble-copy";
-      const label = document.createElement("span");
-      label.className = "social__bubble-copy-label";
-      label.textContent = "Proposed copy";
-      const copyText = document.createElement("p");
-      copyText.textContent = msg.proposedCopy;
-      copyBlock.appendChild(label);
-      copyBlock.appendChild(copyText);
-      wrap.appendChild(copyBlock);
-    }
+    const p = document.createElement("p");
+    p.textContent = msg.text;
+    wrap.appendChild(p);
     el.socialChat.appendChild(wrap);
     el.socialChat.scrollTop = el.socialChat.scrollHeight;
     return wrap;
@@ -1696,8 +1681,7 @@
 
   function socialTranscript() {
     return state.socialMessages.slice(-24).map(function (m) {
-      const text = m.proposedCopy ? m.text + "\n\nProposed copy: " + m.proposedCopy : m.text;
-      return { role: m.role, text: text, image: m.image };
+      return { role: m.role, text: m.text, image: m.image };
     });
   }
 
@@ -1717,7 +1701,7 @@
     const thinking = addSocialChatBubble({ role: "assistant", text: "…", pending: true });
     api("/api/social/chat", {
       method: "POST",
-      body: { messages: socialTranscript(), mode: "reply" },
+      body: { messages: socialTranscript() },
     }).then(function (r) {
       el.socialChatSend.disabled = false;
       thinking.remove();
@@ -1726,14 +1710,10 @@
         setMsg(el.socialAiMsg, (r.data && r.data.error) || "Could not reach the assistant.", "err");
         return;
       }
-      const assistantMsg = {
-        role: "assistant",
-        text: r.data.message,
-        proposedCopy: r.data.proposedCopy || undefined,
-      };
+      const assistantMsg = { role: "assistant", text: r.data.message };
       state.socialMessages.push(assistantMsg);
       addSocialChatBubble(assistantMsg);
-      el.socialDraftBtn.disabled = false;
+      if (r.data.draft) renderSocialAiResult(r.data.draft);
     });
   }
 
@@ -1790,28 +1770,9 @@
     reader.readAsDataURL(file);
   }
 
-  function requestSocialDraft() {
-    if (!state.socialMessages.length) return;
-    setMsg(el.socialAiMsg, "");
-    el.socialDraftBtn.disabled = true;
-    el.socialDraftBtn.textContent = "Drafting…";
-    api("/api/social/chat", {
-      method: "POST",
-      body: { messages: socialTranscript(), mode: "draft" },
-    }).then(function (r) {
-      el.socialDraftBtn.disabled = false;
-      el.socialDraftBtn.textContent = "Draft post copy from this chat";
-      if (!r) return;
-      if (!r.ok) {
-        setMsg(el.socialAiMsg, (r.data && r.data.error) || "Could not draft copy.", "err");
-        return;
-      }
-      renderSocialAiResult(r.data);
-    });
-  }
-
   function renderSocialAiResult(draft) {
     state.socialDraft = draft;
+    if (el.socialDraftEmpty) el.socialDraftEmpty.hidden = true;
     el.socialHeadlineOut.textContent = draft.headline;
     el.socialCaptionOut.textContent = draft.caption;
     el.socialHashtagsOut.textContent = (draft.hashtags || []).map((h) => "#" + h).join(" ");

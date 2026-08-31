@@ -1,11 +1,13 @@
 /**
  * Social post copywriting assistant, backed by Azure OpenAI.
  *
- * Two modes share one conversation transcript:
- *   - chatReply: a conversational turn while the volunteer plans the post
- *     (can see an attached photo — vision-capable deployment required).
- *   - chatDraft: turns the conversation so far into the final structured
- *     headline/caption/hashtags.
+ * Every turn (chatTurn) does two things at once, in a single call, over one
+ * conversation transcript: a short conversational reply (questions, guidance,
+ * pushback) and — once there's enough in the conversation to justify one — a
+ * structured headline/caption/hashtags draft that keeps refining as the chat
+ * continues. The two are kept strictly separate in the response so the UI can
+ * render them as separate things: a chat thread, and a live draft panel next
+ * to it. Vision (an attached photo) requires a vision-capable deployment.
  *
  * The model is asked to self-flag anything a human should double-check, and
  * that self-report is backstopped by a server-side keyword scan on drafts —
@@ -86,22 +88,23 @@ don't silently comply):
   Hazards Near Me app / RFS website for the latest" rather than restating detail as current fact.`;
 
 /** Fixed, not admin-editable — keeps the wire contract stable regardless of guideline edits. */
-const DRAFT_JSON_CONTRACT = `
-
-When asked to produce the final post draft, respond with strict JSON only, no markdown fences,
-matching exactly this shape:
-{"headline": "short on-image headline, under 90 characters", "caption": "the post caption/body copy", "hashtags": ["without the # symbol", "..."], "selfFlags": ["short human-readable notes on anything in this draft a human should verify or reconsider before posting — empty array if none"]}`;
-
-const CHAT_REPLY_SUFFIX = `
+const TURN_JSON_CONTRACT = `
 
 You're chatting with a brigade volunteer to help them plan a post — this is a back-and-forth
-conversation, not a final draft. Keep replies short (2-4 sentences), ask a clarifying question
+conversation. Keep the conversational "message" short (2-4 sentences): ask a clarifying question
 when it would sharpen the post, and clearly push back — explaining why — if asked to write
 something inaccurate, alarmist, political, or privacy-invasive. If a photo is attached, you can
-refer to what's actually in it.
+refer to what's actually in it. Never put actual post wording in "message" — that always belongs
+in the draft fields below.
+
+Alongside that, maintain a live draft of the post itself. Set "draftReady" to true and fill in
+"headline"/"caption"/"hashtags" as soon as you have enough to propose real wording — even a rough
+first pass — and keep refining those same fields on later turns as the conversation adds detail
+or asks for changes. Leave "draftReady" false (and the draft fields empty) only while there's
+still not enough to propose anything concrete yet.
 
 Respond with strict JSON only, no markdown fences, matching exactly this shape:
-{"message": "your conversational reply — guidance, questions, pushback — never the post copy itself", "proposedCopy": "a short draft snippet of actual post wording, ONLY if you are proposing specific copy at this point in the conversation — otherwise null"}`;
+{"message": "your conversational reply — guidance, questions, pushback — never the post copy itself", "draftReady": true or false, "headline": "short on-image headline, under 90 characters, empty string if draftReady is false", "caption": "the post caption/body copy, empty string if draftReady is false", "hashtags": ["without the # symbol", "..."], "selfFlags": ["short human-readable notes on anything in the current draft a human should verify or reconsider before posting — empty array if none or if draftReady is false"]}`;
 
 /**
  * Keyword backstop — catches high-risk content even if the model's own
@@ -243,37 +246,16 @@ async function callAzureChat(
   return content;
 }
 
-/** @param {{systemPrompt:string, transcript:Array}} args */
-async function chatReply({ systemPrompt, transcript }, env = process.env) {
+/**
+ * One turn: a conversational reply plus (once there's enough to go on) the
+ * current best draft. Returns `{ message, draft }` where `draft` is either
+ * `null` (nothing concrete yet) or `{ headline, caption, hashtags, flags }`.
+ *
+ * @param {{systemPrompt:string, transcript:Array}} args
+ */
+async function chatTurn({ systemPrompt, transcript }, env = process.env) {
   const content = await callAzureChat(
-    systemPrompt + CHAT_REPLY_SUFFIX,
-    transcript,
-    { jsonMode: true, reasoningEffort: "none" },
-    env
-  );
-
-  let parsed;
-  try {
-    parsed = parseModelJson(content);
-  } catch {
-    // Fall back to treating the whole thing as the conversational message —
-    // keeps the chat usable even if the model ever drifts off the contract.
-    parsed = { message: content, proposedCopy: null };
-  }
-
-  const message = truncate(parsed.message, 2000);
-  const proposedCopy = typeof parsed.proposedCopy === "string" ? truncate(parsed.proposedCopy, 2000) : "";
-  return { message: message || truncate(content, 2000), proposedCopy: proposedCopy || null };
-}
-
-/** @param {{systemPrompt:string, transcript:Array}} args */
-async function chatDraft({ systemPrompt, transcript }, env = process.env) {
-  const draftSystem =
-    systemPrompt +
-    DRAFT_JSON_CONTRACT +
-    "\n\nProduce the final draft now based on the whole conversation.";
-  const content = await callAzureChat(
-    draftSystem,
+    systemPrompt + TURN_JSON_CONTRACT,
     transcript,
     { jsonMode: true, reasoningEffort: "low" },
     env
@@ -283,25 +265,31 @@ async function chatDraft({ systemPrompt, transcript }, env = process.env) {
   try {
     parsed = parseModelJson(content);
   } catch {
-    throw new Error("Azure OpenAI returned malformed JSON");
+    // Fall back to treating the whole thing as the conversational message —
+    // keeps the chat usable even if the model ever drifts off the contract.
+    parsed = { message: content, draftReady: false };
   }
+
+  const message = truncate(parsed.message, 2000) || truncate(content, 2000);
 
   const headline = truncate(parsed.headline, HEADLINE_MAX);
   const caption = truncate(parsed.caption, CAPTION_MAX);
-  const hashtags = Array.isArray(parsed.hashtags)
-    ? parsed.hashtags
-        .map((h) => truncate(String(h || "").replace(/^#/, ""), HASHTAG_MAX))
-        .filter(Boolean)
-        .slice(0, MAX_HASHTAGS)
-    : [];
-  const selfFlags = Array.isArray(parsed.selfFlags)
-    ? parsed.selfFlags.map((f) => truncate(f, 200)).filter(Boolean)
-    : [];
+  let draft = null;
+  if (parsed.draftReady && headline && caption) {
+    const hashtags = Array.isArray(parsed.hashtags)
+      ? parsed.hashtags
+          .map((h) => truncate(String(h || "").replace(/^#/, ""), HASHTAG_MAX))
+          .filter(Boolean)
+          .slice(0, MAX_HASHTAGS)
+      : [];
+    const selfFlags = Array.isArray(parsed.selfFlags)
+      ? parsed.selfFlags.map((f) => truncate(f, 200)).filter(Boolean)
+      : [];
+    const flags = dedupe([...selfFlags, ...heuristicFlags(`${headline} ${caption}`)]);
+    draft = { headline, caption, hashtags, flags };
+  }
 
-  if (!headline || !caption) throw new Error("Azure OpenAI returned an incomplete draft");
-
-  const flags = dedupe([...selfFlags, ...heuristicFlags(`${headline} ${caption}`)]);
-  return { headline, caption, hashtags, flags };
+  return { message, draft };
 }
 
-module.exports = { DEFAULT_SYSTEM_PROMPT, chatReply, chatDraft, heuristicFlags };
+module.exports = { DEFAULT_SYSTEM_PROMPT, chatTurn, heuristicFlags };

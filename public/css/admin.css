@@ -1065,26 +1065,6 @@ label {
 .social__bubble.is-pending {
   opacity: 0.6;
 }
-.social__bubble-copy {
-  margin-top: 0.5rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 8px;
-  border: 1px solid var(--hairline-strong);
-  background: var(--surface);
-}
-.social__bubble-copy-label {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--ink-faint);
-  margin-bottom: 0.25rem;
-}
-.social__bubble-copy p {
-  margin: 0;
-  font-style: italic;
-}
 .social__bubble-img {
   display: block;
   max-width: 12rem;
@@ -1114,14 +1094,33 @@ label {
   justify-content: space-between;
   gap: 0.6rem;
 }
-.social__draft-btn {
-  margin-top: 0.9rem;
+
+.social__ai-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+.social__ai-chat {
+  flex: 1 1 20rem;
+  min-width: 18rem;
+}
+.social__ai-draft {
+  flex: 1 1 18rem;
+  min-width: 16rem;
+  position: sticky;
+  top: 0.75rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface-sunk);
+  padding: 0.9rem 1rem;
+}
+.social__draft-h {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
 }
 
 .social__result {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--hairline);
   display: flex;
   flex-direction: column;
   gap: 0.9rem;

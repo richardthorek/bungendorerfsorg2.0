@@ -255,80 +255,86 @@
                   </button>
                 </div>
 
-                <div id="socialChat" class="social__chat" aria-live="polite"></div>
-                <p id="socialAiMsg" class="msg" role="status" aria-live="polite" hidden></p>
+                <div class="social__ai-layout">
+                  <div class="social__ai-chat">
+                    <div id="socialChat" class="social__chat" aria-live="polite"></div>
+                    <p id="socialAiMsg" class="msg" role="status" aria-live="polite" hidden></p>
 
-                <div id="socialAttachPreview" class="social__attach" hidden>
-                  <img id="socialAttachThumb" alt="Attached photo" />
-                  <button type="button" class="row-remove" id="socialAttachRemove">Remove</button>
-                </div>
-
-                <form id="socialChatForm" class="social__chat-form" novalidate>
-                  <label class="sr-only" for="socialChatInput">Message</label>
-                  <textarea
-                    id="socialChatInput"
-                    class="editor__input"
-                    rows="2"
-                    maxlength="2000"
-                    placeholder="Type a message…"
-                  ></textarea>
-                  <div class="social__chat-actions">
-                    <button type="button" class="btn btn--ghost" id="socialAttachBtn">
-                      Attach photo
-                    </button>
-                    <input
-                      type="file"
-                      id="socialAttachInput"
-                      accept="image/png,image/jpeg,image/webp"
-                      hidden
-                    />
-                    <button type="submit" class="btn btn--primary" id="socialChatSend">Send</button>
-                  </div>
-                </form>
-
-                <button
-                  type="button"
-                  class="btn btn--primary social__draft-btn"
-                  id="socialDraftBtn"
-                  disabled
-                >
-                  Draft post copy from this chat
-                </button>
-
-                <div id="socialAiResult" class="social__result" hidden>
-                  <div id="socialFlags" class="social__flags" hidden></div>
-
-                  <div class="social__field">
-                    <div class="social__field-head">
-                      <label>Headline</label>
-                      <button
-                        type="button"
-                        class="btn btn--ghost btn--small"
-                        id="socialUseHeadline"
-                      >
-                        Insert into image
+                    <div id="socialAttachPreview" class="social__attach" hidden>
+                      <img id="socialAttachThumb" alt="Attached photo" />
+                      <button type="button" class="row-remove" id="socialAttachRemove">
+                        Remove
                       </button>
                     </div>
-                    <p id="socialHeadlineOut" class="social__out"></p>
-                  </div>
-                  <div class="social__field">
-                    <label>Caption</label>
-                    <p id="socialCaptionOut" class="social__out"></p>
-                  </div>
-                  <div class="social__field">
-                    <label>Hashtags</label>
-                    <p id="socialHashtagsOut" class="social__out"></p>
+
+                    <form id="socialChatForm" class="social__chat-form" novalidate>
+                      <label class="sr-only" for="socialChatInput">Message</label>
+                      <textarea
+                        id="socialChatInput"
+                        class="editor__input"
+                        rows="2"
+                        maxlength="2000"
+                        placeholder="Type a message…"
+                      ></textarea>
+                      <div class="social__chat-actions">
+                        <button type="button" class="btn btn--ghost" id="socialAttachBtn">
+                          Attach photo
+                        </button>
+                        <input
+                          type="file"
+                          id="socialAttachInput"
+                          accept="image/png,image/jpeg,image/webp"
+                          hidden
+                        />
+                        <button type="submit" class="btn btn--primary" id="socialChatSend">
+                          Send
+                        </button>
+                      </div>
+                    </form>
                   </div>
 
-                  <div class="social__review" id="socialReviewGate" hidden>
-                    <label>
-                      <input type="checkbox" id="socialReviewCheck" />
-                      I've reviewed this draft &mdash; it's accurate and appropriate to post.
-                    </label>
+                  <div class="social__ai-draft">
+                    <h4 class="social__draft-h">Draft post copy</h4>
+                    <p id="socialDraftEmpty" class="social__hint">
+                      Nothing drafted yet &mdash; keep chatting and a draft will appear here.
+                    </p>
+
+                    <div id="socialAiResult" class="social__result" hidden>
+                      <div id="socialFlags" class="social__flags" hidden></div>
+
+                      <div class="social__field">
+                        <div class="social__field-head">
+                          <label>Headline</label>
+                          <button
+                            type="button"
+                            class="btn btn--ghost btn--small"
+                            id="socialUseHeadline"
+                          >
+                            Insert into image
+                          </button>
+                        </div>
+                        <p id="socialHeadlineOut" class="social__out"></p>
+                      </div>
+                      <div class="social__field">
+                        <label>Caption</label>
+                        <p id="socialCaptionOut" class="social__out"></p>
+                      </div>
+                      <div class="social__field">
+                        <label>Hashtags</label>
+                        <p id="socialHashtagsOut" class="social__out"></p>
+                      </div>
+
+                      <div class="social__review" id="socialReviewGate" hidden>
+                        <label>
+                          <input type="checkbox" id="socialReviewCheck" />
+                          I've reviewed this draft &mdash; it's accurate and appropriate to post.
+                        </label>
+                      </div>
+                      <button type="button" class="btn btn--ghost" id="socialCopyCaption">
+                        Copy caption + hashtags
+                      </button>
+                    </div>
                   </div>
-                  <button type="button" class="btn btn--ghost" id="socialCopyCaption">
-                    Copy caption + hashtags
-                  </button>
                 </div>
               </div>
 

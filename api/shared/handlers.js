@@ -46,7 +46,7 @@ const {
   setSocialPromptConfig,
 } = require("./store");
 const { validateContent } = require("./contentSchema");
-const { chatReply, chatDraft, DEFAULT_SYSTEM_PROMPT } = require("./aiCopy");
+const { chatTurn, DEFAULT_SYSTEM_PROMPT } = require("./aiCopy");
 
 const ENQUIRY_STATUSES = ["new", "in-progress", "resolved"];
 const { normalizeAuPhone, maskPhone } = require("./phone");
@@ -662,7 +662,7 @@ function sanitizeTranscript(input) {
   return { ok: true, transcript: out };
 }
 
-/** Members only — chat turn or final-draft extraction, safety-flagged. */
+/** Members only — a chat turn that returns a reply plus the live draft, safety-flagged. */
 async function handleSocialChat(req, env = process.env) {
   const s = await resolveSession(req, {}, env);
   if (!s.ok) return { status: s.status, body: { error: s.error } };
@@ -681,26 +681,22 @@ async function handleSocialChat(req, env = process.env) {
   const body = req.body || {};
   const parsed = sanitizeTranscript(body.messages);
   if (!parsed.ok) return { status: 400, body: { error: parsed.error } };
-  const mode = body.mode === "draft" ? "draft" : "reply";
 
   const cfg = await getSocialPromptConfig(env);
   const systemPrompt = (cfg && cfg.prompt) || DEFAULT_SYSTEM_PROMPT;
 
   let out;
   try {
-    out =
-      mode === "draft"
-        ? await chatDraft({ systemPrompt, transcript: parsed.transcript }, env)
-        : await chatReply({ systemPrompt, transcript: parsed.transcript }, env);
+    out = await chatTurn({ systemPrompt, transcript: parsed.transcript }, env);
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.error(`social ${mode} failed: ${err.message}`);
+    console.error(`social chat failed: ${err.message}`);
     return { status: 502, body: { error: "Could not reach the assistant. Try again shortly." } };
   }
 
   await audit(
-    mode === "draft" ? "social_copy_generated" : "social_chat_message",
-    { email: s.member.email, ip, detail: mode === "draft" ? `${out.flags.length} flag(s)` : "" },
+    "social_chat_message",
+    { email: s.member.email, ip, detail: out.draft ? `${out.draft.flags.length} flag(s)` : "" },
     env
   );
 
