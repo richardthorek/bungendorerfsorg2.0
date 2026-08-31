@@ -190,8 +190,21 @@ function toOpenAiMessage(m) {
   return { role: m.role, content: m.text || "" };
 }
 
-/** Low-level Azure OpenAI chat completion call. `transcript` is [{role,text,image?}]. */
-async function callAzureChat(systemPrompt, transcript, { jsonMode } = {}, env = process.env) {
+/**
+ * Low-level Azure OpenAI chat completion call. `transcript` is [{role,text,image?}].
+ *
+ * Targets a GPT-5-series reasoning deployment (e.g. `gpt-5.6-terra`): those models
+ * reject `temperature` and `max_tokens` — the token cap is `max_completion_tokens`
+ * (it also has to cover any hidden reasoning tokens) and `reasoning_effort` trades
+ * latency for depth. `"none"` keeps the conversational turn snappy; the final draft
+ * gets a little reasoning to hold the JSON contract and catch its own selfFlags.
+ */
+async function callAzureChat(
+  systemPrompt,
+  transcript,
+  { jsonMode, reasoningEffort = "none" } = {},
+  env = process.env
+) {
   const endpoint = (env.AZURE_OPENAI_ENDPOINT || "").replace(/\/+$/, "");
   const apiKey = env.AZURE_OPENAI_API_KEY;
   const deployment = env.AZURE_OPENAI_DEPLOYMENT;
@@ -210,8 +223,9 @@ async function callAzureChat(systemPrompt, transcript, { jsonMode } = {}, env = 
     body: JSON.stringify({
       messages,
       response_format: jsonMode ? { type: "json_object" } : undefined,
-      temperature: jsonMode ? 0.6 : 0.7,
-      max_tokens: jsonMode ? 700 : 350,
+      reasoning_effort: reasoningEffort,
+      // Headroom for reasoning tokens on top of the visible reply.
+      max_completion_tokens: jsonMode ? 2000 : 1200,
     }),
   });
 
@@ -228,7 +242,12 @@ async function callAzureChat(systemPrompt, transcript, { jsonMode } = {}, env = 
 
 /** @param {{systemPrompt:string, transcript:Array}} args */
 async function chatReply({ systemPrompt, transcript }, env = process.env) {
-  const content = await callAzureChat(systemPrompt + CHAT_REPLY_SUFFIX, transcript, {}, env);
+  const content = await callAzureChat(
+    systemPrompt + CHAT_REPLY_SUFFIX,
+    transcript,
+    { reasoningEffort: "none" },
+    env
+  );
   return { reply: truncate(content, 2000) };
 }
 
@@ -238,7 +257,12 @@ async function chatDraft({ systemPrompt, transcript }, env = process.env) {
     systemPrompt +
     DRAFT_JSON_CONTRACT +
     "\n\nProduce the final draft now based on the whole conversation.";
-  const content = await callAzureChat(draftSystem, transcript, { jsonMode: true }, env);
+  const content = await callAzureChat(
+    draftSystem,
+    transcript,
+    { jsonMode: true, reasoningEffort: "low" },
+    env
+  );
 
   let parsed;
   try {
