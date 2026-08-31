@@ -1,3 +1,13 @@
+// Provisions the Static Web App *shell* only.
+//
+// Application settings are NOT managed here. The `Microsoft.Web/staticSites/config`
+// resource does a full replace of the app-settings collection, and this app's
+// settings have grown per-feature (members' auth, ACS, Azure OpenAI, Clarity,
+// duty line, …) and are set out-of-band with `az staticwebapp appsettings set`.
+// Running a partial settings block from IaC would wipe the rest and break auth,
+// Social Studio, the brigade phone, and contact email. See infra/README.md and
+// api/local.settings.example.json for the full settings surface.
+
 @description('Name of the Azure Static Web App')
 param staticWebAppName string = 'bungendorerfs-static'
 
@@ -11,33 +21,6 @@ param location string = 'eastasia'
 @description('SWA SKU')
 param skuName string = 'Free'
 
-@secure()
-@description('Mapbox public access token used by /mapbox-token')
-param mapboxAccessToken string
-
-@secure()
-@description('Webhook URL for contact form submissions')
-param azureContactWebhookUrl string
-
-@secure()
-@description('Webhook URL for calendar events')
-param azureCalendarWebhookUrl string
-
-@secure()
-@description('Webhook URL for incidents GeoJSON')
-param azureIncidentsWebhookUrl string
-
-@secure()
-@description('Webhook URL for fire danger XML feed')
-param azureFireDangerWebhookUrl string
-
-@description('Optional comma-separated origin allow-list for mapbox token endpoint')
-param allowedOrigins string = ''
-
-@secure()
-@description('Microsoft Clarity Data Export API token (members-area analytics). Optional.')
-param clarityApiToken string = ''
-
 resource staticSite 'Microsoft.Web/staticSites@2023-12-01' = {
   name: staticWebAppName
   location: location
@@ -48,19 +31,6 @@ resource staticSite 'Microsoft.Web/staticSites@2023-12-01' = {
   properties: {
     stagingEnvironmentPolicy: 'Enabled'
     allowConfigFileUpdates: true
-  }
-}
-
-resource staticSiteAppSettings 'Microsoft.Web/staticSites/config@2023-12-01' = {
-  name: '${staticSite.name}/appsettings'
-  properties: {
-    MAPBOX_ACCESS_TOKEN: mapboxAccessToken
-    AZURE_CONTACT_WEBHOOK_URL: azureContactWebhookUrl
-    AZURE_CALENDAR_WEBHOOK_URL: azureCalendarWebhookUrl
-    AZURE_INCIDENTS_WEBHOOK_URL: azureIncidentsWebhookUrl
-    AZURE_FIRE_DANGER_WEBHOOK_URL: azureFireDangerWebhookUrl
-    ALLOWED_ORIGINS: allowedOrigins
-    CLARITY_API_TOKEN: clarityApiToken
   }
 }
 

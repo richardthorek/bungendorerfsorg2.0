@@ -7,12 +7,10 @@ on:
   push:
     branches:
       - main
-      - liveDev
       - 'copilot/**'
   pull_request:
     branches:
       - main
-      - liveDev
 
 jobs:
   lint-and-test:

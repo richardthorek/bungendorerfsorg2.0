@@ -1,8 +1,13 @@
 # UI Baseline — Home Page (Pre-Redesign)
 
-**Captured:** 2026-04-23 · **Source commit:** topic branch `claude/fix-dynamic-site-elements-loading` · **Tracking issue:** [#56](https://github.com/richardthorek/bungendorerfsorg2.0/issues/56)
+**Captured:** 2026-04-23 · **Source commit:** topic branch `claude/fix-dynamic-site-elements-loading` · **Tracking issue:** [#56](https://github.com/richardthorek/bungendorerfsorg2.0/issues/56) — closed Aug 2026.
 
-This is the evidence base for the "Command Centre" UI redesign. Every claim links to a file path and line number so it can be verified or revisited.
+> **Historical snapshot.** This is the pre-redesign measurement the "Command
+> Centre" work was compared against — the redesign has since shipped. The file
+> path / line references below point at the *pre-redesign* `index.html` and no
+> longer resolve against the current file. The one part still current is
+> **§5 — the canonical DOM-ID contract** for JS reading/writing the live status
+> strip; treat that as authoritative, the rest as a record.
 
 ---
 

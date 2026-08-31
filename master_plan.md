@@ -54,18 +54,33 @@ current DOM): [`docs/current_state/ui-baseline.md`](docs/current_state/ui-baseli
 
 ---
 
+## Outstanding — owner action
+
+The M365-migration and members'-area programmes below are **code-complete**. What
+is left is manual teardown / config only the owner can do:
+
+- **Twilio Studio** — point the `phoneNumbers` (calls) and `phoneNumbers2` (SMS)
+  widgets at `/api/duty`, add `X-Duty-Key`, add the SMS-PIN Split/claim widgets;
+  then retire `phoneNumberForwarding` and the `prod-00` SMS-lookup Logic App.
+- **Delete** the disabled `formHandler` Logic App and the `getCalendar` Logic App,
+  plus the `office365` / `office365-1` / `sharepointonline` / `teams` connections.
+- Remove `AZURE_CALENDAR_WEBHOOK_URL` (and any `AZURE_CONTACT_WEBHOOK_URL`) from
+  the Static Web App settings if still present.
+
+---
+
 ## Other programmes
 
 | Programme                                                                             | Status | Reference                                                                                         |
 | ------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------- |
 | Security remediation (token logging, Logic Apps proxy, XSS, mapbox origin validation) | Done   | [`SECURITY_FIXES.md`](SECURITY_FIXES.md)                                                          |
 | Test infrastructure (Jest + Testing-Library)                                          | Done   | [`docs/TESTING.md`](docs/TESTING.md), `__tests__/`                                                |
-| CI (lint + test + audit on push/PR)                                                   | Done   | `.github/workflows/ci.yml`                                                                        |
+| CI (lint + test + audit)                                                              | Done   | `.github/workflows/ci.yml`                                                                        |
 | Calendar migration off Microsoft Graph to static content files                        | Done   | `public/Content/communityEvents.json`, `trainingSchedule.json`; see README § Editing site content |
 
 ---
 
-## Active programme: Contact form email — migrate off the retiring M365 tenant
+## Delivered: Contact form email — off the retiring M365 tenant
 
 **Target outcome:** the website contact form no longer depends on the
 `bungendorerfs.onmicrosoft.com` tenant (SharePoint list + Office 365 mail +
@@ -87,7 +102,7 @@ enquirer.
 
 ---
 
-## Active programme: Members' area + duty-line + events, off the retiring M365 tenant
+## Delivered: Members' area (auth · duty line · events · enquiries · Social Studio · Analytics)
 
 **Target outcome:** a passwordless members' sign-in on the website that replaces the
 Microsoft-365-dependent workflows — the SharePoint duty-phone lookup behind the
@@ -118,7 +133,7 @@ tenant — simpler, no SWA Standard upgrade, and the allow-list is needed either
 | PR 7 config — set `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_API_KEY` / `AZURE_OPENAI_DEPLOYMENT` (a vision-capable chat deployment) / `AZURE_OPENAI_API_VERSION` on the SWA                                                  | Done — `brfs-openai` (Azure OpenAI, australiaeast, RG `BungendoreRFS`), deployment `gpt-5.6-terra` (GlobalStandard); API version `2024-10-21` (GA; json_object + vision + reasoning_effort verified end-to-end). GPT-5 reasoning models reject `temperature`/`max_tokens`, so `api/shared/aiCopy.js` now sends `max_completion_tokens` + `reasoning_effort` (`low`). 4 settings live on `bungendorerfs-static` |
 | PR 7 follow-up — collapsed the separate "chat reply" / "draft post copy" round-trips into one `chatTurn` call returning `{message, draft}`; admin UI now shows the chat thread and a live-updating draft panel side by side instead of a chat-then-click-to-draft flow                                                  | Done — branch `claude/ai-copy-response-structure-cne5xe` |
 | PR 8 — Microsoft Clarity: analytics tag on `public/index.html` (project `yaxo089b41`, public site only — not `admin.html`); "Analytics" tab in the members' area reading the Clarity Data Export API via `api/clarity` (+ `server.js` mirror). Rolling 3-day window normalised to a stable summary and stored in a new `analytics` table (`latest` + one `day:<date>` rollup row) so the trend outlives Clarity's own retention. Refresh is opportunistic off members'-area traffic (`maybeRefreshClarity` fired from `handleAuthMe` + the panel), gated to ≥6h apart and ≤6 pulls/UTC-day (Clarity's cap is 10) | Done — branch `feat/site-analytics` (PR #105) |
-| PR 8 config — set `CLARITY_API_TOKEN` on the SWA | Done — live on `bungendorerfs-static`; also a `@secure()` `clarityApiToken` param + app-setting in `infra/main.bicep`. Data stays empty until the Clarity tag ships to production |
+| PR 8 config — set `CLARITY_API_TOKEN` on the SWA | Done — live on `bungendorerfs-static` (set with `az staticwebapp appsettings set`, like every other members'-area setting; `infra/main.bicep` no longer manages app settings — see `infra/README.md`). Data stays empty until the Clarity tag has production traffic |
 
 Twilio flow notes: inbound calls hit widget `phoneNumbers` → `prod-08` Logic App
 `32aded0a…`; inbound SMS hit `phoneNumbers2` → `prod-00` Logic App `86da0e0d…` and

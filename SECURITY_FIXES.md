@@ -22,7 +22,15 @@ enquiries and contact→ACS work (PRs #90–#101). No backdoors found. Fixes app
 
 ---
 
-## Critical Security Fixes Implemented
+## Critical Security Fixes Implemented (February 2026)
+
+> **Superseded in places.** This section is the original remediation record. Since
+> it was written: the contact form moved off its Logic App to Azure Communication
+> Services (`AZURE_CONTACT_WEBHOOK_URL` gone), the calendar Logic App and
+> `AZURE_CALENDAR_WEBHOOK_URL` were removed entirely, and the members' area added
+> ACS sign-in, `brfsstorage`, Azure OpenAI and Microsoft Clarity. The **principles**
+> below still hold; the specific webhook/variable names in "Required Next Steps"
+> are historical. Current env surface: `api/local.settings.example.json`.
 
 ### 1. ✅ Removed Token Logging (CRITICAL)
 
@@ -110,46 +118,14 @@ const allowedOrigins = [
 
 ---
 
-## Required Next Steps
+## Required Next Steps (February 2026 — historical)
 
-### IMMEDIATE ACTION REQUIRED ⚠️
-
-Before deploying these changes to production, you MUST:
-
-1. **Regenerate Azure Logic App Signatures:**
-   - Go to Azure Portal → Logic Apps
-   - Find each Logic App:
-     - Contact form webhook
-     - Calendar events webhook
-     - Fire incidents webhook
-     - Fire danger rating webhook
-     - Mapbox token webhook
-   - Regenerate the signatures for each
-   - Copy the new complete URLs
-
-2. **Create .env File:**
-   - Copy `.env.example` to `.env`
-   - Replace placeholder URLs with your newly generated Azure Logic App URLs
-   - Add your Mapbox access token
-   - DO NOT commit the `.env` file (it's in .gitignore)
-
-3. **Configure Production Environment:**
-   - Add all environment variables to your hosting platform
-   - Ensure the following are set:
-     - `MAPBOX_ACCESS_TOKEN`
-     - `AZURE_CONTACT_WEBHOOK_URL`
-     - `AZURE_CALENDAR_WEBHOOK_URL`
-     - `AZURE_INCIDENTS_WEBHOOK_URL`
-     - `AZURE_FIRE_DANGER_WEBHOOK_URL`
-     - `AZURE_MAPBOX_TOKEN_WEBHOOK_URL` (optional, falls back to MAPBOX_ACCESS_TOKEN)
-     - `PORT` (optional, defaults to 3000)
-
-4. **Test All Functionality:**
-   - Contact form submission
-   - Calendar events display
-   - Map with fire incidents
-   - Fire danger rating display
-   - Modal functionality
+The February 2026 deployment required regenerating the Logic App SAS URLs (contact,
+calendar, incidents, fire danger, mapbox), creating `.env` from `.env.example`,
+and setting the same variables on the Static Web App. Contact and calendar have
+since been removed. For the **current** credential list and rotation steps see
+[`docs/API_INTEGRATION.md` → Credential Rotation](docs/API_INTEGRATION.md#credential-rotation)
+and [`api/local.settings.example.json`](api/local.settings.example.json).
 
 ---
 
@@ -174,7 +150,7 @@ Before deploying these changes to production, you MUST:
 
 ## References
 
-- [docs/IMPLEMENTATION_SUMMARY.md](./docs/IMPLEMENTATION_SUMMARY.md) - Change log for the same remediation pass
+- [docs/API_INTEGRATION.md](./docs/API_INTEGRATION.md) - current endpoint + credential reference
 - [DOMPurify Documentation](https://github.com/cure53/DOMPurify)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Express Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html)

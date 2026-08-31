@@ -1,44 +1,51 @@
 # Infrastructure as Code (IaC)
 
-This folder provisions the production Static Web App and all runtime settings required by the integrated `api/` Functions package.
+`main.bicep` provisions the **Static Web App shell only** — name, region, SKU,
+staging-environment policy, `allowConfigFileUpdates`.
 
-## What this deploys
+## Application settings are NOT in the Bicep
 
-- Azure Static Web App (`Microsoft.Web/staticSites`)
-- Static Web App app settings used by integrated API functions:
-  - `MAPBOX_ACCESS_TOKEN`
-  - `AZURE_CONTACT_WEBHOOK_URL`
-  - `AZURE_CALENDAR_WEBHOOK_URL`
-  - `AZURE_INCIDENTS_WEBHOOK_URL`
-  - `AZURE_FIRE_DANGER_WEBHOOK_URL`
-  - `ALLOWED_ORIGINS`
+The `Microsoft.Web/staticSites/config` resource does a **full replace** of the
+app-settings collection. This app's settings have grown feature by feature
+(members' auth, ACS email, Azure OpenAI, Microsoft Clarity, the duty line, live
+fire feeds) and are set directly on the Static Web App with
+`az staticwebapp appsettings set` (or the portal). Managing a partial set from
+IaC would wipe the rest and break auth, Social Studio, the brigade phone, and
+contact email.
 
-## Deploy
+The authoritative, complete settings list — with dev values and comments — is
+[`../api/local.settings.example.json`](../api/local.settings.example.json), and
+the per-feature breakdown is in
+[`../docs/API_INTEGRATION.md`](../docs/API_INTEGRATION.md#environment-variables).
 
 ```bash
-# 1) Choose your subscription
+# set / update one setting
+az staticwebapp appsettings set \
+  --name bungendorerfs-static --resource-group BungendoreRFS \
+  --setting-names "AZURE_OPENAI_API_KEY=<value>"
+
+# list current settings (values are redacted in the CLI output)
+az staticwebapp appsettings list --name bungendorerfs-static --resource-group BungendoreRFS
+```
+
+## Deploy the shell
+
+```bash
 az account set --subscription "<subscription-name-or-id>"
-
-# 2) Create/update the resource group
 az group create --name BungendoreRFS --location eastasia
-
-# 3) Copy and edit parameters
-cp infra/parameters.example.json infra/parameters.json
-
-# 4) Deploy IaC
+cp infra/parameters.example.json infra/parameters.json    # edit if needed
 az deployment group create \
   --resource-group BungendoreRFS \
   --template-file infra/main.bicep \
   --parameters @infra/parameters.json
 ```
 
-## App code deployment
+## App + API code deployment
 
-Infrastructure is created by IaC, but code deployment still happens via GitHub Actions using `.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`.
-
-That workflow now includes:
+Code deploys via GitHub Actions
+(`.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`), triggered
+on `workflow_run` after CI passes. It publishes the frontend and the HTTP-trigger
+Functions together as one package:
 
 - `app_location: ./public`
 - `api_location: ./api`
-
-So the frontend and HTTP-trigger Functions are deployed together as one Static Web App package.

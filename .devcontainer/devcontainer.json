@@ -13,7 +13,7 @@
 		// Azure CLI + Azure Functions tooling for the api/ proxy layer and infra/main.bicep.
 		"ghcr.io/devcontainers/features/azure-cli:1": {},
 		"ghcr.io/jlaundry/devcontainer-features/azure-functions-core-tools:1": {},
-		// GitHub CLI — topic-branch -> PR workflow into liveDev.
+		// GitHub CLI — topic-branch -> PR workflow into main.
 		"ghcr.io/devcontainers/features/github-cli:1": {},
 		// Claude Code CLI.
 		"ghcr.io/anthropics/devcontainer-features/claude-code:1": {}

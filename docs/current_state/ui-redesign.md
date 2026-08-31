@@ -1,8 +1,13 @@
-# UI Redesign Spec — "Command Centre" Home Page (Future State)
+# UI Redesign Spec — "Command Centre" Home Page (As Built)
 
-**Created:** 2026-04-23 · **Tracking issue:** [#56](https://github.com/richardthorek/bungendorerfsorg2.0/issues/56) · **Companion docs:** [ui-baseline.md](ui-baseline.md), [wireframe/index.html](wireframe/index.html)
+**Created:** 2026-04-23 · **Tracking issue:** [#56](https://github.com/richardthorek/bungendorerfsorg2.0/issues/56) — closed Aug 2026 · **Companion docs:** [ui-baseline.md](ui-baseline.md), [wireframe/index.html](wireframe/index.html)
 
-This document is the **definition of done** for the redesign. Each section maps to one PR; a worker agent will read this top-to-bottom and execute. Acceptance criteria are testable from `git diff` + a browser at the four standard breakpoints (360 / 768 / 1280 / 1920).
+> **The redesign has shipped.** This was written as the definition of done, one
+> section per PR; all seven phases landed (#57–#63 closed). Read it now as the
+> **as-built spec** for the home page's composition and intent — not a work
+> order. The `← phase N` tags are left in as provenance. The numeric verification
+> (Lighthouse, axe-core, the last of the CSS target) was consciously deferred —
+> see `master_plan.md`.
 
 ---
 
@@ -179,7 +184,7 @@ This document is the **definition of done** for the redesign. Each section maps 
 **Changes:**
 - `<head>`: remove the duplicate Pico stylesheet (keep one — recommended: keep `@picocss/pico@2/css/pico.colors.min.css` only if its colours are actually used; otherwise keep the `latest` main bundle and drop the colours add-on).
 - Remove FA 5.15.4 (`L21–22`); keep FA 6 only.
-- Lazy-load Mapbox GL JS + Leaflet only when the map enters the viewport, via `IntersectionObserver` on `#map` or the strip's mini-map cell.
+- Lazy-load Mapbox GL JS only when the map enters the viewport, via `IntersectionObserver`. (As built: Leaflet was dropped from the project entirely; the map is Mapbox GL only.)
 - Sweep `main.css` for unused selectors (target `≤ 50 KB / ≤ 2 000 lines`). Document removals in `docs/CSS_OPTIMIZATION.md`.
 
 **Acceptance:**

@@ -6,7 +6,6 @@ on:
     types: [completed]
     branches:
       - main
-      - liveDev
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
