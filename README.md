@@ -109,9 +109,11 @@ PORT=3000
 ALLOWED_ORIGINS=https://bungendorerfs.org,https://www.bungendorerfs.org,http://localhost:3000
 ```
 
-`AZURE_CALENDAR_WEBHOOK_URL` is also read by `server.js`/`api/calendar-events` but is
-no longer used by the front end — events and training now come from static content
-files (below), not a live calendar feed. It's safe to leave unset.
+Events and the training schedule are edited in the members' area (`/admin`) and
+stored in `brfsstorage`; the home page reads them from `/api/content/events` and
+`/api/content/training`, falling back to the bundled JSON files if the API is
+unreachable. The old Microsoft 365 calendar feed (`api/calendar-events`,
+`AZURE_CALENDAR_WEBHOOK_URL`, the `getCalendar` Logic App) has been removed.
 
 **Never commit `.env`.** It holds live credentials.
 
@@ -228,7 +230,7 @@ See `infra/README.md` for details.
 Two backend targets share one contract:
 
 1. **Production (Azure Static Web Apps):** `api/<fn>/index.js` functions
-   (`mapbox-token`, `fire-danger`, `fire-incidents`, `calendar-events`, `contact`) act
+   (`mapbox-token`, `fire-danger`, `fire-incidents`, `contact`, and the members'-area functions) act
    as the proxy layer between the static site and upstream services (Azure Logic Apps
    webhooks for fire data, Azure Communication Services for contact-form email). This
    is the security boundary — credentials never reach the browser.

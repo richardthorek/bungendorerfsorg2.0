@@ -15,6 +15,8 @@ const {
   handleDutyStatus,
   handleDutySet,
   handleDutyClaim,
+  handleContentGet,
+  handleContentSet,
 } = require("./api/shared/handlers");
 
 const allowedOrigins = [
@@ -152,31 +154,6 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
-// Proxy endpoint for calendar events
-app.get("/api/calendar-events", async (req, res) => {
-  try {
-    const webhookUrl = process.env.AZURE_CALENDAR_WEBHOOK_URL;
-
-    if (!webhookUrl) {
-      console.error("AZURE_CALENDAR_WEBHOOK_URL not configured");
-      return res.status(500).json({ error: "Server configuration error" });
-    }
-
-    const response = await fetch(webhookUrl);
-
-    if (!response.ok) {
-      console.error(`Azure webhook returned status ${response.status}`);
-      return res.status(response.status).json({ error: "Failed to fetch events" });
-    }
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error("Error fetching calendar events:", error);
-    res.status(500).json({ error: "Failed to fetch events" });
-  }
-});
-
 // Proxy endpoint for fire incidents (map data)
 app.get("/api/fire-incidents", async (req, res) => {
   try {
@@ -276,6 +253,15 @@ app.get("/api/duty/status", mirror(handleDutyStatus));
 app.get("/api/duty", mirror(handleDutyLookup));
 app.post("/api/duty/claim", mirror(handleDutyClaim));
 app.post("/api/duty", mirror(handleDutySet));
+
+app.get(
+  "/api/content/:key",
+  mirror((req) => handleContentGet(req.params.key, process.env))
+);
+app.put(
+  "/api/content/:key",
+  mirror((req) => handleContentSet(req.params.key, req, process.env))
+);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

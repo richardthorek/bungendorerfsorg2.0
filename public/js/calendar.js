@@ -112,14 +112,23 @@ function renderEmpty(containerId, message) {
   container.appendChild(emptyEl);
 }
 
+// Editable content lives in the members' area (Azure Table); the bundled JSON
+// file is the seed source and a fallback if the API is unreachable.
+function fetchContent(apiPath, staticPath) {
+  return fetch(apiPath)
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .catch(() =>
+      fetch(staticPath).then((r) => {
+        if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+        return r.json();
+      })
+    );
+}
+
 function renderTrainingSchedule(containerId) {
   showLoadingMessage(containerId, "Loading training schedule...");
 
-  fetch("/Content/trainingSchedule.json")
-    .then((response) => {
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return response.json();
-    })
+  fetchContent("/api/content/training", "/Content/trainingSchedule.json")
     .then((items) => {
       const today = luxon.DateTime.now().setZone("Australia/Sydney").startOf("day");
       const schedule = (Array.isArray(items) ? items : [])
@@ -154,11 +163,7 @@ function renderTrainingSchedule(containerId) {
 function renderCommunityEvents(containerId) {
   showLoadingMessage(containerId, "Loading community events...");
 
-  fetch("/Content/communityEvents.json")
-    .then((response) => {
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      return response.json();
-    })
+  fetchContent("/api/content/events", "/Content/communityEvents.json")
     .then((items) => {
       const container = document.getElementById(containerId);
       if (!container) return;

@@ -99,24 +99,22 @@ SharePoint connections are retired.
 
 ---
 
-### 2. Community events & training schedule (static content, not a live endpoint)
+### 2. Community events & training schedule
 
-**Not proxied through the API.** Community events and the recurring training
-schedule are read directly by `public/js/calendar.js` from static content files:
+Edited in the members' area (`/admin` → Events & training) and stored in
+`brfsstorage`. `public/js/calendar.js` renders the two home-page widgets from:
 
-- `GET /Content/communityEvents.json` — array of `{ name, timing, description }`.
-- `GET /Content/trainingSchedule.json` — array of `{ title, recurrence, time, location }`;
+- `GET /api/content/events` — array of `{ name, timing, description }`
+- `GET /api/content/training` — array of `{ title, recurrence, time, location }`;
   `calendar.js` computes each item's next occurrence client-side from `recurrence`
-  (e.g. `second-saturday`, `every-friday`) using Luxon, converted to
-  `Australia/Sydney`.
+  (`every-friday`, `second-saturday`, …) using Luxon in `Australia/Sydney`.
 
-See the README's [Editing site content](../README.md#editing-site-content-no-code-required)
-section for the schema and edit workflow.
+If the API is unreachable it falls back to the bundled `/Content/*.json` files,
+which also seed the tables (`node scripts/seed-content.js`). See
+[Members' area §7 — Brigade phone / §editable content](#7-brigade-phone-call--sms-forwarding-number).
 
-`GET /api/calendar-events` (backed by `AZURE_CALENDAR_WEBHOOK_URL`) still exists in
-`api/` and `server.js` for backward compatibility, but nothing in the current
-frontend calls it — the site no longer depends on a live Microsoft Graph calendar
-feed for events or training.
+The old Microsoft 365 calendar feed — `api/calendar-events`,
+`AZURE_CALENDAR_WEBHOOK_URL`, and the `getCalendar` Logic App — has been removed.
 
 ---
 
@@ -223,27 +221,31 @@ Allowed origins:
 ### 6. Members' area (sign-in + allow-list)
 
 **Page:** `/admin` (served from `public/admin.html`; `noindex`). Plain-JS dashboard
-shell — sign-in, then sections for Duty line, Events & training (both built later)
-and Members (admin only). Backend logic is shared: `api/shared/handlers.js` is used
-by `api/auth-*` / `api/members` and mirrored in `server.js`.
+shell — sign-in, then **Brigade phone** (§7), **Events & training** (§2) and
+**Members** (admin only). Backend logic is shared: `api/shared/handlers.js` is used
+by `api/auth-*` / `api/members` / `api/duty` / `api/content` and mirrored in
+`server.js`.
 
 **Sign-in** is passwordless. A person may sign in only if BOTH:
 
 1. their email is on `AUTH_ALLOWED_EMAIL_DOMAIN` (`rfs.nsw.gov.au`), and
 2. their email is a row in the `members` table (the allow-list) and not disabled.
 
-| Endpoint                                       | Notes                                                                                                                                                                                         |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/auth/request` `{email}`             | Emails a 6-digit code via ACS (10-min, single-use, 5-attempt lock). Always returns `{ok:true}` — never reveals whether the address is a member. Rate-limited per email (3/15 min) and per IP. |
-| `POST /api/auth/verify` `{email,code}`         | On success sets `brfs_session` — an HS256 JWT, `HttpOnly; Secure; SameSite=Lax`, **60-min** expiry (`AUTH_SESSION_MINUTES`).                                                                  |
-| `GET /api/auth/me`                             | `{email,name,role,expiresAt}` or 401. Re-checks the `members` row every call, so disabling a member or bumping `tokenVersion` logs them out at once.                                          |
-| `POST /api/auth/logout`                        | Clears the cookie and bumps `tokenVersion` so the token can't be replayed.                                                                                                                    |
-| `GET /api/members`                             | Admin only. `{members:[…]}`                                                                                                                                                                   |
-| `POST /api/members` `{email,displayName,role}` | Admin only. Adds/updates an allow-list entry (must be an `@rfs.nsw.gov.au` address). Requires header `X-BRFS-Auth: 1`.                                                                        |
-| `DELETE /api/members/{email}`                  | Admin only. Ends the member's session and removes them. Refuses to remove the last admin. Requires `X-BRFS-Auth: 1`.                                                                          |
+| Endpoint                                        | Notes                                                                                                                                                                                         |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/auth/request` `{email}`              | Emails a 6-digit code via ACS (10-min, single-use, 5-attempt lock). Always returns `{ok:true}` — never reveals whether the address is a member. Rate-limited per email (3/15 min) and per IP. |
+| `POST /api/auth/verify` `{email,code}`          | On success sets `brfs_session` — an HS256 JWT, `HttpOnly; Secure; SameSite=Lax`, **60-min** expiry (`AUTH_SESSION_MINUTES`).                                                                  |
+| `GET /api/auth/me`                              | `{email,name,role,expiresAt}` or 401. Re-checks the `members` row every call, so disabling a member or bumping `tokenVersion` logs them out at once.                                          |
+| `POST /api/auth/logout`                         | Clears the cookie and bumps `tokenVersion` so the token can't be replayed.                                                                                                                    |
+| `GET /api/members`                              | Admin only. `{members:[…]}`                                                                                                                                                                   |
+| `POST /api/members` `{email,displayName,role}`  | Admin only. Adds/updates an allow-list entry (must be an `@rfs.nsw.gov.au` address). Requires header `X-BRFS-Auth: 1`.                                                                        |
+| `DELETE /api/members/{email}`                   | Admin only. Ends the member's session and removes them. Refuses to remove the last admin. Requires `X-BRFS-Auth: 1`.                                                                          |
+| `GET /api/content/{events\|training}`           | Public. Returns the plain array the home-page widgets consume.                                                                                                                                |
+| `PUT /api/content/{events\|training}` `{items}` | Members only, `X-BRFS-Auth: 1`. Validates and replaces the whole list; audits `content_updated`.                                                                                              |
 
-**Storage:** four Azure Storage tables in `brfsstorage` (`BRFS_STORAGE_CONNECTION`),
-created on first use — `members`, `authcodes`, `ratelimits`, `auditlog`.
+**Storage:** Azure Storage tables in `brfsstorage` (`BRFS_STORAGE_CONNECTION`),
+created on first use — `members`, `authcodes`, `ratelimits`, `auditlog`, `duty`,
+`content`.
 
 **First admin:** there's no self-serve bootstrap. Seed it once:
 
@@ -304,10 +306,6 @@ Azure Logic Apps provides the serverless backend for:
 (The contact form no longer uses Logic Apps — it sends email directly via Azure
 Communication Services. See [Contact Form Submission](#1-contact-form-submission).)
 
-(A calendar-events workflow still exists for backward compatibility — see
-[Community events & training schedule](#2-community-events--training-schedule-static-content-not-a-live-endpoint)
-above — but the site doesn't call it.)
-
 ### Configuration
 
 Each Logic App has a unique HTTP trigger URL with SAS signature:
@@ -332,7 +330,6 @@ See `.env.example` for complete list:
 - `CONTACT_NOTIFY_CONFIRM` — optional; `false` disables the enquirer acknowledgement (default `true`)
 - `AZURE_INCIDENTS_WEBHOOK_URL`
 - `AZURE_FIRE_DANGER_WEBHOOK_URL`
-- `AZURE_CALENDAR_WEBHOOK_URL` — optional; kept for backward compatibility, unused by the current frontend
 
 ---
 
@@ -377,7 +374,6 @@ ACS_SENDER_ADDRESS=contact@notify.bungendorerfs.org
 CONTACT_NOTIFY_TO=committee@example-distribution-list.org
 
 # Azure Logic Apps Webhook URLs
-AZURE_CALENDAR_WEBHOOK_URL=https://prod-...
 AZURE_INCIDENTS_WEBHOOK_URL=https://prod-...
 AZURE_FIRE_DANGER_WEBHOOK_URL=https://prod-...
 

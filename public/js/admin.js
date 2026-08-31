@@ -186,6 +186,7 @@
     if (location.hash.replace("#", "") !== name) history.replaceState(null, "", "#" + name);
     if (name === "members") loadMembers();
     if (name === "duty") loadDuty();
+    if (name === "events") loadAllContent();
   }
 
   el.navItems.forEach(function (b) {
@@ -425,6 +426,183 @@
       el.dutyForm.reset();
       loadDuty();
     });
+  });
+
+  /* --------------------------------------------------------- events + training */
+
+  const ORDINALS = ["every", "first", "second", "third", "fourth", "last"];
+  const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+  const CONTENT = {
+    events: {
+      list: document.getElementById("eventList"),
+      meta: document.getElementById("eventMeta"),
+      msg: document.getElementById("eventMsg"),
+      fields: [
+        { key: "name", placeholder: "Event name", type: "text" },
+        { key: "timing", placeholder: "Timing, e.g. Date TBC", type: "text" },
+        { key: "description", placeholder: "Short description", type: "textarea" },
+      ],
+    },
+    training: {
+      list: document.getElementById("trainList"),
+      meta: document.getElementById("trainMeta"),
+      msg: document.getElementById("trainMsg"),
+      fields: [
+        { key: "title", placeholder: "Session title", type: "text" },
+        { key: "recurrence", type: "recurrence" },
+        { key: "time", placeholder: "Time, e.g. 7:00 PM – 8:00 PM", type: "text" },
+        { key: "location", placeholder: "Location", type: "text" },
+      ],
+    },
+  };
+
+  function cap(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function makeField(field, value) {
+    if (field.type === "recurrence") {
+      const wrap = document.createElement("div");
+      wrap.className = "recur";
+      const parts = String(value || "every-friday").split("-");
+      const ord = document.createElement("select");
+      ord.className = "recur__ord";
+      ORDINALS.forEach(function (o) {
+        const opt = document.createElement("option");
+        opt.value = o;
+        opt.textContent = o === "every" ? "Every" : cap(o);
+        if (o === parts[0]) opt.selected = true;
+        ord.appendChild(opt);
+      });
+      const day = document.createElement("select");
+      day.className = "recur__day";
+      WEEKDAYS.forEach(function (d) {
+        const opt = document.createElement("option");
+        opt.value = d;
+        opt.textContent = cap(d);
+        if (d === parts[1]) opt.selected = true;
+        day.appendChild(opt);
+      });
+      wrap.appendChild(ord);
+      wrap.appendChild(day);
+      return wrap;
+    }
+    const input = document.createElement(field.type === "textarea" ? "textarea" : "input");
+    if (field.type !== "textarea") input.type = "text";
+    input.className = "editor__input";
+    input.placeholder = field.placeholder || "";
+    input.value = value || "";
+    input.dataset.key = field.key;
+    return input;
+  }
+
+  function contentRow(key, data) {
+    const cfg = CONTENT[key];
+    const row = document.createElement("div");
+    row.className = "editor__row";
+    cfg.fields.forEach(function (field) {
+      const el2 = makeField(field, data ? data[field.key] : "");
+      el2.dataset.field = field.key;
+      row.appendChild(el2);
+    });
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "row-remove";
+    del.textContent = "Remove";
+    del.addEventListener("click", function () {
+      row.remove();
+    });
+    row.appendChild(del);
+    return row;
+  }
+
+  function renderContent(key, items) {
+    const cfg = CONTENT[key];
+    cfg.list.innerHTML = "";
+    (items || []).forEach(function (it) {
+      cfg.list.appendChild(contentRow(key, it));
+    });
+    if (!items || !items.length) {
+      const empty = document.createElement("p");
+      empty.className = "editor__empty";
+      empty.textContent = "Nothing listed. Add an entry below.";
+      cfg.list.appendChild(empty);
+    }
+  }
+
+  function collectContent(key) {
+    const cfg = CONTENT[key];
+    const rows = Array.prototype.slice.call(cfg.list.querySelectorAll(".editor__row"));
+    return rows.map(function (row) {
+      const obj = {};
+      cfg.fields.forEach(function (field) {
+        const holder = row.querySelector("[data-field=\"" + field.key + "\"]");
+        if (field.type === "recurrence") {
+          obj[field.key] =
+            holder.querySelector(".recur__ord").value +
+            "-" +
+            holder.querySelector(".recur__day").value;
+        } else {
+          obj[field.key] = holder.value.trim();
+        }
+      });
+      return obj;
+    });
+  }
+
+  function loadContent(key) {
+    const cfg = CONTENT[key];
+    setMsg(cfg.msg, "");
+    api("/api/content/" + key).then(function (r) {
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(cfg.msg, (r.data && r.data.error) || "Could not load this list.", "err");
+        return;
+      }
+      renderContent(key, Array.isArray(r.data) ? r.data : []);
+    });
+  }
+
+  function loadAllContent() {
+    loadContent("events");
+    loadContent("training");
+  }
+
+  function saveContent(key, btn) {
+    const cfg = CONTENT[key];
+    setMsg(cfg.msg, "");
+    btn.disabled = true;
+    api("/api/content/" + key, { method: "PUT", body: { items: collectContent(key) } }).then(
+      function (r) {
+        btn.disabled = false;
+        if (!r) return;
+        if (!r.ok) {
+          setMsg(cfg.msg, (r.data && r.data.error) || "Could not save.", "err");
+          return;
+        }
+        setMsg(cfg.msg, "Saved. Live within a few minutes.", "ok");
+        cfg.meta.textContent = "Updated just now by you";
+        renderContent(key, r.data.items);
+      }
+    );
+  }
+
+  document.getElementById("eventAdd").addEventListener("click", function () {
+    const empty = CONTENT.events.list.querySelector(".editor__empty");
+    if (empty) empty.remove();
+    CONTENT.events.list.appendChild(contentRow("events", null));
+  });
+  document.getElementById("trainAdd").addEventListener("click", function () {
+    const empty = CONTENT.training.list.querySelector(".editor__empty");
+    if (empty) empty.remove();
+    CONTENT.training.list.appendChild(contentRow("training", null));
+  });
+  document.getElementById("eventSave").addEventListener("click", function (e) {
+    saveContent("events", e.currentTarget);
+  });
+  document.getElementById("trainSave").addEventListener("click", function (e) {
+    saveContent("training", e.currentTarget);
   });
 
   /* --------------------------------------------------------------- utility */

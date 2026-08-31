@@ -572,12 +572,95 @@ label {
   justify-content: center;
 }
 
+/* -------------------------------------------------- content editors */
+
+.editor {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 44rem;
+}
+.editor__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.editor__head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.editor__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.editor__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.75rem;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--ground);
+}
+.editor__row > *:first-child {
+  grid-column: 1 / -1;
+}
+.editor__row textarea {
+  grid-column: 1 / -1;
+  min-height: 3.2rem;
+  resize: vertical;
+}
+.editor__row .row-remove {
+  align-self: center;
+}
+.editor__input {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  width: 100%;
+}
+.recur {
+  display: flex;
+  gap: 0.4rem;
+}
+.recur select {
+  width: auto;
+  flex: 1;
+}
+.editor__empty {
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  margin: 0;
+}
+.editor__foot {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-top: 0.9rem;
+}
+.editor__meta {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
 @media (max-width: 40rem) {
   .shell {
     grid-template-columns: 1fr;
   }
   .duty-form__row {
     flex-direction: column;
+  }
+  .editor__row {
+    grid-template-columns: 1fr;
   }
   .nav {
     flex-direction: row;

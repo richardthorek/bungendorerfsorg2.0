@@ -102,15 +102,16 @@ tenant — simpler, no SWA Standard upgrade, and the allow-list is needed either
 
 ### Status
 
-| Step                                                                                                                                                                       | State                              |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| PR 1 — auth core: sign-in codes, sessions, `members` allow-list + admin screen, audit log, seed script, tests                                                              | Done — branch `feat/members-auth`  |
-| First admin seeded (`richardthorek-vol@rfs.nsw.gov.au`) + SWA settings (`AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`) | Done                               |
-| PR 2 — `/api/duty` (public lookup + members set/status), duty screen, `DUTY_LOOKUP_KEY`; duty seeded `+61488880286`                                                        | Done — branch `feat/duty-line`     |
-| PR 2 cut-over — point the Twilio flow's `phoneNumbers` + `phoneNumbers2` widgets at `/api/duty`, add `X-Duty-Key`; retire `phoneNumberForwarding` + `prod-00` SMS lookup   | Pending — owner, in the Twilio GUI |
-| PR 3 — brigade-phone change-alert email + `POST /api/duty/claim` (SMS-PIN) + member `phone` field                                                                          | Done — branch `feat/duty-sms`      |
-| PR 3 config — set `DUTY_CLAIM_PIN` / `DUTY_FALLBACK_NUMBER` / `DUTY_ALERT_TO` on the SWA; add the `Split` + claim widgets in the Twilio flow                               | Pending — owner                    |
-| PR 4 — events + training + calendar-link admin in `brfsstorage`; retire `getCalendar`                                                                                      | Pending                            |
+| Step                                                                                                                                                                                                                       | State                              |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| PR 1 — auth core: sign-in codes, sessions, `members` allow-list + admin screen, audit log, seed script, tests                                                                                                              | Done — branch `feat/members-auth`  |
+| First admin seeded (`richardthorek-vol@rfs.nsw.gov.au`) + SWA settings (`AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`)                                                 | Done                               |
+| PR 2 — `/api/duty` (public lookup + members set/status), duty screen, `DUTY_LOOKUP_KEY`; duty seeded `+61488880286`                                                                                                        | Done — branch `feat/duty-line`     |
+| PR 2 cut-over — point the Twilio flow's `phoneNumbers` + `phoneNumbers2` widgets at `/api/duty`, add `X-Duty-Key`; retire `phoneNumberForwarding` + `prod-00` SMS lookup                                                   | Pending — owner, in the Twilio GUI |
+| PR 3 — brigade-phone change-alert email + `POST /api/duty/claim` (SMS-PIN) + member `phone` field                                                                                                                          | Done — branch `feat/duty-sms`      |
+| PR 3 config — set `DUTY_CLAIM_PIN` / `DUTY_FALLBACK_NUMBER` / `DUTY_ALERT_TO` on the SWA; add the `Split` + claim widgets in the Twilio flow                                                                               | Pending — owner                    |
+| PR 4 — events + training editing in the members' area (`/api/content/*`, `content` table); home page reads it via `calendar.js` with a bundled-JSON fallback; `api/calendar-events` + `AZURE_CALENDAR_WEBHOOK_URL` removed | Done — branch `feat/content-admin` |
+| PR 4 config — `node scripts/seed-content.js` against `brfsstorage`; remove `AZURE_CALENDAR_WEBHOOK_URL` from the SWA; retire the `getCalendar` Logic App                                                                   | Pending — owner                    |
 
 Twilio flow notes: inbound calls hit widget `phoneNumbers` → `prod-08` Logic App
 `32aded0a…`; inbound SMS hit `phoneNumbers2` → `prod-00` Logic App `86da0e0d…` and

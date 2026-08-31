@@ -21,6 +21,7 @@ const TABLES = {
   rate: "ratelimits",
   audit: "auditlog",
   duty: "duty",
+  content: "content",
 };
 
 let clients = null;
@@ -320,12 +321,49 @@ async function listDutyHistory(limit, env) {
   return out;
 }
 
+/* ------------------------------------------------------------------- content */
+
+/** Editable site content stored as one JSON array per key ("events" / "training"). */
+async function getContent(key, env) {
+  const e = await getEntity((await db(env)).content, "content", key);
+  if (!e || !e.json) return null;
+  try {
+    const parsed = JSON.parse(e.json);
+    return {
+      items: Array.isArray(parsed) ? parsed : [],
+      updatedBy: e.updatedBy || "",
+      updatedAt: e.updatedAt || "",
+    };
+  } catch {
+    return { items: [], updatedBy: "", updatedAt: "" };
+  }
+}
+
+async function setContent(key, items, updatedBy, env) {
+  const updatedAt = new Date().toISOString();
+  await (
+    await db(env)
+  ).content.upsertEntity(
+    {
+      partitionKey: "content",
+      rowKey: key,
+      json: JSON.stringify(Array.isArray(items) ? items : []),
+      updatedBy: updatedBy || "",
+      updatedAt,
+    },
+    "Replace"
+  );
+  return { items, updatedBy, updatedAt };
+}
+
 module.exports = {
   TABLES,
   _reset,
   getDuty,
   setDuty,
   listDutyHistory,
+  getContent,
+  setContent,
   getMember,
   listMembers,
   upsertMember,

@@ -16,6 +16,7 @@ const mockDb = {
   rate: new Map(),
   audit: [],
   duty: { current: null, history: [] },
+  content: {},
 };
 
 function resetDb() {
@@ -25,6 +26,7 @@ function resetDb() {
   mockDb.audit.length = 0;
   mockDb.duty.current = null;
   mockDb.duty.history.length = 0;
+  mockDb.content = {};
 }
 
 jest.mock("../api/shared/store", () => ({
@@ -95,6 +97,14 @@ jest.mock("../api/shared/store", () => ({
   },
   async listDutyHistory(limit) {
     return mockDb.duty.history.slice(0, limit || 20);
+  },
+  async getContent(key) {
+    return mockDb.content[key] || null;
+  },
+  async setContent(key, items, updatedBy) {
+    const rec = { items, updatedBy, updatedAt: new Date().toISOString() };
+    mockDb.content[key] = rec;
+    return rec;
   },
 }));
 
@@ -545,5 +555,79 @@ describe("handleDutyClaim", () => {
       keyed
     );
     expect(ok.body.handled).toBe(true);
+  });
+});
+
+/* -------------------------------------------------------- editable content */
+
+describe("content schema", () => {
+  const { validateContent } = require("../api/shared/contentSchema");
+
+  test("events require a name and cap fields", () => {
+    expect(validateContent("events", [{ timing: "x" }]).ok).toBe(false);
+    const r = validateContent("events", [
+      { name: "  Show  ", timing: "TBC", description: "d", extra: "dropped" },
+    ]);
+    expect(r.ok).toBe(true);
+    expect(r.items[0]).toEqual({ name: "Show", timing: "TBC", description: "d" });
+  });
+
+  test("training rejects a bad recurrence", () => {
+    expect(validateContent("training", [{ title: "T", recurrence: "someday" }]).ok).toBe(false);
+    expect(validateContent("training", [{ title: "T", recurrence: "second-saturday" }]).ok).toBe(
+      true
+    );
+    expect(
+      validateContent("training", [{ title: "T", recurrence: "EVERY-FRIDAY" }]).items[0].recurrence
+    ).toBe("every-friday");
+  });
+
+  test("unknown key is refused", () => {
+    expect(validateContent("random", []).ok).toBe(false);
+  });
+});
+
+describe("content handlers", () => {
+  const CSRF = { "x-brfs-auth": "1" };
+
+  test("GET is public and returns a plain array", async () => {
+    const empty = await handlers.handleContentGet("events");
+    expect(empty).toMatchObject({ status: 200, body: [] });
+
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    await handlers.handleContentSet("events", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { items: [{ name: "Show", timing: "TBC" }] },
+    });
+
+    const got = await handlers.handleContentGet("events");
+    expect(got.body).toEqual([{ name: "Show", timing: "TBC", description: "" }]);
+  });
+
+  test("PUT needs a session, the CSRF header, and valid data", async () => {
+    const anon = await handlers.handleContentSet("events", { headers: {}, body: { items: [] } });
+    expect(anon.status).toBe(401);
+
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const noCsrf = await handlers.handleContentSet("events", {
+      headers: { cookie: cookieHeader },
+      body: { items: [] },
+    });
+    expect(noCsrf.status).toBe(403);
+
+    const bad = await handlers.handleContentSet("training", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { items: [{ title: "T", recurrence: "nope" }] },
+    });
+    expect(bad.status).toBe(400);
+
+    const ok = await handlers.handleContentSet("training", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: {
+        items: [{ title: "Drill", recurrence: "every-friday", time: "7pm", location: "Stn" }],
+      },
+    });
+    expect(ok.status).toBe(200);
+    expect(mockDb.audit.some((a) => a.event === "content_updated")).toBe(true);
   });
 });

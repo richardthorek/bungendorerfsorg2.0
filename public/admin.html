@@ -137,20 +137,38 @@
             </ul>
           </section>
 
-          <!-- Events & training (built in a later change) -->
+          <!-- Events & training -->
           <section id="view-events" class="view" hidden>
             <h2>Events &amp; training</h2>
-            <div class="placeholder">
-              <p class="placeholder__lead">
-                Community engagement events and the training schedule will be editable here.
-              </p>
-              <p>
-                These currently come from a Microsoft&nbsp;365 calendar. This screen will let
-                members add, edit and remove entries and manage calendar links, writing to the
-                website&rsquo;s own store so the public pages keep working after the tenant is
-                retired.
-              </p>
-              <p class="placeholder__tag">Coming after the brigade phone</p>
+            <p class="view__lead">
+              These feed the public <em>Events</em> and <em>Membership</em> pages. Changes go live
+              within a few minutes of saving.
+            </p>
+
+            <div class="editor">
+              <div class="editor__head">
+                <h3>Community events</h3>
+                <button type="button" class="btn btn--ghost" id="eventAdd">Add event</button>
+              </div>
+              <div id="eventList" class="editor__list"></div>
+              <div class="editor__foot">
+                <button type="button" class="btn btn--primary" id="eventSave">Save events</button>
+                <span id="eventMeta" class="editor__meta"></span>
+              </div>
+              <p id="eventMsg" class="msg" role="status" aria-live="polite" hidden></p>
+            </div>
+
+            <div class="editor">
+              <div class="editor__head">
+                <h3>Training schedule</h3>
+                <button type="button" class="btn btn--ghost" id="trainAdd">Add session</button>
+              </div>
+              <div id="trainList" class="editor__list"></div>
+              <div class="editor__foot">
+                <button type="button" class="btn btn--primary" id="trainSave">Save schedule</button>
+                <span id="trainMeta" class="editor__meta"></span>
+              </div>
+              <p id="trainMsg" class="msg" role="status" aria-live="polite" hidden></p>
             </div>
           </section>
 

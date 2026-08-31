@@ -16,7 +16,6 @@
     "DUTY_CLAIM_PIN": "",
     "DUTY_FALLBACK_NUMBER": "",
     "DUTY_ALERT_TO": "",
-    "AZURE_CALENDAR_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
     "AZURE_INCIDENTS_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
     "AZURE_FIRE_DANGER_WEBHOOK_URL": "https://prod-xx.australiaeast.logic.azure.com/workflows/...",
     "ALLOWED_ORIGINS": "http://localhost:3000,https://bungendorerfs.org,https://www.bungendorerfs.org"

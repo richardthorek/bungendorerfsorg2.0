@@ -108,7 +108,6 @@ AUTH_JWT_SECRET=...             # members' area: >= 32 chars, signs the session 
 BRFS_STORAGE_CONNECTION=...     # members' area: storage account for allow-list tables (UseDevelopmentStorage=true locally)
 AUTH_ALLOWED_EMAIL_DOMAIN=rfs.nsw.gov.au
 AUTH_SESSION_MINUTES=60
-AZURE_CALENDAR_WEBHOOK_URL=...
 AZURE_INCIDENTS_WEBHOOK_URL=...
 AZURE_FIRE_DANGER_WEBHOOK_URL=...
 PORT=3000
@@ -129,7 +128,7 @@ Local dev for the Azure Functions in `api/` uses `api/local.settings.json` (temp
 
 ### Backend — two deployment targets, one codebase
 
-1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`, `fire-danger`, `fire-incidents`, `calendar-events`, `contact`) act as the proxy layer between the static site and upstream services — Azure Logic Apps webhooks for fire data, Azure Communication Services Email for the contact form (`api/contact/notify.js`, shared with `server.js`). This is where the security boundary lives.
+1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`, `fire-danger`, `fire-incidents`, `contact`, `auth-*`, `members`, `duty`, `content`) act as the proxy layer between the static site and upstream services — Azure Logic Apps webhooks for fire data, Azure Communication Services Email for the contact form (`api/contact/notify.js`, shared with `server.js`). This is where the security boundary lives.
 2. **Local dev:** `server.js` (Express) serves `public/` and re-implements the same proxy endpoints by reading from `.env`. Keep the two surfaces semantically identical — when an `api/<fn>/index.js` changes its contract, mirror the change in `server.js`.
 
 ### Infrastructure

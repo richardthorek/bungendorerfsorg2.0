@@ -34,7 +34,10 @@ const {
   getDuty,
   setDuty,
   listDutyHistory,
+  getContent,
+  setContent,
 } = require("./store");
+const { validateContent } = require("./contentSchema");
 const { normalizeAuPhone, maskPhone } = require("./phone");
 const { sendDutyChangeAlert } = require("./dutyAlert");
 const { normalizeEmail, isAllowedDomain, allowedDomain, sessionMinutes } = require("./identity");
@@ -466,6 +469,46 @@ async function findMemberByPhone(e164, env) {
   return members.find((m) => m.phone && normalizeAuPhone(m.phone) === e164) || null;
 }
 
+/* ------------------------------------------------------- editable site content */
+
+/** Public — returns the plain array (same shape the static JSON files had). */
+async function handleContentGet(key, env = process.env) {
+  if (key !== "events" && key !== "training") {
+    return { status: 404, body: { error: "Not found" } };
+  }
+  const content = await getContent(key, env);
+  return {
+    status: 200,
+    headers: { "Cache-Control": "public, max-age=300" },
+    body: content ? content.items : [],
+  };
+}
+
+/** Members only — replaces the whole list after validation. */
+async function handleContentSet(key, req, env = process.env) {
+  const s = await resolveSession(req, {}, env);
+  if (!s.ok) return { status: s.status, body: { error: s.error } };
+  if (!hasCsrfHeader(req)) return { status: 403, body: { error: "Bad request" } };
+
+  const incoming = req.body && (Array.isArray(req.body) ? req.body : req.body.items);
+  const result = validateContent(key, incoming);
+  if (!result.ok) return { status: 400, body: { error: result.error } };
+
+  const saved = await setContent(key, result.items, s.member.email, env);
+  await audit(
+    "content_updated",
+    {
+      email: s.member.email,
+      detail: `${key} (${result.items.length} items)`,
+    },
+    env
+  );
+  return {
+    status: 200,
+    body: { items: saved.items, updatedBy: saved.updatedBy, updatedAt: saved.updatedAt },
+  };
+}
+
 module.exports = {
   handleAuthRequest,
   handleAuthVerify,
@@ -474,6 +517,8 @@ module.exports = {
   handleDutyStatus,
   handleDutySet,
   handleDutyClaim,
+  handleContentGet,
+  handleContentSet,
   handleAuthLogout,
   handleMembersList,
   handleMembersUpsert,
