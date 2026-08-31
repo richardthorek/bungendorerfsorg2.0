@@ -44,9 +44,48 @@
     enqMsg: document.getElementById("enqMsg"),
     enqBadge: document.getElementById("enqBadge"),
     enqFilter: document.getElementById("enqFilter"),
+    socialTemplates: document.getElementById("socialTemplates"),
+    socialCanvas: document.getElementById("socialCanvas"),
+    socialLayerPanel: document.getElementById("socialLayerPanel"),
+    socialExport: document.getElementById("socialExport"),
+    socialCanvasMeta: document.getElementById("socialCanvasMeta"),
+    socialStarters: document.getElementById("socialStarters"),
+    socialChat: document.getElementById("socialChat"),
+    socialAiMsg: document.getElementById("socialAiMsg"),
+    socialAttachPreview: document.getElementById("socialAttachPreview"),
+    socialAttachThumb: document.getElementById("socialAttachThumb"),
+    socialAttachRemove: document.getElementById("socialAttachRemove"),
+    socialChatForm: document.getElementById("socialChatForm"),
+    socialChatInput: document.getElementById("socialChatInput"),
+    socialAttachBtn: document.getElementById("socialAttachBtn"),
+    socialAttachInput: document.getElementById("socialAttachInput"),
+    socialChatSend: document.getElementById("socialChatSend"),
+    socialDraftBtn: document.getElementById("socialDraftBtn"),
+    socialAiResult: document.getElementById("socialAiResult"),
+    socialFlags: document.getElementById("socialFlags"),
+    socialHeadlineOut: document.getElementById("socialHeadlineOut"),
+    socialCaptionOut: document.getElementById("socialCaptionOut"),
+    socialHashtagsOut: document.getElementById("socialHashtagsOut"),
+    socialUseHeadline: document.getElementById("socialUseHeadline"),
+    socialReviewGate: document.getElementById("socialReviewGate"),
+    socialReviewCheck: document.getElementById("socialReviewCheck"),
+    socialCopyCaption: document.getElementById("socialCopyCaption"),
+    socialPromptCfg: document.getElementById("socialPromptCfg"),
+    socialPromptText: document.getElementById("socialPromptText"),
+    socialPromptSave: document.getElementById("socialPromptSave"),
+    socialPromptReset: document.getElementById("socialPromptReset"),
+    socialPromptMeta: document.getElementById("socialPromptMeta"),
+    socialPromptMsg: document.getElementById("socialPromptMsg"),
   };
 
-  const state = { me: null, enqFilter: "all", enquiries: [] };
+  const state = {
+    me: null,
+    enqFilter: "all",
+    enquiries: [],
+    socialDraft: null,
+    socialMessages: [],
+    socialDefaultPrompt: "",
+  };
 
   /* ---------------------------------------------------------------- helpers */
 
@@ -165,13 +204,18 @@
     el.navItems.forEach(function (b) {
       if (b.hasAttribute("data-admin")) b.hidden = me.role !== "admin";
     });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-admin]"), function (n) {
+      n.hidden = me.role !== "admin";
+    });
     switchView(currentViewFromHash() || "duty");
     if (currentViewFromHash() !== "enquiries") loadEnquiries(); // for the nav badge
   }
 
+  const VIEWS = ["duty", "enquiries", "events", "social", "members"];
+
   function currentViewFromHash() {
     const h = (location.hash || "").replace("#", "");
-    return ["duty", "enquiries", "events", "members"].indexOf(h) >= 0 ? h : null;
+    return VIEWS.indexOf(h) >= 0 ? h : null;
   }
 
   function switchView(name) {
@@ -179,7 +223,7 @@
     el.navItems.forEach(function (b) {
       b.classList.toggle("is-active", b.dataset.view === name);
     });
-    ["duty", "enquiries", "events", "members"].forEach(function (v) {
+    VIEWS.forEach(function (v) {
       const section = document.getElementById("view-" + v);
       if (section) section.hidden = v !== name;
     });
@@ -188,6 +232,7 @@
     if (name === "duty") loadDuty();
     if (name === "events") loadAllContent();
     if (name === "enquiries") loadEnquiries();
+    if (name === "social") initSocialStudio();
   }
 
   el.navItems.forEach(function (b) {
@@ -952,6 +997,857 @@
   document.getElementById("trainSave").addEventListener("click", function (e) {
     saveContent("training", e.currentTarget);
   });
+
+  /* ------------------------------------------------------------ social studio */
+
+  const SOCIAL_BRAND = {
+    red: "#e5281b",
+    ink: "#22201f",
+    inkSoft: "#5c5651",
+    cream: "#f5f3f0",
+    white: "#ffffff",
+    dark: "#1f1e1c",
+  };
+
+  const SOCIAL_TEMPLATES = [
+    {
+      id: "alert",
+      label: "Community update",
+      width: 1080,
+      height: 1080,
+      layers: [
+        {
+          id: "bg",
+          type: "rect",
+          x: 0,
+          y: 0,
+          w: 1080,
+          h: 1080,
+          fill: SOCIAL_BRAND.red,
+          locked: true,
+        },
+        {
+          id: "panel",
+          type: "rect",
+          x: 50,
+          y: 50,
+          w: 980,
+          h: 980,
+          fill: SOCIAL_BRAND.white,
+          locked: true,
+        },
+        {
+          id: "headline",
+          type: "text",
+          role: "headline",
+          x: 110,
+          y: 130,
+          w: 860,
+          h: 240,
+          text: "Community update",
+          size: 72,
+          weight: "800",
+          color: SOCIAL_BRAND.ink,
+          align: "left",
+        },
+        {
+          id: "body",
+          type: "text",
+          role: "body",
+          x: 110,
+          y: 400,
+          w: 860,
+          h: 420,
+          text: "Add the detail of your update here. Keep it factual and calm.",
+          size: 36,
+          weight: "400",
+          color: SOCIAL_BRAND.inkSoft,
+          align: "left",
+        },
+        { id: "logo", type: "image", x: 110, y: 900, w: 160, h: 96, src: "/Images/logo.png" },
+      ],
+    },
+    {
+      id: "event",
+      label: "Event promo",
+      width: 1080,
+      height: 1080,
+      layers: [
+        {
+          id: "bg",
+          type: "rect",
+          x: 0,
+          y: 0,
+          w: 1080,
+          h: 1080,
+          fill: SOCIAL_BRAND.dark,
+          locked: true,
+        },
+        { id: "photo", type: "image", x: 60, y: 60, w: 960, h: 600, src: "" },
+        {
+          id: "badge",
+          type: "text",
+          role: "badge",
+          x: 60,
+          y: 690,
+          w: 500,
+          h: 70,
+          text: "Date · Time",
+          size: 32,
+          weight: "700",
+          color: SOCIAL_BRAND.white,
+          align: "left",
+          bg: SOCIAL_BRAND.red,
+        },
+        {
+          id: "headline",
+          type: "text",
+          role: "headline",
+          x: 60,
+          y: 780,
+          w: 960,
+          h: 160,
+          text: "Event name",
+          size: 66,
+          weight: "800",
+          color: SOCIAL_BRAND.white,
+          align: "left",
+        },
+        { id: "logo", type: "image", x: 880, y: 960, w: 140, h: 84, src: "/Images/logo-dark.png" },
+      ],
+    },
+    {
+      id: "recruit",
+      label: "Recruitment",
+      width: 1080,
+      height: 1350,
+      layers: [
+        {
+          id: "bg",
+          type: "rect",
+          x: 0,
+          y: 0,
+          w: 1080,
+          h: 1350,
+          fill: SOCIAL_BRAND.dark,
+          locked: true,
+        },
+        {
+          id: "headline",
+          type: "text",
+          role: "headline",
+          x: 90,
+          y: 160,
+          w: 900,
+          h: 300,
+          text: "Join Bungendore RFS",
+          size: 80,
+          weight: "800",
+          color: SOCIAL_BRAND.white,
+          align: "left",
+        },
+        {
+          id: "body",
+          type: "text",
+          role: "body",
+          x: 90,
+          y: 500,
+          w: 900,
+          h: 500,
+          text: "We're always looking for new volunteers. No experience needed — training provided.",
+          size: 40,
+          weight: "400",
+          color: "#d8d3cc",
+          align: "left",
+        },
+        { id: "logo", type: "image", x: 90, y: 1170, w: 170, h: 102, src: "/Images/logo-dark.png" },
+      ],
+    },
+    {
+      id: "announcement",
+      label: "General announcement",
+      width: 1080,
+      height: 1080,
+      layers: [
+        {
+          id: "bg",
+          type: "rect",
+          x: 0,
+          y: 0,
+          w: 1080,
+          h: 1080,
+          fill: SOCIAL_BRAND.cream,
+          locked: true,
+        },
+        {
+          id: "accent",
+          type: "rect",
+          x: 0,
+          y: 0,
+          w: 1080,
+          h: 18,
+          fill: SOCIAL_BRAND.red,
+          locked: true,
+        },
+        {
+          id: "headline",
+          type: "text",
+          role: "headline",
+          x: 90,
+          y: 150,
+          w: 900,
+          h: 260,
+          text: "Announcement",
+          size: 72,
+          weight: "800",
+          color: SOCIAL_BRAND.ink,
+          align: "left",
+        },
+        {
+          id: "body",
+          type: "text",
+          role: "body",
+          x: 90,
+          y: 440,
+          w: 900,
+          h: 460,
+          text: "Add your message here.",
+          size: 38,
+          weight: "400",
+          color: SOCIAL_BRAND.inkSoft,
+          align: "left",
+        },
+        { id: "logo", type: "image", x: 850, y: 940, w: 140, h: 84, src: "/Images/logo.png" },
+      ],
+    },
+    {
+      id: "fblink",
+      label: "Facebook link card",
+      width: 1200,
+      height: 630,
+      layers: [
+        {
+          id: "bg",
+          type: "rect",
+          x: 0,
+          y: 0,
+          w: 1200,
+          h: 630,
+          fill: SOCIAL_BRAND.white,
+          locked: true,
+        },
+        { id: "photo", type: "image", x: 0, y: 0, w: 1200, h: 420, src: "" },
+        {
+          id: "headline",
+          type: "text",
+          role: "headline",
+          x: 50,
+          y: 450,
+          w: 1100,
+          h: 130,
+          text: "Headline goes here",
+          size: 52,
+          weight: "800",
+          color: SOCIAL_BRAND.ink,
+          align: "left",
+        },
+        { id: "logo", type: "image", x: 1030, y: 540, w: 120, h: 72, src: "/Images/logo.png" },
+      ],
+    },
+  ];
+
+  const SOCIAL_STARTERS = {
+    event: "Help me write a post promoting an upcoming community event.",
+    training: "Help me write a reminder post about our next training night.",
+    recruit: "Help me write a recruitment post encouraging people to join the brigade.",
+    update: "Help me write a general community update post.",
+  };
+
+  const social = {
+    started: false,
+    template: null,
+    layers: [],
+    selectedId: null,
+    ctx: null,
+    drag: null, // {mode:'move'|'resize', layerId, startX, startY, orig:{x,y,w,h}}
+    images: {}, // src -> HTMLImageElement (cache)
+    pendingImage: null, // dataURL of a photo attached to the next chat message
+  };
+
+  function initSocialStudio() {
+    if (social.started) return;
+    social.started = true;
+
+    renderSocialTemplateList();
+    social.ctx = el.socialCanvas.getContext("2d");
+    wireSocialCanvasEvents();
+    el.socialExport.addEventListener("click", exportSocialCanvas);
+    selectSocialTemplate(SOCIAL_TEMPLATES[0]);
+
+    el.socialStarters.addEventListener("click", function (e) {
+      const btn = e.target.closest(".social__starter");
+      if (!btn) return;
+      el.socialChatInput.value = SOCIAL_STARTERS[btn.dataset.starter] || "";
+      el.socialChatInput.focus();
+    });
+
+    el.socialChatForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      sendSocialChatMessage();
+    });
+    el.socialAttachBtn.addEventListener("click", function () {
+      el.socialAttachInput.click();
+    });
+    el.socialAttachInput.addEventListener("change", onSocialAttachChange);
+    el.socialAttachRemove.addEventListener("click", clearSocialAttachment);
+    el.socialDraftBtn.addEventListener("click", requestSocialDraft);
+    el.socialUseHeadline.addEventListener("click", useSocialHeadline);
+    el.socialCopyCaption.addEventListener("click", copySocialCaption);
+    el.socialReviewCheck.addEventListener("change", function () {
+      el.socialCopyCaption.disabled = !el.socialReviewCheck.checked;
+    });
+
+    el.socialPromptSave.addEventListener("click", saveSocialPrompt);
+    el.socialPromptReset.addEventListener("click", function () {
+      el.socialPromptText.value = state.socialDefaultPrompt;
+    });
+    if (state.me && state.me.role === "admin") loadSocialPromptConfig();
+  }
+
+  /* ----------------------------------------------------------- canvas editor */
+
+  function renderSocialTemplateList() {
+    el.socialTemplates.innerHTML = "";
+    SOCIAL_TEMPLATES.forEach(function (t) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "social__template";
+      btn.textContent = t.label;
+      btn.dataset.id = t.id;
+      btn.addEventListener("click", function () {
+        selectSocialTemplate(t);
+      });
+      el.socialTemplates.appendChild(btn);
+    });
+  }
+
+  function selectSocialTemplate(t) {
+    social.template = t;
+    social.layers = t.layers.map(function (l) {
+      return Object.assign({}, l);
+    });
+    social.selectedId = null;
+    Array.prototype.forEach.call(el.socialTemplates.children, function (b) {
+      b.classList.toggle("is-active", b.dataset.id === t.id);
+    });
+    el.socialCanvas.width = t.width;
+    el.socialCanvas.height = t.height;
+    el.socialCanvas.style.aspectRatio = t.width + " / " + t.height;
+    el.socialCanvasMeta.textContent = t.width + " × " + t.height + "px";
+    el.socialExport.disabled = false;
+    preloadSocialImages(function () {
+      drawSocialScene();
+    });
+    renderSocialLayerPanel();
+  }
+
+  function preloadSocialImages(done) {
+    const srcs = social.layers.filter((l) => l.type === "image" && l.src).map((l) => l.src);
+    const unique = Array.from(new Set(srcs));
+    let remaining = unique.length;
+    if (!remaining) return done();
+    unique.forEach(function (src) {
+      if (social.images[src]) {
+        remaining -= 1;
+        if (remaining <= 0) done();
+        return;
+      }
+      const img = new Image();
+      img.onload = function () {
+        social.images[src] = img;
+        remaining -= 1;
+        if (remaining <= 0) done();
+      };
+      img.onerror = function () {
+        remaining -= 1;
+        if (remaining <= 0) done();
+      };
+      img.src = src;
+    });
+  }
+
+  function wrapSocialText(ctx, text, maxWidth) {
+    const words = String(text || "")
+      .split(/\s+/)
+      .filter(Boolean);
+    const lines = [];
+    let line = "";
+    words.forEach(function (word) {
+      const attempt = line ? line + " " + word : word;
+      if (ctx.measureText(attempt).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = attempt;
+      }
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function drawSocialLayer(ctx, layer) {
+    if (layer.type === "rect") {
+      ctx.fillStyle = layer.fill;
+      ctx.fillRect(layer.x, layer.y, layer.w, layer.h);
+      return;
+    }
+    if (layer.type === "image") {
+      const img = layer.src && social.images[layer.src];
+      if (img) {
+        const scale = Math.max(layer.w / img.width, layer.h / img.height);
+        const dw = img.width * scale;
+        const dh = img.height * scale;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(layer.x, layer.y, layer.w, layer.h);
+        ctx.clip();
+        ctx.drawImage(img, layer.x + (layer.w - dw) / 2, layer.y + (layer.h - dh) / 2, dw, dh);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "#c8c2b8";
+        ctx.fillRect(layer.x, layer.y, layer.w, layer.h);
+        ctx.fillStyle = "#5c5651";
+        ctx.font = "28px 'Public Sans', sans-serif";
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "center";
+        ctx.fillText("Add a photo", layer.x + layer.w / 2, layer.y + layer.h / 2);
+      }
+      return;
+    }
+    if (layer.type === "text") {
+      const padX = layer.bg ? 24 : 0;
+      const padY = layer.bg ? 10 : 0;
+      ctx.font = (layer.weight || "400") + " " + layer.size + "px 'Public Sans', sans-serif";
+      const lineHeight = Math.round(layer.size * 1.22);
+      const lines = wrapSocialText(ctx, layer.text, layer.w - padX * 2);
+      if (layer.bg) {
+        const h = lineHeight * lines.length + padY * 2;
+        ctx.fillStyle = layer.bg;
+        ctx.fillRect(layer.x, layer.y, layer.w, Math.min(h, layer.h));
+      }
+      ctx.fillStyle = layer.color;
+      ctx.textAlign = layer.align === "center" ? "center" : "left";
+      ctx.textBaseline = "top";
+      const tx = layer.align === "center" ? layer.x + layer.w / 2 : layer.x + padX;
+      lines.forEach(function (line, i) {
+        ctx.fillText(line, tx, layer.y + padY + i * lineHeight);
+      });
+    }
+  }
+
+  function drawSocialScene() {
+    const ctx = social.ctx;
+    if (!ctx || !social.template) return;
+    ctx.clearRect(0, 0, el.socialCanvas.width, el.socialCanvas.height);
+    social.layers.forEach(function (layer) {
+      drawSocialLayer(ctx, layer);
+    });
+    const sel = social.layers.find((l) => l.id === social.selectedId);
+    if (sel) {
+      ctx.save();
+      ctx.strokeStyle = "#1f6feb";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 6]);
+      ctx.strokeRect(sel.x, sel.y, sel.w, sel.h);
+      ctx.setLineDash([]);
+      if (!sel.locked) {
+        ctx.fillStyle = "#1f6feb";
+        const s = 18;
+        ctx.fillRect(sel.x + sel.w - s / 2, sel.y + sel.h - s / 2, s, s);
+      }
+      ctx.restore();
+    }
+  }
+
+  function clamp(v, min, max) {
+    return Math.min(Math.max(v, min), max);
+  }
+
+  function canvasPoint(evt) {
+    const rect = el.socialCanvas.getBoundingClientRect();
+    const scaleX = el.socialCanvas.width / rect.width;
+    const scaleY = el.socialCanvas.height / rect.height;
+    return { x: (evt.clientX - rect.left) * scaleX, y: (evt.clientY - rect.top) * scaleY };
+  }
+
+  function hitSocialLayer(pt) {
+    for (let i = social.layers.length - 1; i >= 0; i -= 1) {
+      const l = social.layers[i];
+      if (l.locked) continue;
+      if (pt.x >= l.x && pt.x <= l.x + l.w && pt.y >= l.y && pt.y <= l.y + l.h) return l;
+    }
+    return null;
+  }
+
+  function onSocialResizeHandle(pt, layer) {
+    if (!layer || layer.locked) return false;
+    const s = 22;
+    return (
+      pt.x >= layer.x + layer.w - s &&
+      pt.x <= layer.x + layer.w + s / 2 &&
+      pt.y >= layer.y + layer.h - s &&
+      pt.y <= layer.y + layer.h + s / 2
+    );
+  }
+
+  function wireSocialCanvasEvents() {
+    el.socialCanvas.addEventListener("pointerdown", function (evt) {
+      const pt = canvasPoint(evt);
+      const selected = social.layers.find((l) => l.id === social.selectedId);
+      if (selected && onSocialResizeHandle(pt, selected)) {
+        social.drag = {
+          mode: "resize",
+          layerId: selected.id,
+          startX: pt.x,
+          startY: pt.y,
+          orig: { w: selected.w, h: selected.h },
+        };
+        el.socialCanvas.setPointerCapture(evt.pointerId);
+        return;
+      }
+      const hit = hitSocialLayer(pt);
+      social.selectedId = hit ? hit.id : null;
+      renderSocialLayerPanel();
+      if (hit) {
+        social.drag = {
+          mode: "move",
+          layerId: hit.id,
+          startX: pt.x,
+          startY: pt.y,
+          orig: { x: hit.x, y: hit.y },
+        };
+        el.socialCanvas.setPointerCapture(evt.pointerId);
+      }
+      drawSocialScene();
+    });
+
+    el.socialCanvas.addEventListener("pointermove", function (evt) {
+      if (!social.drag) return;
+      const pt = canvasPoint(evt);
+      const layer = social.layers.find((l) => l.id === social.drag.layerId);
+      if (!layer) return;
+      const dx = pt.x - social.drag.startX;
+      const dy = pt.y - social.drag.startY;
+      if (social.drag.mode === "move") {
+        layer.x = clamp(social.drag.orig.x + dx, -layer.w + 20, el.socialCanvas.width - 20);
+        layer.y = clamp(social.drag.orig.y + dy, -layer.h + 20, el.socialCanvas.height - 20);
+      } else {
+        layer.w = clamp(social.drag.orig.w + dx, 40, el.socialCanvas.width - layer.x);
+        layer.h = clamp(social.drag.orig.h + dy, 30, el.socialCanvas.height - layer.y);
+      }
+      drawSocialScene();
+    });
+
+    ["pointerup", "pointercancel"].forEach(function (evtName) {
+      el.socialCanvas.addEventListener(evtName, function () {
+        social.drag = null;
+      });
+    });
+  }
+
+  function renderSocialLayerPanel() {
+    el.socialLayerPanel.innerHTML = "";
+    const layer = social.layers.find((l) => l.id === social.selectedId);
+    if (!layer) {
+      const p = document.createElement("p");
+      p.className = "social__hint";
+      p.textContent =
+        "Click a layer on the image to edit it. Drag to move, use the corner handle to resize.";
+      el.socialLayerPanel.appendChild(p);
+      return;
+    }
+
+    const title = document.createElement("h4");
+    title.className = "social__panel-h";
+    title.textContent = cap(layer.role || layer.type);
+    el.socialLayerPanel.appendChild(title);
+
+    if (layer.type === "text") {
+      const textarea = document.createElement("textarea");
+      textarea.className = "editor__input";
+      textarea.rows = 3;
+      textarea.value = layer.text;
+      textarea.addEventListener("input", function () {
+        layer.text = textarea.value;
+        drawSocialScene();
+      });
+      el.socialLayerPanel.appendChild(socialLabelWrap("Text", textarea));
+
+      const sizeInput = document.createElement("input");
+      sizeInput.type = "number";
+      sizeInput.className = "editor__input";
+      sizeInput.min = "16";
+      sizeInput.max = "160";
+      sizeInput.value = layer.size;
+      sizeInput.addEventListener("input", function () {
+        layer.size = Number(sizeInput.value) || layer.size;
+        drawSocialScene();
+      });
+      el.socialLayerPanel.appendChild(socialLabelWrap("Font size", sizeInput));
+    }
+
+    if (layer.type === "image") {
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "image/png,image/jpeg";
+      fileInput.addEventListener("change", function () {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          layer.src = reader.result;
+          preloadSocialImages(function () {
+            drawSocialScene();
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+      el.socialLayerPanel.appendChild(socialLabelWrap("Replace image", fileInput));
+    }
+  }
+
+  function socialLabelWrap(text, node) {
+    const wrap = document.createElement("label");
+    wrap.className = "social__panel-field";
+    const span = document.createElement("span");
+    span.textContent = text;
+    wrap.appendChild(span);
+    wrap.appendChild(node);
+    return wrap;
+  }
+
+  function exportSocialCanvas() {
+    el.socialCanvas.toBlob(function (blob) {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = (social.template ? social.template.id : "post") + ".png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
+
+  /* --------------------------------------------------------- AI chat assist */
+
+  function addSocialChatBubble(msg) {
+    const wrap = document.createElement("div");
+    wrap.className =
+      "social__bubble social__bubble--" + msg.role + (msg.pending ? " is-pending" : "");
+    if (msg.image) {
+      const img = document.createElement("img");
+      img.src = msg.image;
+      img.alt = "Attached photo";
+      img.className = "social__bubble-img";
+      wrap.appendChild(img);
+    }
+    const p = document.createElement("p");
+    p.textContent = msg.text;
+    wrap.appendChild(p);
+    el.socialChat.appendChild(wrap);
+    el.socialChat.scrollTop = el.socialChat.scrollHeight;
+    return wrap;
+  }
+
+  function socialTranscript() {
+    return state.socialMessages.slice(-24).map(function (m) {
+      return { role: m.role, text: m.text, image: m.image };
+    });
+  }
+
+  function sendSocialChatMessage() {
+    const text = el.socialChatInput.value.trim();
+    const image = social.pendingImage;
+    if (!text && !image) return;
+
+    const userMsg = { role: "user", text: text, image: image || undefined };
+    state.socialMessages.push(userMsg);
+    addSocialChatBubble(userMsg);
+    el.socialChatInput.value = "";
+    clearSocialAttachment();
+    setMsg(el.socialAiMsg, "");
+    el.socialChatSend.disabled = true;
+
+    const thinking = addSocialChatBubble({ role: "assistant", text: "…", pending: true });
+    api("/api/social/chat", {
+      method: "POST",
+      body: { messages: socialTranscript(), mode: "reply" },
+    }).then(function (r) {
+      el.socialChatSend.disabled = false;
+      thinking.remove();
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.socialAiMsg, (r.data && r.data.error) || "Could not reach the assistant.", "err");
+        return;
+      }
+      const assistantMsg = { role: "assistant", text: r.data.reply };
+      state.socialMessages.push(assistantMsg);
+      addSocialChatBubble(assistantMsg);
+      el.socialDraftBtn.disabled = false;
+    });
+  }
+
+  function onSocialAttachChange() {
+    const file = el.socialAttachInput.files && el.socialAttachInput.files[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      setMsg(el.socialAiMsg, "That photo is too large (max 8MB).", "err");
+      el.socialAttachInput.value = "";
+      return;
+    }
+    resizeImageForChat(file, function (dataUrl) {
+      social.pendingImage = dataUrl;
+      el.socialAttachThumb.src = dataUrl;
+      el.socialAttachPreview.hidden = false;
+    });
+  }
+
+  function clearSocialAttachment() {
+    social.pendingImage = null;
+    el.socialAttachInput.value = "";
+    el.socialAttachPreview.hidden = true;
+    el.socialAttachThumb.src = "";
+  }
+
+  /** Downscale to a max 1024px edge before sending, to keep payloads small. */
+  function resizeImageForChat(file, cb) {
+    const reader = new FileReader();
+    reader.onload = function () {
+      const img = new Image();
+      img.onload = function () {
+        const maxDim = 1024;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        cb(c.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function requestSocialDraft() {
+    if (!state.socialMessages.length) return;
+    setMsg(el.socialAiMsg, "");
+    el.socialDraftBtn.disabled = true;
+    el.socialDraftBtn.textContent = "Drafting…";
+    api("/api/social/chat", {
+      method: "POST",
+      body: { messages: socialTranscript(), mode: "draft" },
+    }).then(function (r) {
+      el.socialDraftBtn.disabled = false;
+      el.socialDraftBtn.textContent = "Draft post copy from this chat";
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.socialAiMsg, (r.data && r.data.error) || "Could not draft copy.", "err");
+        return;
+      }
+      renderSocialAiResult(r.data);
+    });
+  }
+
+  function renderSocialAiResult(draft) {
+    state.socialDraft = draft;
+    el.socialHeadlineOut.textContent = draft.headline;
+    el.socialCaptionOut.textContent = draft.caption;
+    el.socialHashtagsOut.textContent = (draft.hashtags || []).map((h) => "#" + h).join(" ");
+
+    el.socialFlags.innerHTML = "";
+    const flags = draft.flags || [];
+    if (flags.length) {
+      el.socialFlags.hidden = false;
+      const h = document.createElement("p");
+      h.className = "social__flags-h";
+      h.textContent = "Check before posting:";
+      el.socialFlags.appendChild(h);
+      const ul = document.createElement("ul");
+      flags.forEach(function (f) {
+        const li = document.createElement("li");
+        li.textContent = f;
+        ul.appendChild(li);
+      });
+      el.socialFlags.appendChild(ul);
+      el.socialReviewGate.hidden = false;
+      el.socialReviewCheck.checked = false;
+      el.socialCopyCaption.disabled = true;
+    } else {
+      el.socialFlags.hidden = true;
+      el.socialReviewGate.hidden = true;
+      el.socialCopyCaption.disabled = false;
+    }
+    el.socialAiResult.hidden = false;
+  }
+
+  function useSocialHeadline() {
+    if (!state.socialDraft) return;
+    const layer = social.layers.find((l) => l.role === "headline");
+    if (!layer) return;
+    layer.text = state.socialDraft.headline;
+    drawSocialScene();
+    if (social.selectedId === layer.id) renderSocialLayerPanel();
+  }
+
+  function copySocialCaption() {
+    if (!state.socialDraft) return;
+    const text =
+      state.socialDraft.caption +
+      (state.socialDraft.hashtags && state.socialDraft.hashtags.length
+        ? "\n\n" + state.socialDraft.hashtags.map((h) => "#" + h).join(" ")
+        : "");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        setMsg(el.socialAiMsg, "Copied to clipboard.", "ok");
+      });
+    }
+  }
+
+  /* ------------------------------------------------- AI guidelines (admin) */
+
+  function loadSocialPromptConfig() {
+    api("/api/social/prompt").then(function (r) {
+      if (!r || !r.ok) return;
+      state.socialDefaultPrompt = r.data.defaultPrompt;
+      el.socialPromptText.value = r.data.prompt;
+      el.socialPromptMeta.textContent = r.data.isDefault
+        ? "Using the built-in default."
+        : "Updated " +
+          relTime(r.data.updatedAt) +
+          (r.data.updatedBy ? " by " + r.data.updatedBy : "");
+    });
+  }
+
+  function saveSocialPrompt() {
+    setMsg(el.socialPromptMsg, "");
+    el.socialPromptSave.disabled = true;
+    api("/api/social/prompt", { method: "PUT", body: { prompt: el.socialPromptText.value } }).then(
+      function (r) {
+        el.socialPromptSave.disabled = false;
+        if (!r) return;
+        if (!r.ok) {
+          setMsg(el.socialPromptMsg, (r.data && r.data.error) || "Could not save.", "err");
+          return;
+        }
+        setMsg(el.socialPromptMsg, "Saved.", "ok");
+        el.socialPromptMeta.textContent = "Updated just now by you";
+      }
+    );
+  }
 
   /* --------------------------------------------------------------- utility */
 

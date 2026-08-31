@@ -42,8 +42,11 @@ const {
   getEnquiry,
   updateEnquiry,
   deleteEnquiry,
+  getSocialPromptConfig,
+  setSocialPromptConfig,
 } = require("./store");
 const { validateContent } = require("./contentSchema");
+const { chatReply, chatDraft, DEFAULT_SYSTEM_PROMPT } = require("./aiCopy");
 
 const ENQUIRY_STATUSES = ["new", "in-progress", "resolved"];
 const { normalizeAuPhone, maskPhone } = require("./phone");
@@ -612,6 +615,141 @@ async function handleEnquiryDelete(id, req, env = process.env) {
   return { status: 200, body: { ok: true } };
 }
 
+/* ------------------------------------------------------- social copy assist */
+
+const MAX_TRANSCRIPT_MESSAGES = 24;
+const MAX_CHAT_TEXT_LEN = 2000;
+const MAX_IMAGE_DATA_URL_LEN = 3_000_000; // ~2.2MB decoded; client downsizes before sending
+
+function str300(v, max) {
+  return typeof v === "string" ? v.trim().slice(0, max) : "";
+}
+
+/**
+ * Cap message count/length and keep only the most recent attached photo
+ * (scanning from the end) — bounds request size and vision-token cost.
+ */
+function sanitizeTranscript(input) {
+  if (!Array.isArray(input) || !input.length) {
+    return { ok: false, error: "Say something first." };
+  }
+  const trimmed = input.slice(-MAX_TRANSCRIPT_MESSAGES);
+  let keptImage = false;
+  const out = [];
+  for (let i = trimmed.length - 1; i >= 0; i -= 1) {
+    const raw = trimmed[i];
+    const role = raw && raw.role === "assistant" ? "assistant" : "user";
+    const text = str300(raw && raw.text, MAX_CHAT_TEXT_LEN);
+    let image;
+    if (raw && raw.image && !keptImage) {
+      if (
+        typeof raw.image !== "string" ||
+        !/^data:image\/(png|jpeg|webp);base64,/.test(raw.image)
+      ) {
+        return { ok: false, error: "That photo couldn't be read." };
+      }
+      if (raw.image.length > MAX_IMAGE_DATA_URL_LEN) {
+        return { ok: false, error: "That photo is too large." };
+      }
+      image = raw.image;
+      keptImage = true;
+    }
+    if (!text && !image) continue;
+    out.unshift({ role, text, image });
+  }
+  if (!out.length) return { ok: false, error: "Say something first." };
+  return { ok: true, transcript: out };
+}
+
+/** Members only — chat turn or final-draft extraction, safety-flagged. */
+async function handleSocialChat(req, env = process.env) {
+  const s = await resolveSession(req, {}, env);
+  if (!s.ok) return { status: s.status, body: { error: s.error } };
+  if (!hasCsrfHeader(req)) return { status: 403, body: { error: "Bad request" } };
+
+  const ip = getClientIp(req);
+  const rl = await hitRateLimit(`social:${s.member.email}`, { max: 60, windowSeconds: 3600 }, env);
+  if (!rl.allowed) {
+    return {
+      status: 429,
+      headers: { "Retry-After": String(rl.retryAfterSeconds) },
+      body: { error: "Too many requests. Try again shortly." },
+    };
+  }
+
+  const body = req.body || {};
+  const parsed = sanitizeTranscript(body.messages);
+  if (!parsed.ok) return { status: 400, body: { error: parsed.error } };
+  const mode = body.mode === "draft" ? "draft" : "reply";
+
+  const cfg = await getSocialPromptConfig(env);
+  const systemPrompt = (cfg && cfg.prompt) || DEFAULT_SYSTEM_PROMPT;
+
+  let out;
+  try {
+    out =
+      mode === "draft"
+        ? await chatDraft({ systemPrompt, transcript: parsed.transcript }, env)
+        : await chatReply({ systemPrompt, transcript: parsed.transcript }, env);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`social ${mode} failed: ${err.message}`);
+    return { status: 502, body: { error: "Could not reach the assistant. Try again shortly." } };
+  }
+
+  await audit(
+    mode === "draft" ? "social_copy_generated" : "social_chat_message",
+    { email: s.member.email, ip, detail: mode === "draft" ? `${out.flags.length} flag(s)` : "" },
+    env
+  );
+
+  return { status: 200, body: out };
+}
+
+/* --------------------------------------------------- social AI guidelines (admin) */
+
+async function handleSocialPromptGet(req, env = process.env) {
+  const gate = await requireAdmin(req, env);
+  if (gate.error) return gate.error;
+  const cfg = await getSocialPromptConfig(env);
+  return {
+    status: 200,
+    body: {
+      prompt: (cfg && cfg.prompt) || DEFAULT_SYSTEM_PROMPT,
+      isDefault: !cfg,
+      defaultPrompt: DEFAULT_SYSTEM_PROMPT,
+      updatedBy: cfg ? cfg.updatedBy : "",
+      updatedAt: cfg ? cfg.updatedAt : "",
+    },
+  };
+}
+
+async function handleSocialPromptSet(req, env = process.env) {
+  const gate = await requireAdmin(req, env);
+  if (gate.error) return gate.error;
+  if (!hasCsrfHeader(req)) return { status: 403, body: { error: "Bad request" } };
+
+  const prompt = str300(req.body && req.body.prompt, 6000);
+  if (!prompt) return { status: 400, body: { error: "Guidelines can't be empty." } };
+
+  const saved = await setSocialPromptConfig(prompt, gate.member.email, env);
+  await audit(
+    "social_prompt_updated",
+    { email: gate.member.email, detail: `${prompt.length} chars` },
+    env
+  );
+  return {
+    status: 200,
+    body: {
+      prompt: saved.prompt,
+      isDefault: false,
+      defaultPrompt: DEFAULT_SYSTEM_PROMPT,
+      updatedBy: saved.updatedBy,
+      updatedAt: saved.updatedAt,
+    },
+  };
+}
+
 module.exports = {
   handleAuthRequest,
   handleAuthVerify,
@@ -629,4 +767,7 @@ module.exports = {
   handleMembersList,
   handleMembersUpsert,
   handleMembersDelete,
+  handleSocialChat,
+  handleSocialPromptGet,
+  handleSocialPromptSet,
 };

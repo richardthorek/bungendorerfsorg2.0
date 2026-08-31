@@ -91,6 +91,9 @@
           <button class="nav__item" data-view="events" type="button">
             Events &amp; training<span class="nav__note">community &amp; drill calendar</span>
           </button>
+          <button class="nav__item" data-view="social" type="button">
+            Social Studio<span class="nav__note">Instagram &amp; Facebook posts</span>
+          </button>
           <button class="nav__item" data-view="members" data-admin="true" type="button" hidden>
             Members<span class="nav__note">who can sign in</span>
           </button>
@@ -191,6 +194,162 @@
                 <span id="trainMeta" class="editor__meta"></span>
               </div>
               <p id="trainMsg" class="msg" role="status" aria-live="polite" hidden></p>
+            </div>
+          </section>
+
+          <!-- Social Studio -->
+          <section id="view-social" class="view" hidden>
+            <h2>Social Studio</h2>
+            <p class="view__lead">
+              Draft on-brand Instagram &amp; Facebook graphics and copy, then download and post via
+              Meta Business Suite &mdash; there's no direct auto-posting here.
+            </p>
+
+            <div class="social">
+              <div
+                class="social__templates"
+                id="socialTemplates"
+                role="tablist"
+                aria-label="Choose a template"
+              ></div>
+
+              <div class="social__workspace">
+                <div class="social__canvas-wrap">
+                  <canvas id="socialCanvas" width="1080" height="1080"></canvas>
+                </div>
+                <div class="social__layerpanel" id="socialLayerPanel">
+                  <p class="social__hint">Click a template to start.</p>
+                </div>
+              </div>
+
+              <div class="social__foot">
+                <button type="button" class="btn btn--primary" id="socialExport" disabled>
+                  Download PNG
+                </button>
+                <span id="socialCanvasMeta" class="editor__meta"></span>
+              </div>
+
+              <div class="social__ai">
+                <h3>AI copy assist</h3>
+                <p class="view__lead">
+                  Chat through the post with the assistant &mdash; it drafts in brigade voice and
+                  will push back on anything inaccurate, alarmist, political, or privacy-invasive.
+                  Attach the photo you plan to post so it can write about what's actually in it.
+                </p>
+
+                <div class="social__starters" id="socialStarters">
+                  <button type="button" class="social__starter" data-starter="event">
+                    Event promo
+                  </button>
+                  <button type="button" class="social__starter" data-starter="training">
+                    Training reminder
+                  </button>
+                  <button type="button" class="social__starter" data-starter="recruit">
+                    Recruitment call
+                  </button>
+                  <button type="button" class="social__starter" data-starter="update">
+                    Community update
+                  </button>
+                  <button type="button" class="social__starter" data-starter="blank">
+                    Start blank
+                  </button>
+                </div>
+
+                <div id="socialChat" class="social__chat" aria-live="polite"></div>
+                <p id="socialAiMsg" class="msg" role="status" aria-live="polite" hidden></p>
+
+                <div id="socialAttachPreview" class="social__attach" hidden>
+                  <img id="socialAttachThumb" alt="Attached photo" />
+                  <button type="button" class="row-remove" id="socialAttachRemove">Remove</button>
+                </div>
+
+                <form id="socialChatForm" class="social__chat-form" novalidate>
+                  <label class="sr-only" for="socialChatInput">Message</label>
+                  <textarea
+                    id="socialChatInput"
+                    class="editor__input"
+                    rows="2"
+                    maxlength="2000"
+                    placeholder="Type a message…"
+                  ></textarea>
+                  <div class="social__chat-actions">
+                    <button type="button" class="btn btn--ghost" id="socialAttachBtn">
+                      Attach photo
+                    </button>
+                    <input
+                      type="file"
+                      id="socialAttachInput"
+                      accept="image/png,image/jpeg,image/webp"
+                      hidden
+                    />
+                    <button type="submit" class="btn btn--primary" id="socialChatSend">Send</button>
+                  </div>
+                </form>
+
+                <button
+                  type="button"
+                  class="btn btn--primary social__draft-btn"
+                  id="socialDraftBtn"
+                  disabled
+                >
+                  Draft post copy from this chat
+                </button>
+
+                <div id="socialAiResult" class="social__result" hidden>
+                  <div id="socialFlags" class="social__flags" hidden></div>
+
+                  <div class="social__field">
+                    <div class="social__field-head">
+                      <label>Headline</label>
+                      <button
+                        type="button"
+                        class="btn btn--ghost btn--small"
+                        id="socialUseHeadline"
+                      >
+                        Insert into image
+                      </button>
+                    </div>
+                    <p id="socialHeadlineOut" class="social__out"></p>
+                  </div>
+                  <div class="social__field">
+                    <label>Caption</label>
+                    <p id="socialCaptionOut" class="social__out"></p>
+                  </div>
+                  <div class="social__field">
+                    <label>Hashtags</label>
+                    <p id="socialHashtagsOut" class="social__out"></p>
+                  </div>
+
+                  <div class="social__review" id="socialReviewGate" hidden>
+                    <label>
+                      <input type="checkbox" id="socialReviewCheck" />
+                      I've reviewed this draft &mdash; it's accurate and appropriate to post.
+                    </label>
+                  </div>
+                  <button type="button" class="btn btn--ghost" id="socialCopyCaption">
+                    Copy caption + hashtags
+                  </button>
+                </div>
+              </div>
+
+              <details class="social__promptcfg" id="socialPromptCfg" data-admin="true" hidden>
+                <summary>AI guidelines (admin)</summary>
+                <p class="view__lead">
+                  The system prompt the assistant follows for every reply and draft &mdash; brigade
+                  voice and hard rules. Changes apply immediately for everyone using Social Studio.
+                </p>
+                <textarea id="socialPromptText" class="editor__input" rows="14"></textarea>
+                <div class="social__foot">
+                  <button type="button" class="btn btn--primary" id="socialPromptSave">
+                    Save guidelines
+                  </button>
+                  <button type="button" class="btn btn--ghost" id="socialPromptReset">
+                    Reset to default
+                  </button>
+                  <span id="socialPromptMeta" class="editor__meta"></span>
+                </div>
+                <p id="socialPromptMsg" class="msg" role="status" aria-live="polite" hidden></p>
+              </details>
             </div>
           </section>
 

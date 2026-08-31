@@ -482,9 +482,37 @@ async function deleteEnquiry(id, env) {
   }
 }
 
+/* ------------------------------------------------------- social studio settings */
+
+/** Admin-editable system-prompt guidelines for the social copy assistant. */
+async function getSocialPromptConfig(env) {
+  const e = await getEntity((await db(env)).content, "settings", "socialPrompt");
+  if (!e || !e.prompt) return null;
+  return { prompt: e.prompt, updatedBy: e.updatedBy || "", updatedAt: e.updatedAt || "" };
+}
+
+async function setSocialPromptConfig(prompt, updatedBy, env) {
+  const updatedAt = new Date().toISOString();
+  await (
+    await db(env)
+  ).content.upsertEntity(
+    {
+      partitionKey: "settings",
+      rowKey: "socialPrompt",
+      prompt,
+      updatedBy: updatedBy || "",
+      updatedAt,
+    },
+    "Replace"
+  );
+  return { prompt, updatedBy, updatedAt };
+}
+
 module.exports = {
   TABLES,
   _reset,
+  getSocialPromptConfig,
+  setSocialPromptConfig,
   recordEnquiry,
   listEnquiries,
   getEnquiry,

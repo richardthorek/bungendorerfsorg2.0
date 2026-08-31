@@ -21,6 +21,9 @@ const {
   handleEnquiriesList,
   handleEnquiryUpdate,
   handleEnquiryDelete,
+  handleSocialChat,
+  handleSocialPromptGet,
+  handleSocialPromptSet,
 } = require("./api/shared/handlers");
 
 const allowedOrigins = [
@@ -285,6 +288,10 @@ app.delete(
   "/api/enquiries/:id",
   mirror((req) => handleEnquiryDelete(req.params.id, req, process.env))
 );
+
+app.post("/api/social/chat", mirror(handleSocialChat));
+app.get("/api/social/prompt", mirror(handleSocialPromptGet));
+app.put("/api/social/prompt", mirror(handleSocialPromptSet));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
