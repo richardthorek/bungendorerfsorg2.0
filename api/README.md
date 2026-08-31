@@ -1,101 +1,94 @@
 # Azure Functions API
 
-This directory contains Azure Functions that serve as proxy endpoints for the Bungendore RFS website when deployed to Azure Static Web Apps.
+The production backend for the Bungendore RFS website, deployed as the managed
+Functions package inside the Azure Static Web App. Every function is a proxy /
+security boundary: upstream credentials (Logic App webhook URLs, the Mapbox
+token, the ACS connection string, storage keys, the Azure OpenAI key, the
+Clarity token) never reach the browser.
 
-## Structure
+`server.js` at the repo root is an Express mirror of these endpoints for local
+dev — **any change to an `api/<fn>/index.js` contract must be mirrored there.**
+Most logic lives in `api/shared/` and is imported by both backends.
 
-Each function is in its own directory:
+## Functions
 
-- `mapbox-token/` - Returns the Mapbox access token with origin validation
-- `fire-danger/` - Proxies fire danger rating data from Azure Logic Apps
-- `fire-incidents/` - Proxies fire incidents data (map markers) from Azure Logic Apps
-- `calendar-events/` - Proxies calendar events from Azure Logic Apps
-- `contact/` - Handles contact form submissions with validation and spam prevention
+Each function is its own directory with `index.js` + `function.json`.
 
-## Environment Variables
+| Directory | Route | Purpose |
+| --- | --- | --- |
+| `mapbox-token/` | `GET /api/mapbox-token` | Returns the Mapbox token, origin-validated |
+| `fire-danger/` | `GET /api/fire-danger` | Proxies the fire-danger XML feed (Logic App) |
+| `fire-incidents/` | `GET /api/fire-incidents` | Proxies the incidents GeoJSON (Logic App) |
+| `contact/` | `POST /api/contact` | Contact-form submit: validates, records to the `enquiries` table, emails the committee DL via ACS (`submit.js` + `notify.js`) |
+| `auth-request/` | `POST /api/auth/request` | Members' area: email a one-time sign-in code (ACS) |
+| `auth-verify/` | `POST /api/auth/verify` | Verify the code, issue the 60-min session cookie |
+| `auth-me/` | `GET /api/auth/me` | Current session; also fires an opportunistic Clarity refresh |
+| `auth-logout/` | `POST /api/auth/logout` | Clear the session, bump `tokenVersion` |
+| `members/` | `GET/POST /api/members`, `DELETE /api/members/{email}` | Allow-list admin (admins only) |
+| `duty/` | `GET /api/duty`, `GET /api/duty/status`, `POST /api/duty`, `POST /api/duty/claim` | Brigade-phone forwarding number (public lookup + members set/claim) |
+| `content/` | `GET/PUT /api/content/{key}` | Editable home-page content (`events`, `training`) in the `content` table |
+| `enquiries/` | `GET /api/enquiries`, `PATCH`/`DELETE /api/enquiries/{id}` | Contact-form submissions list (members only) |
+| `social-chat/` | `POST /api/social/chat` | Social Studio AI copy assistant — one `chatTurn` per message, returns `{message, draft}` |
+| `social-prompt/` | `GET/PUT /api/social/prompt` | Admin-editable voice/rules prompt (`content` table, `settings` partition) |
+| `clarity/` | `GET /api/clarity/insights` | Microsoft Clarity analytics snapshot + daily-rollup history |
 
-The following environment variables must be configured in Azure Static Web Apps settings:
+`api/shared/` holds the cross-backend logic: `handlers.js` (all members'-area
+handlers), `auth.js` / `identity.js` (sessions, allow-list), `store.js` (Table
+Storage), `otpEmail.js` (ACS sign-in code), `aiCopy.js` (Azure OpenAI),
+`clarityInsights.js` (Clarity export API), `phone.js`, `dutyAlert.js`,
+`contentSchema.js`, `functionAdapter.js`.
 
-- `MAPBOX_ACCESS_TOKEN` - Mapbox API token for map tiles
-- `AZURE_FIRE_DANGER_WEBHOOK_URL` - Azure Logic Apps webhook for fire danger data
-- `AZURE_INCIDENTS_WEBHOOK_URL` - Azure Logic Apps webhook for fire incidents
-- `AZURE_CALENDAR_WEBHOOK_URL` - Azure Logic Apps webhook for calendar events
-- `AZURE_CONTACT_WEBHOOK_URL` - Azure Logic Apps webhook for contact form
+## Environment variables
 
-## Configuration in Azure Portal
+Set these as **Application settings** on the Static Web App (Configuration blade).
+The authoritative list with dev-friendly values is
+[`local.settings.example.json`](local.settings.example.json).
 
-1. Go to your Azure Static Web Apps resource
-2. Navigate to **Configuration** in the left menu
-3. Under **Application settings**, add each environment variable
-4. Click **Save** to apply changes
+| Setting | Used by |
+| --- | --- |
+| `MAPBOX_ACCESS_TOKEN` | `mapbox-token` |
+| `ALLOWED_ORIGINS` | `mapbox-token` origin allow-list (optional) |
+| `AZURE_FIRE_DANGER_WEBHOOK_URL`, `AZURE_INCIDENTS_WEBHOOK_URL` | `fire-danger`, `fire-incidents` |
+| `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS` | contact email + sign-in codes |
+| `CONTACT_NOTIFY_TO`, `CONTACT_NOTIFY_CONFIRM` | `contact` |
+| `AUTH_JWT_SECRET`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES` | members'-area auth |
+| `BRFS_STORAGE_CONNECTION` | all Table Storage (`brfsstorage` in prod) |
+| `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`, `DUTY_ALERT_TO` | `duty` |
+| `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` | `social-chat` |
+| `CLARITY_API_TOKEN` | `clarity` (optional — tab shows "not connected" without it) |
 
-## Local Development
+Removed: `AZURE_CONTACT_WEBHOOK_URL` (contact moved to ACS) and
+`AZURE_CALENDAR_WEBHOOK_URL` / the `calendar-events` function (events + training
+are now edited in the members' area, stored in the `content` table).
 
-To test these functions locally:
+## Local development
 
-1. Install Azure Functions Core Tools:
-   ```bash
-   npm install -g azure-functions-core-tools@4
-   ```
+Prefer `npm start` from the repo root — it runs `server.js`, which mirrors every
+endpoint above and reads `.env`.
 
-2. Create a `local.settings.json` file in the `/api` directory:
-   ```json
-   {
-     "IsEncrypted": false,
-     "Values": {
-       "AzureWebJobsStorage": "",
-       "FUNCTIONS_WORKER_RUNTIME": "node",
-       "MAPBOX_ACCESS_TOKEN": "your_token_here",
-       "AZURE_FIRE_DANGER_WEBHOOK_URL": "your_url_here",
-       "AZURE_INCIDENTS_WEBHOOK_URL": "your_url_here",
-       "AZURE_CALENDAR_WEBHOOK_URL": "your_url_here",
-       "AZURE_CONTACT_WEBHOOK_URL": "your_url_here"
-     }
-   }
-   ```
+To run the real Functions runtime instead:
 
-3. Start the functions:
-   ```bash
-   cd api
-   func start
-   ```
+```bash
+npm install -g azure-functions-core-tools@4
+cp api/local.settings.example.json api/local.settings.json   # then fill in real values
+cd api && func start        # http://localhost:7071/api/...
+```
 
-4. Functions will be available at:
-   - `http://localhost:7071/api/mapbox-token`
-   - `http://localhost:7071/api/fire-danger`
-   - `http://localhost:7071/api/fire-incidents`
-   - `http://localhost:7071/api/calendar-events`
-   - `http://localhost:7071/api/contact`
+`local.settings.json` is gitignored — never commit it.
 
 ## Deployment
 
-These functions are automatically deployed with the Azure Static Web Apps deployment workflow. The workflow is configured to:
-
-1. Deploy static files from `/public` folder
-2. Deploy API functions from `/api` folder
-3. Configure routing to use the local API functions instead of external redirects
-
-See `.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml` for deployment configuration.
+Deployed automatically by
+`.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`, which runs
+on `workflow_run` after the CI workflow completes (and on pull requests). It
+publishes `public/` as the app and `api/` as the managed Functions package.
 
 ## Security
 
-- All functions validate origins and include CORS headers
-- Contact form includes honeypot spam prevention and comprehensive validation
-- Mapbox token is validated against allowed origins
-- All webhook URLs are stored as environment variables (never in code)
-
-## Troubleshooting
-
-**Functions not loading on deployed site:**
-1. Verify environment variables are set in Azure Static Web Apps configuration
-2. Check deployment logs in GitHub Actions
-3. Check Azure Static Web Apps logs in Azure Portal
-
-**Local functions not working:**
-1. Ensure `local.settings.json` exists with all required environment variables
-2. Verify Azure Functions Core Tools are installed
-3. Check function logs in terminal for errors
-
-## Migration from Express.js
-
-These Azure Functions replace the Express.js server (`server.js`) for the deployed Azure Static Web Apps environment. The Express.js server can still be used for local development by running `npm start` from the root directory.
+- Every function validates input server-side; client validation is UX only.
+- Origin validation + CORS on `mapbox-token`; honeypot + rate limiting on `contact`.
+- All upstream secrets are Application settings, never in code or the repo.
+- Members'-area sessions are short-lived signed cookies; `tokenVersion` on the
+  member row invalidates them on sign-out / disable / role change.
+- See [`../SECURITY_FIXES.md`](../SECURITY_FIXES.md) and
+  [`../docs/API_INTEGRATION.md`](../docs/API_INTEGRATION.md).

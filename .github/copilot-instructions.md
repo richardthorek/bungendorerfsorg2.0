@@ -20,17 +20,18 @@ If the request is a one-off (typo, doc tweak, dependency bump), skip the plan; o
 ```
 master_plan.md                  # Single source of truth for in-flight work
 docs/                           # All project documentation (consolidated; was Documentation/)
-├── current_state/              # Current UI/UX spec + redesign-programme evidence
-│   ├── ui-baseline.md          # Quantified pre-change baseline + DOM-ID contract
-│   ├── ui-redesign.md          # Authoritative target spec + per-PR acceptance criteria
+├── current_state/              # As-built UI/UX spec + redesign-programme evidence (programme closed Aug 2026)
+│   ├── ui-baseline.md          # Pre-redesign baseline snapshot + DOM-ID contract
+│   ├── ui-redesign.md          # As-built "Command Centre" spec
 │   ├── wireframe/index.html    # Self-contained interactive previews
-│   └── images/                 # Screenshots (baseline + after)
-├── API_INTEGRATION.md          # Azure Functions / Logic Apps integration
+│   └── images/                 # Screenshots
+├── README.md                   # Documentation index
+├── API_INTEGRATION.md          # Endpoints, Logic Apps, Azure OpenAI + Clarity contracts
 ├── TESTING.md                  # Jest + Testing-Library guide
-├── ASSET_ORGANIZATION.md       # Images & icons
-├── CSS_OPTIMIZATION.md         # CSS architecture
-└── IMPLEMENTATION_SUMMARY.md   # Historical change log (do not modify)
-SECURITY_FIXES.md               # Security remediation log (root, kept for visibility)
+└── CSS_OPTIMIZATION.md         # CSS architecture + dead-code sweeps
+api/README.md                   # Function-by-function reference
+infra/README.md                 # What the Bicep provisions (and what it doesn't)
+SECURITY_FIXES.md               # Security remediation log (root, still appended to)
 README.md                       # Project overview + setup + content-editing guide
 ```
 
@@ -48,13 +49,19 @@ README.md                       # Project overview + setup + content-editing gui
 
 ## 2. Branching & PRs
 
-| Branch                   | Role                                               | Protected                              |
-| ------------------------ | -------------------------------------------------- | -------------------------------------- |
-| `main`                   | Production. Auto-deploys to Azure Static Web Apps. | Yes — owner merges from `liveDev` only |
-| `liveDev`                | Integration / staging. Permanent preview URL.      | Yes — PRs require review               |
-| `copilot/*`, `feature/*` | Topic branches off `liveDev`                       | No                                     |
+| Branch                                    | Role                                              | Protected |
+| ----------------------------------------- | ------------------------------------------------ | --------- |
+| `main`                                    | Production. Deploys to the Azure Static Web App.  | Yes       |
+| `feat/*`, `fix/*`, `chore/*`, `copilot/*` | Topic branches off `main`                         | No        |
 
-**Workflow:** topic branch off `liveDev` → PR into `liveDev` → owner promotes `liveDev` → `main`. Reference the GitHub issue (`Fixes #N`) and link the relevant `master_plan.md` phase. One PR per phase where possible.
+**Workflow:** topic branch off `main` → PR into `main` → squash-merge after CI is
+green. Reference the GitHub issue (`Fixes #N`) and link the relevant
+`master_plan.md` entry. (An earlier `liveDev` integration branch no longer
+exists — some older docs still mention it.)
+
+**Commit / PR hygiene:** never write a `Claude-Session:` trailer or a "session" /
+`claude.ai` link into a commit message or PR description — those are public and
+leak internal session URLs. A `Co-Authored-By:` trailer is fine.
 
 ---
 
@@ -76,44 +83,49 @@ npm run format:check
 npm run build        # lint + test:coverage (CI-style gate)
 ```
 
-### Test infrastructure (now exists)
+### Test infrastructure
 
-- **Framework:** Jest + jsdom + `@testing-library/dom` + `@testing-library/jest-dom`.
-- **Location:** `__tests__/` at repo root. Current files: `error-handler.test.js`, `validation.test.js`.
-- **Config:** `jest.config.js`.
-- **Conventions:** colocate by responsibility, not by source path. Prefer Testing-Library queries; mock `fetch` for API tests; render fragments instead of full HTML where practical.
+- **Framework:** Jest 30 + jsdom + `@testing-library/dom` + `@testing-library/jest-dom` 7.
+- **Location:** `__tests__/` at repo root. Suites: `admin-nav`, `clarity-insights`,
+  `contact-notify`, `duty-alert`, `error-handler`, `members-auth`, `otp-email`, `validation`.
+- **Config:** `jest.config.js` (jsdom env; `collectCoverageFrom` covers `public/js/**` + `server.js`).
+- **Conventions:** colocate by responsibility, not by source path. For the shared
+  `api/shared/` handlers, `jest.mock("../api/shared/store", …)` with an in-memory
+  fake and set `global.fetch = jest.fn()` (see `members-auth.test.js`,
+  `clarity-insights.test.js`). Render fragments instead of full HTML where practical.
 - See [`docs/TESTING.md`](../docs/TESTING.md) for patterns.
 
-### Lint & format (now exists)
+### Lint & format
 
-- ESLint config: `.eslintrc.json`. Prettier config: `.prettierrc.json`.
-- Run `npm run lint` and `npm run format:check` before pushing. CI does not yet enforce these — running them locally avoids review-cycle churn.
+- ESLint config: `eslint.config.js` (flat config, ESLint 10). Prettier config: `.prettierrc.json`.
+- CI runs `npm run lint` (blocking). It does **not** run Prettier — run
+  `npm run format:check` locally before pushing.
 
 ### CI/CD
 
-- Deploy workflow: `.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`. Triggers on push to `main` / `liveDev`, PRs into `main`. Deploys static site (`public/`) **and** the integrated API (`api/`) to Azure Static Web Apps.
-- Lint/test/audit gate: `.github/workflows/ci.yml`. Triggers on push to `main` / `liveDev` / `copilot/**`, PRs into `main` / `liveDev`. Runs ESLint, `test:coverage`, and a moderate+ `npm audit` gate.
+- Lint/test/audit gate: `.github/workflows/ci.yml`. Triggers on push to `main` and
+  `copilot/**`, and PRs into `main`. Runs ESLint, `test:coverage`, and a
+  moderate-or-higher `npm audit` gate (blocking).
+- Deploy workflow: `.github/workflows/azure-static-web-apps-lively-flower-0577f4700.yml`.
+  Triggers on `workflow_run` after CI completes (and on pull requests). Publishes
+  `public/` as the app and `api/` as the managed Functions package.
 - Dependabot: `.github/dependabot.yml`.
 
 ### Environment variables
 
-Copy `.env.example` to `.env`. Required for full local function:
+`server.js` reads `.env` (copy from `.env.example`). The `api/` Functions runtime
+reads `api/local.settings.json` (copy from `api/local.settings.example.json`) —
+that file is the authoritative, complete list. Never commit either.
 
-```
-MAPBOX_ACCESS_TOKEN=...
-ACS_CONNECTION_STRING=...        # contact form + members' area sign-in codes (ACS)
-ACS_SENDER_ADDRESS=contact@notify.bungendorerfs.org
-CONTACT_NOTIFY_TO=...           # committee distribution list (comma-separated ok)
-AUTH_JWT_SECRET=...             # members' area: >= 32 chars, signs the session cookie
-BRFS_STORAGE_CONNECTION=...     # members' area: storage account for allow-list tables (UseDevelopmentStorage=true locally)
-AUTH_ALLOWED_EMAIL_DOMAIN=rfs.nsw.gov.au
-AUTH_SESSION_MINUTES=60
-AZURE_INCIDENTS_WEBHOOK_URL=...
-AZURE_FIRE_DANGER_WEBHOOK_URL=...
-PORT=3000
-```
-
-Local dev for the Azure Functions in `api/` uses `api/local.settings.json` (template: `api/local.settings.example.json`); never commit the real one.
+Groups: Mapbox (`MAPBOX_ACCESS_TOKEN`, `ALLOWED_ORIGINS`) · live fire data
+(`AZURE_INCIDENTS_WEBHOOK_URL`, `AZURE_FIRE_DANGER_WEBHOOK_URL`) · ACS email —
+contact form **and** sign-in codes (`ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS`,
+`CONTACT_NOTIFY_TO`, `CONTACT_NOTIFY_CONFIRM`) · members' auth (`AUTH_JWT_SECRET`,
+`BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`) ·
+brigade phone (`DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`,
+`DUTY_ALERT_TO`) · Social Studio AI (`AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`,
+`AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION`) · Analytics
+(`CLARITY_API_TOKEN`).
 
 ---
 
@@ -122,22 +134,52 @@ Local dev for the Azure Functions in `api/` uses `api/local.settings.json` (temp
 ### Frontend (`public/`)
 
 - Plain ES6+ JavaScript loaded via `<script defer>`. **No bundler.** Order matters — see `public/index.html` end of body.
-- Vendored libs in `public/js/vendor/` (Luxon, Marked, DOMPurify). External: Mapbox GL, Leaflet, Pico CSS, Font Awesome via CDN.
+- Vendored libs in `public/js/vendor/` (Luxon, Marked, DOMPurify). External via CDN: Mapbox GL JS (lazy-loaded when the map scrolls into view), Pico CSS, Font Awesome 6. Microsoft Clarity's analytics tag also loads on the public site.
 - One stylesheet: `public/css/main.css`. CSS variables in `:root` drive theming and dark mode (`prefers-color-scheme`).
 - Markdown content lives in `public/Content/` and is fetched + rendered client-side by `dynamicContent.js` through Marked + DOMPurify.
 
 ### Backend — two deployment targets, one codebase
 
-1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`, `fire-danger`, `fire-incidents`, `contact`, `auth-*`, `members`, `duty`, `content`) act as the proxy layer between the static site and upstream services — Azure Logic Apps webhooks for fire data, Azure Communication Services Email for the contact form (`api/contact/notify.js`, shared with `server.js`). This is where the security boundary lives.
-2. **Local dev:** `server.js` (Express) serves `public/` and re-implements the same proxy endpoints by reading from `.env`. Keep the two surfaces semantically identical — when an `api/<fn>/index.js` changes its contract, mirror the change in `server.js`.
+1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`,
+   `fire-danger`, `fire-incidents`, `contact`, `auth-*`, `members`, `duty`,
+   `content`, `enquiries`, `social-chat`, `social-prompt`, `clarity`) are the
+   proxy layer / security boundary. Upstream services: Azure Logic Apps webhooks
+   for fire data; Azure Communication Services Email for the contact form **and**
+   members'-area sign-in codes; `brfsstorage` Table Storage for the members' area;
+   Azure OpenAI for the Social Studio copy assistant; the Microsoft Clarity export
+   API for the Analytics tab. Full reference: [`api/README.md`](../api/README.md).
+2. **Local dev:** `server.js` (Express) serves `public/` and re-implements the same
+   proxy endpoints by reading from `.env`. Keep the two surfaces semantically
+   identical — when an `api/<fn>/index.js` changes its contract, mirror the change
+   in `server.js`. Most logic already lives in `api/shared/` and is imported by both.
 
 ### Infrastructure
 
-- `infra/main.bicep` provisions the SWA + app settings; `infra/parameters.example.json` is the template.
+- `infra/main.bicep` provisions the SWA and a **subset** of app settings
+  (`infra/parameters.example.json` is the template). Members'-area, Social Studio,
+  and duty settings are managed directly on the Static Web App — see
+  [`infra/README.md`](../infra/README.md).
 
 ---
 
 ## 5. Coding conventions
+
+### Design intent — protect this
+
+The UI is deliberately slick, modern, and information-rich, with emergency
+information above everything else. When changing the front end, preserve:
+
+- **Emergency-first hierarchy** — fire danger, active incidents, warning level,
+  total fire ban, and the live map surface immediately (hero + `#liveStatusStrip`).
+- **Polish** — smooth transitions, parallax, tabbed/accordion content, dark mode.
+  Don't strip animations, focus outlines, or responsive behaviour to "simplify".
+- **Density without clutter** — rich data presented cleanly; tabular numerics,
+  iconography, colour-coded status. Match the existing visual language (`:root`
+  tokens in `main.css`).
+- **Accessibility is not optional** — semantic HTML5, ARIA on tab/dialog widgets,
+  keyboard operability, meaningful `alt`. Never regress these.
+
+The as-built spec is `docs/current_state/ui-redesign.md`; skim it before reworking layout.
 
 ### JavaScript
 
@@ -179,9 +221,10 @@ master_plan.md            # In-flight work tracker
 SECURITY_FIXES.md         # Security remediation log
 server.js                 # Local-dev Express server
 replace-token.js          # Build-time Mapbox token substitution into main.js
+scripts/                  # Table Storage seed scripts (seed-{member,duty,content,enquiries}.js)
 package.json
 jest.config.js
-.eslintrc.json / .prettierrc.json
+eslint.config.js / .prettierrc.json
 ```
 
 ### Dependencies
@@ -201,26 +244,32 @@ jest.config.js
 
 ### Live status strip
 
-The UI Redesign programme (issue #56) consolidated the home page's previously
-duplicated emergency surfaces (header bar, expanded overlay, mobile panel, in-page
-card) into a single live status strip (`#liveStatusStrip`), managed by
-`public/js/emergency-dashboard.js`. The legacy ID-alias shim was removed in Phase 7.
-Treat the canonical IDs in [`docs/current_state/ui-baseline.md` §5](../docs/current_state/ui-baseline.md)
-as the current contract for any JS reading/writing status-strip state.
+The UI Redesign programme (issue #56, closed Aug 2026) consolidated the home
+page's previously duplicated emergency surfaces (header bar, expanded overlay,
+mobile panel, in-page card) into a single live status strip (`#liveStatusStrip`),
+managed by `public/js/emergency-dashboard.js`. The legacy ID-alias shim was
+removed. Treat the canonical IDs in
+[`docs/current_state/ui-baseline.md` §5](../docs/current_state/ui-baseline.md) as
+the contract for any JS reading/writing status-strip state.
 
-### Favicons
+### Assets
 
-- Favicon files live in repo root (and `public/`) for proper browser discovery. See [`docs/ASSET_ORGANIZATION.md`](../docs/ASSET_ORGANIZATION.md).
-
-### Dark mode
-
-- CSS-driven via `prefers-color-scheme`. Logo swap (`logo.png` ↔ `logo-dark.png`) is the only image asset that varies.
+- Favicon files live in the repo root (and `public/`) for proper browser discovery.
+- `public/Images/` holds site images. The hero uses the `hero4-*` set (WebP with a
+  JPEG fallback, separate desktop/mobile assets), preloaded in `index.html`.
+- Dark mode is CSS-driven via `prefers-color-scheme`. The logo swap
+  (`logo.png` ↔ `logo-dark.png`) is the only image asset that varies by theme.
 
 ---
 
 ## 7. Security
 
-The CRITICAL items from earlier reviews have been addressed: Logic Apps URLs are now server-side in `api/*`, the contact form has spam prevention + validation, the mapbox-token endpoint validates origins. See [`SECURITY_FIXES.md`](../SECURITY_FIXES.md) for the audit trail.
+The CRITICAL items from earlier reviews have been addressed: Logic Apps URLs are now server-side in `api/*`, the contact form has spam prevention + validation, the mapbox-token endpoint validates origins. `SECURITY_FIXES.md` also carries an August 2026 members'-area review (rate limiting, session invalidation, duty-key checks). See it for the full trail.
+
+Secrets now in play, all Application settings / `.env` only, never in code:
+Logic App webhook URLs, `MAPBOX_ACCESS_TOKEN`, `ACS_CONNECTION_STRING`,
+`AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `DUTY_LOOKUP_KEY` / `DUTY_CLAIM_PIN`,
+`AZURE_OPENAI_API_KEY`, `CLARITY_API_TOKEN`.
 
 ### Standing rules
 

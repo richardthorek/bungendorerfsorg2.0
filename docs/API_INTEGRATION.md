@@ -7,7 +7,9 @@ This document describes all API integrations used in the Bungendore RFS website.
 ## Table of Contents
 
 - [Overview](#overview)
-- [Server-Side Proxy Endpoints](#server-side-proxy-endpoints)
+- [Server-Side Proxy Endpoints](#server-side-proxy-endpoints) — contact, events/training, fire incidents, fire danger, mapbox token, members' area, brigade phone
+- [Social Studio — Azure OpenAI copy assistant](#social-studio--azure-openai-copy-assistant)
+- [Analytics — Microsoft Clarity](#analytics--microsoft-clarity)
 - [Azure Logic Apps Integration](#azure-logic-apps-integration)
 - [External APIs](#external-apis)
 - [Environment Configuration](#environment-configuration)
@@ -23,11 +25,13 @@ The Bungendore RFS website uses a combination of server-side proxy endpoints and
 **Architecture:**
 
 ```
-Frontend (Browser)
+Frontend (public site  ·  /admin members' area)
   ↓
-Static Web Apps Integrated API (HTTP-trigger Azure Functions)
+Static Web Apps integrated API — HTTP-trigger Azure Functions in api/
+(mirrored by server.js for local dev; shared logic in api/shared/)
   ↓
-Azure Logic Apps / External APIs
+Azure Logic Apps (fire data)  ·  ACS Email  ·  brfsstorage Table Storage
+Azure OpenAI (Social Studio)  ·  Microsoft Clarity export API (Analytics)
 ```
 
 ---
@@ -110,8 +114,9 @@ Edited in the members' area (`/admin` → Events & training) and stored in
   (`every-friday`, `second-saturday`, …) using Luxon in `Australia/Sydney`.
 
 If the API is unreachable it falls back to the bundled `/Content/*.json` files,
-which also seed the tables (`node scripts/seed-content.js`). See
-[Members' area §7 — Brigade phone / §editable content](#7-brigade-phone-call--sms-forwarding-number).
+which also seed the tables (`node scripts/seed-content.js`). The `content` table
+endpoints are documented with the rest of the members' area in
+[§6](#6-members-area-sign-in--allow-list).
 
 The old Microsoft 365 calendar feed — `api/calendar-events`,
 `AZURE_CALENDAR_WEBHOOK_URL`, and the `getCalendar` Logic App — has been removed.
@@ -192,29 +197,21 @@ The old Microsoft 365 calendar feed — `api/calendar-events`,
 
 ### 5. Mapbox Token
 
-**Endpoint:** `GET /mapbox-token`
+**Endpoint:** `GET /api/mapbox-token`
 
-**Purpose:** Provide Mapbox access token with origin validation
+**Purpose:** Provide the Mapbox access token with origin validation.
 
-**Origin Validation:**
-Allowed origins:
+**Origin validation:** the request `Origin` (or `Referer` origin) must match the
+allow-list in `api/mapbox-token/index.js` — the apex and `www.bungendorerfs.org`,
+`http://localhost:3000`, the SWA production and preview hostnames, plus regex
+patterns for numbered preview environments and Codespaces. Requests with no
+origin (same-origin) are allowed. The `ALLOWED_ORIGINS` env var is an optional
+additional allow-list. Keep this list, `SECURITY_FIXES.md`, and the code in agreement.
 
-- `https://www.bungendorerfs.org`
-- `http://localhost:3000`
-- `https://lively-flower-0577f4700-livedev.eastasia.5.azurestaticapps.net`
+**Response:** `{ "token": "pk.ey..." }`
 
-**Response:**
-
-```json
-{
-  "token": "pk.ey..."
-}
-```
-
-**Usage:**
-
-- Map tiles for day/night mode
-- Map rendering via Leaflet.js
+**Usage:** Mapbox GL JS map tiles and rendering (day/night styles), lazy-loaded
+when the map scrolls into view.
 
 ---
 
@@ -222,8 +219,10 @@ Allowed origins:
 
 **Page:** `/admin` (served from `public/admin.html`; `noindex`). Plain-JS dashboard
 shell — sign-in, then **Brigade phone** (§7), **Enquiries** (§1), **Events &
-training** (§2) and **Members** (admin only). Backend logic is shared:
-`api/shared/handlers.js` is used by `api/{auth-*,members,duty,content,enquiries}`
+training** (§2), **Social Studio** (Azure OpenAI copy assistant), **Analytics**
+(Microsoft Clarity) and **Members** (admin only). Backend logic is shared:
+`api/shared/handlers.js` is used by
+`api/{auth-*,members,duty,content,enquiries,social-chat,social-prompt,clarity}`
 and mirrored in `server.js`.
 
 **Sign-in** is passwordless. A person may sign in only if BOTH:
@@ -245,10 +244,14 @@ and mirrored in `server.js`.
 | `GET /api/enquiries`                            | Members only. All contact-form submissions, newest first, with status + notes.                                                                                                                |
 | `PATCH /api/enquiries/{id}` `{status?, note?}`  | Members only, `X-BRFS-Auth: 1`. `status` ∈ new / in-progress / resolved; a note is appended with the member's name + time; first move off `new` records `handledBy`.                          |
 | `DELETE /api/enquiries/{id}`                    | Admin only, `X-BRFS-Auth: 1`. For spam.                                                                                                                                                       |
+| `POST /api/social/chat` `{messages, …}`         | Members only, `X-BRFS-Auth: 1`. One Social Studio turn — see [Social Studio](#social-studio--azure-openai-copy-assistant).                                                                     |
+| `GET/PUT /api/social/prompt`                    | `GET` members / `PUT` admin, `X-BRFS-Auth: 1`. The editable voice/rules prompt (`content` table, `settings` partition).                                                                        |
+| `GET /api/clarity/insights`                     | Members only. Stored Clarity snapshot + daily history — see [Analytics](#analytics--microsoft-clarity).                                                                                        |
 
 **Storage:** Azure Storage tables in `brfsstorage` (`BRFS_STORAGE_CONNECTION`),
 created on first use — `members`, `authcodes`, `ratelimits`, `auditlog`, `duty`,
-`content`, `enquiries`.
+`content` (also holds the `settings` partition for the Social Studio prompt),
+`enquiries`, `analytics` (Clarity snapshots).
 
 **Seeding old enquiries:** `node scripts/seed-enquiries.js <file.json>` — an array
 of `{name, message, email?, phone?, receivedAt?, legacyRef?}`, de-duplicated by
@@ -262,8 +265,9 @@ BRFS_STORAGE_CONNECTION="<brfsstorage connection string>" \
 ```
 
 **Config:** `AUTH_JWT_SECRET` (≥32 chars), `BRFS_STORAGE_CONNECTION`,
-`AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`, plus the existing
-`ACS_CONNECTION_STRING` / `ACS_SENDER_ADDRESS`.
+`AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`, `ACS_CONNECTION_STRING` /
+`ACS_SENDER_ADDRESS` (the same ACS resource as the contact form). Social Studio
+additionally needs `AZURE_OPENAI_*`; the Analytics tab needs `CLARITY_API_TOKEN`.
 
 ---
 
@@ -302,6 +306,77 @@ Members may carry an optional `phone` for SMS attribution.
 
 ---
 
+## Social Studio — Azure OpenAI copy assistant
+
+Social Studio (`/admin → Social Studio`) has two halves: a client-only canvas
+graphic-template editor (PNG export, nothing persisted server-side) and an AI
+copy-drafting assistant backed by **Azure OpenAI**. Only the AI half touches the
+backend.
+
+**Endpoint:** `POST /api/social/chat` (members only, `X-BRFS-Auth: 1`), body
+`{ messages: [{ role, text, image? }], … }`. `image` is a downscaled data-URL
+(≤ ~3 MB, PNG/JPEG/WebP) — vision requires a vision-capable deployment.
+
+**Per turn** the handler calls `chatTurn()` in `api/shared/aiCopy.js` — **one**
+Azure OpenAI round trip that returns `{ message, draft }`:
+
+- `message` — the conversational reply (questions, guidance, push-back). Never
+  contains the post copy itself.
+- `draft` — the live post: `{ headline, caption, hashtags[], flags[] }`, refined
+  every turn once there's enough to propose. `flags` combines the model's own
+  self-flags with a **fixed server-side keyword scan** (`RISK_PATTERNS` in
+  `aiCopy.js`) for casualties / addresses / evacuation language / political or
+  commercial content — this scan always runs regardless of the editable prompt.
+
+**Request contract** (`callAzureChat`, `api/shared/aiCopy.js`): the deployment is
+a GPT-5 reasoning model (prod: `gpt-5.6-terra`), so the call sends
+`max_completion_tokens` + `reasoning_effort` (`"low"`) and a
+`response_format: { type: "json_object" }` — **not** `temperature` / `max_tokens`,
+which GPT-5 reasoning models reject. Default `AZURE_OPENAI_API_VERSION` is
+`2024-10-21` (the GA version verified for `json_object` + vision).
+
+**Editable prompt:** `GET/PUT /api/social/prompt` reads/writes the admin-editable
+voice & rules text, stored in the `content` table under the `settings` partition.
+`GET` is members, `PUT` is admin-only. The default lives in
+`DEFAULT_SYSTEM_PROMPT` in `aiCopy.js` (grounded in NSW RFS Service Standard
+1.4.5). Posting itself is always copy/paste into Meta Business Suite — there is no
+Graph API integration.
+
+**Config:** `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`,
+`AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION`.
+
+---
+
+## Analytics — Microsoft Clarity
+
+The public site loads the Microsoft Clarity analytics tag
+(`public/index.html`, project `yaxo089b41`). The members'-area **Analytics** tab
+reads Clarity's **Data Export API** — deliberately *not* on `admin.html`, so
+member PII is never captured in session replays.
+
+**Endpoint:** `GET /api/clarity/insights` (members only). Returns the stored
+snapshot (`sessions`, `pages/session`, scroll depth, engagement, top pages,
+friction signals) plus a daily-rollup history and a `configured` flag.
+`?refresh=1` forces a pull within the daily budget.
+
+**The constraint:** Clarity's export API only serves the last 1–3 days and allows
+**10 calls / project / day**. So `api/shared/clarityInsights.js`:
+
+- fetches at most once every `REFRESH_INTERVAL_MS` (6 h) and never more than
+  `MAX_FETCHES_PER_DAY` (6) times per UTC day — a margin under Clarity's 10;
+- is driven **opportunistically** — no timer. `maybeRefreshClarity()` is
+  fire-and-forgotten from `handleAuthMe` (every members'-area page load) and from
+  the Analytics panel; the refresh slot is claimed in storage *before* the
+  network call so concurrent loads don't stampede;
+- normalises Clarity's per-metric response into a stable summary and persists it
+  in the `analytics` table: a `latest` row + one `day:<yyyy-mm-dd>` rollup row
+  per day, so the members'-area trend outlives Clarity's own 3-day retention.
+
+**Config:** `CLARITY_API_TOKEN` (Clarity → Settings → Data Export → Generate
+token). Optional — the tab shows a "not connected" state when unset.
+
+---
+
 ## Azure Logic Apps Integration
 
 Azure Logic Apps provides the serverless backend for:
@@ -326,16 +401,25 @@ https://prod-XX.australiaeast.logic.azure.com/workflows/[WORKFLOW_ID]/triggers/W
 - Server-side only (never exposed to client)
 - Can be regenerated via Azure Portal if compromised
 
-### Required Environment Variables
+### Environment Variables
 
-See `.env.example` for complete list:
+The **complete** list, with dev values and inline comments, is
+[`../api/local.settings.example.json`](../api/local.settings.example.json) (for
+`api/`) and [`../.env.example`](../.env.example) (for `server.js`). Summary by
+feature:
 
-- `ACS_CONNECTION_STRING` — Azure Communication Services connection string (contact form)
-- `ACS_SENDER_ADDRESS` — verified MailFrom on `notify.bungendorerfs.org` (contact form)
-- `CONTACT_NOTIFY_TO` — committee distribution list; comma-separated for several recipients
-- `CONTACT_NOTIFY_CONFIRM` — optional; `false` disables the enquirer acknowledgement (default `true`)
-- `AZURE_INCIDENTS_WEBHOOK_URL`
-- `AZURE_FIRE_DANGER_WEBHOOK_URL`
+| Feature | Variables |
+| --- | --- |
+| Live fire data (Logic Apps) | `AZURE_INCIDENTS_WEBHOOK_URL`, `AZURE_FIRE_DANGER_WEBHOOK_URL` |
+| Map | `MAPBOX_ACCESS_TOKEN`, `ALLOWED_ORIGINS` (optional) |
+| ACS email (contact + sign-in codes) | `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS`, `CONTACT_NOTIFY_TO`, `CONTACT_NOTIFY_CONFIRM` |
+| Members' auth | `AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES` |
+| Brigade phone | `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`, `DUTY_ALERT_TO` |
+| Social Studio AI | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` |
+| Analytics | `CLARITY_API_TOKEN` |
+
+Obsolete (removed): `AZURE_CONTACT_WEBHOOK_URL` (contact → ACS),
+`AZURE_CALENDAR_WEBHOOK_URL` (calendar feed removed).
 
 ---
 
@@ -355,12 +439,22 @@ See `.env.example` for complete list:
 **Update Frequency:** Real-time
 **Accessed via:** Azure Logic Apps proxy
 
-### Mapbox Tiles API
+### Mapbox
 
 **Source:** Mapbox
-**Data:** Map tiles (day/night mode)
-**Authentication:** Access token
-**Usage:** Map rendering with Leaflet.js
+**Data:** Map tiles + GL styles (day/night mode)
+**Authentication:** access token, fetched at runtime from `/api/mapbox-token`
+**Usage:** Mapbox GL JS map (lazy-loaded)
+
+### Azure OpenAI
+
+**Data:** the Social Studio copy assistant — see
+[Social Studio](#social-studio--azure-openai-copy-assistant).
+
+### Microsoft Clarity
+
+**Data:** public-site web analytics; the Analytics tab reads the Data Export API
+— see [Analytics](#analytics--microsoft-clarity).
 
 ---
 
@@ -368,24 +462,9 @@ See `.env.example` for complete list:
 
 ### Required Variables
 
-Create a `.env` file based on `.env.example`:
-
-```bash
-# Mapbox Configuration
-MAPBOX_ACCESS_TOKEN=pk.ey...
-
-# Contact form → Azure Communication Services Email
-ACS_CONNECTION_STRING=endpoint=https://stationkit-comm.australia.communication.azure.com/;accesskey=...
-ACS_SENDER_ADDRESS=contact@notify.bungendorerfs.org
-CONTACT_NOTIFY_TO=committee@example-distribution-list.org
-
-# Azure Logic Apps Webhook URLs
-AZURE_INCIDENTS_WEBHOOK_URL=https://prod-...
-AZURE_FIRE_DANGER_WEBHOOK_URL=https://prod-...
-
-# Server Configuration
-PORT=3000
-```
+See the table under [Azure Logic Apps Integration → Environment Variables](#environment-variables)
+and the two example files it links. `server.js` loads `.env`; the `api/` Functions
+runtime loads `api/local.settings.json`.
 
 ### Production Deployment
 
@@ -473,19 +552,19 @@ All proxy endpoints return standardized error responses:
 
 ### Credential Rotation
 
-If credentials are compromised:
+If a credential is compromised, regenerate it at the source and update the Static
+Web App Application settings (and your local `.env` / `api/local.settings.json`):
 
-1. **Azure Logic Apps:**
-   - Go to Azure Portal → Logic Apps
-   - Open workflow → Settings → Access keys
-   - Regenerate shared access signature
-   - Update `.env` file with new URL
-
-2. **Mapbox Token:**
-   - Go to Mapbox Account → Tokens
-   - Create new token with domain restrictions
-   - Revoke old token
-   - Update `.env` file
+| Credential | Where to rotate |
+| --- | --- |
+| `AZURE_*_WEBHOOK_URL` | Azure Portal → Logic App → workflow → Access keys → regenerate SAS |
+| `MAPBOX_ACCESS_TOKEN` | Mapbox account → Tokens → new token with domain restriction, revoke old |
+| `ACS_CONNECTION_STRING` | ACS resource (`stationkit-comm`) → Keys → regenerate |
+| `AUTH_JWT_SECRET` | Generate a new ≥32-char random string (invalidates all live sessions) |
+| `BRFS_STORAGE_CONNECTION` | Storage account (`brfsstorage`) → Access keys → rotate |
+| `DUTY_LOOKUP_KEY` / `DUTY_CLAIM_PIN` | Pick new values; update the Twilio flow's URL / PIN too |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI resource (`brfs-openai`) → Keys → regenerate |
+| `CLARITY_API_TOKEN` | Clarity → Settings → Data Export → revoke + generate new |
 
 ---
 

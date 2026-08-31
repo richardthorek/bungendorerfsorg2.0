@@ -18,14 +18,24 @@ This document describes the testing infrastructure and practices for the Bungend
 
 ## Overview
 
-The project uses **Jest** as the testing framework with **@testing-library** utilities for DOM testing.
+The project uses **Jest** (jsdom) with **@testing-library** utilities for DOM
+testing. Tests live in `__tests__/` at the repo root.
 
-**Current Test Coverage:**
+**Suites (`__tests__/`):**
 
-- ✅ Error handler utilities
-- ✅ Form validation (client and server)
-- 🔄 Integration tests (planned)
-- 🔄 E2E tests (planned)
+| Suite | Covers |
+| --- | --- |
+| `validation.test.js` | contact-form validation (client + server rules) |
+| `error-handler.test.js` | `public/js/error-handler.js` |
+| `admin-nav.test.js` | members'-area view switching |
+| `members-auth.test.js` | sign-in codes, sessions, `handleAuth*` / `handleMembers*` / `handleDuty*` |
+| `otp-email.test.js` | `buildCodeEmail` — the sign-in code stays copy-paste-safe |
+| `contact-notify.test.js` | ACS contact email (`api/contact/notify.js`) |
+| `duty-alert.test.js` | brigade-phone change-alert email |
+| `clarity-insights.test.js` | Clarity response normaliser + the budget-limited refresh gate |
+
+Most new logic lives in `api/shared/`, so most new tests exercise those modules
+with fakes rather than the DOM (see [Testing the shared handlers](#testing-the-shared-api-handlers)).
 
 **Test Philosophy:**
 
@@ -42,26 +52,20 @@ The project uses **Jest** as the testing framework with **@testing-library** uti
 
 ```json
 {
-  "jest": "^29.7.0",
-  "jest-environment-jsdom": "^29.7.0",
+  "jest": "^30.4.2",
+  "jest-environment-jsdom": "^30.4.1",
   "@testing-library/dom": "^10.4.0",
-  "@testing-library/jest-dom": "^6.6.3"
+  "@testing-library/jest-dom": "^7.0.0"
 }
 ```
 
 ### Configuration
 
-**`jest.config.js`:**
-
-```javascript
-module.exports = {
-  testEnvironment: "jsdom",
-  testMatch: ["**/__tests__/**/*.js", "**/?(*.)+(spec|test).js"],
-  coverageDirectory: "coverage",
-  collectCoverageFrom: ["public/js/**/*.js", "server.js", "!public/js/**/*.test.js"],
-  setupFilesAfterEnv: ["@testing-library/jest-dom"],
-};
-```
+`jest.config.js` (jsdom env; `testMatch` picks up **everything** under
+`__tests__/`, so helper files there must be self-contained). `globals` pre-stubs
+`DOMPurify.sanitize`, `L`, `marked`, `luxon` so front-end modules load without a
+browser. `collectCoverageFrom` covers `public/js/**` + `server.js` — the
+`api/shared/` modules are exercised by tests but not in the coverage number.
 
 ---
 
@@ -86,31 +90,36 @@ npm test error-handler.test.js
 npm test -- --testNamePattern="validation"
 ```
 
-### Output Examples
+`npm run build` (lint + `test:coverage`) is the local pre-merge gate and is what
+CI runs.
 
-**Successful test run:**
+---
 
+## Testing the shared API handlers
+
+The members'-area logic (`api/shared/handlers.js`, `store.js`, `aiCopy.js`,
+`clarityInsights.js`, `otpEmail.js`) is backend-agnostic, so tests import it
+directly and replace its collaborators with fakes:
+
+```javascript
+// jest.mock the storage layer with an in-memory implementation
+jest.mock("../api/shared/store", () => ({
+  async getMember(email) { return mockDb.members.get(email) || null; },
+  // …only the functions the handler under test calls
+}));
+
+// stub network + email
+global.fetch = jest.fn(async () => ({ ok: true, status: 200, json: async () => ({}) }));
+jest.mock("../api/shared/otpEmail", () => ({ sendSignInCode: jest.fn() }));
+
+const handlers = require("../api/shared/handlers");
+const res = await handlers.handleAuthVerify(req({ email, code }));
+expect(res.status).toBe(200);
 ```
-PASS  __tests__/validation.test.js
-PASS  __tests__/error-handler.test.js
 
-Test Suites: 2 passed, 2 total
-Tests:       29 passed, 29 total
-Snapshots:   0 total
-Time:        1.017 s
-```
-
-**Coverage report:**
-
-```
-----------------------|---------|----------|---------|---------|
-File                  | % Stmts | % Branch | % Funcs | % Lines |
-----------------------|---------|----------|---------|---------|
-All files             |   85.2  |   78.5   |   90.1  |   86.3  |
- error-handler.js     |   92.5  |   85.2   |   100   |   93.1  |
- validation.js        |   78.9  |   72.3   |   81.2  |   80.5  |
-----------------------|---------|----------|---------|---------|
-```
+`members-auth.test.js` is the reference for the storage fake + a `req()` helper;
+`clarity-insights.test.js` shows mocking `fetch` and asserting the refresh-budget
+gate. Never let a test make a real network call.
 
 ---
 
@@ -228,14 +237,12 @@ After running `npm run test:coverage`:
 2. **HTML report:** Open `coverage/lcov-report/index.html` in browser
 3. **CI integration:** Coverage uploaded to Codecov (optional)
 
-### Coverage Targets
+### Coverage
 
-| Component  | Target | Current |
-| ---------- | ------ | ------- |
-| Utilities  | 90%    | 92%     |
-| Validation | 90%    | 85%     |
-| Server     | 70%    | 60%     |
-| Overall    | 80%    | 75%     |
+There is no hard coverage gate — `test:coverage` runs in CI for the report, and
+Codecov upload is best-effort (`continue-on-error`). Aim to cover new
+branch logic and error paths in any module you touch; don't chase a number on
+DOM glue or third-party wrappers.
 
 ### What to Test
 
@@ -259,25 +266,21 @@ After running `npm run test:coverage`:
 
 ### GitHub Actions Workflow
 
-Tests run automatically on:
+`.github/workflows/ci.yml` runs on every push to `main` / `copilot/**` and every
+PR into `main`. On Node 20 it runs, in order:
 
-- Every push to `main`, `liveDev`, `copilot/**` branches
-- Every pull request to `main` or `liveDev`
+1. `npm ci`
+2. `npm run lint` (ESLint — blocking)
+3. `npm run test:coverage` (blocking)
+4. `codecov/codecov-action@v7` — best-effort, `continue-on-error: true`
+5. `npm audit --omit=dev` report (non-blocking)
+6. `npm audit --omit=dev --audit-level=moderate` — **blocking** gate
 
-**`.github/workflows/ci.yml`:**
+There is no Prettier step in CI — run `npm run format:check` locally.
 
-```yaml
-- name: Run tests
-  run: npm test
-
-- name: Run tests with coverage
-  run: npm run test:coverage
-
-- name: Upload coverage reports
-  uses: codecov/codecov-action@v4
-  with:
-    file: ./coverage/coverage-final.json
-```
+Deployment is a separate workflow
+(`azure-static-web-apps-lively-flower-0577f4700.yml`) triggered on `workflow_run`
+after CI passes.
 
 ### Viewing CI Results
 
@@ -291,16 +294,9 @@ Tests run automatically on:
 
 ### 1. Test Organization
 
-```
-__tests__/
-├── error-handler.test.js      # Unit tests for error handling
-├── validation.test.js          # Unit tests for validation
-├── integration/                # Integration tests (future)
-│   ├── contact-form.test.js
-│   └── calendar.test.js
-└── e2e/                        # End-to-end tests (future)
-    └── user-journey.test.js
-```
+Flat — one `*.test.js` per unit of behaviour, colocated in `__tests__/`, named
+after what it covers (not the source path). Shared fakes are defined inline in
+the file that needs them. See the suite table in [Overview](#overview).
 
 ### 2. Naming Conventions
 
