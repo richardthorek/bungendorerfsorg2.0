@@ -38,10 +38,13 @@ As part of Phase 6 (Asset dedupe and performance cleanup), the following dead CS
 
 ### File size impact
 
-| Metric | Before | After |
-|--------|--------|-------|
-| File size | ~78.6 KB | ~54.3 KB |
-| Reduction | – | **30.9 %** |
+This pass removed ~1,100 lines of dead rules.
+
+> The redesign's stated target was ≥ 30 % off the 72,895-byte baseline (≈ 51 KB);
+> Phase 6 got partway. **The live `main.css` size is in the Sweep 2 table below** —
+> treat that as current, and this section as the record of what Phase 6 removed.
+> (An earlier draft of this table quoted "~54.3 KB / 30.9 %", which was never
+> actually reached.)
 
 ## Dead-CSS Sweep 2 (August 2026)
 
