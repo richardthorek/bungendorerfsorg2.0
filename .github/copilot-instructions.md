@@ -76,7 +76,7 @@ npm run dev          # server only
 npm test             # Jest
 npm run test:watch
 npm run test:coverage
-npm run lint         # ESLint over public/js, server.js, replace-token.js
+npm run lint         # ESLint over public/js, public/sw.js, server.js, replace-token.js
 npm run lint:fix
 npm run format       # Prettier write
 npm run format:check

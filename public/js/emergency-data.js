@@ -1,7 +1,9 @@
-/* exported loadEmergencyData, filterFeaturesForEnvironment, computeCategoryCounts */
+/* exported loadEmergencyData, filterFeaturesForEnvironment, computeCategoryCounts,
+   saveLastKnownGood, loadLastKnownGood, isLikelyOffline */
 
 /**
- * Independent emergency-data pipeline (WEBSITE_ROADMAP.md §2.1-2.3, Workstream 1).
+ * Independent emergency-data pipeline (WEBSITE_ROADMAP.md §2.1-2.3, Workstream 1;
+ * offline handling is Bet 2, §4).
  *
  * This is the single source of truth for "what's the current incident
  * picture", and it has no dependency on Mapbox GL. The map is a progressive
@@ -11,13 +13,84 @@
  *
  * A failed fetch is rendered as an explicit degraded state and must never be
  * allowed to look like "0 incidents" / "no current warning".
+ *
+ * Offline handling (Bet 2): a fully offline client can't reach the server at
+ * all, so the server-side last-known-good cache in api/shared/fireDataProxy.js
+ * never gets a chance to help — this module keeps its OWN last-known-good
+ * copy in localStorage (belt-and-braces alongside the service worker's HTTP
+ * cache in sw.js) purely so it can label what it's showing honestly. When a
+ * fetch fails AND the browser looks offline (or the failure looks like a
+ * network-level failure, not an HTTP error from a reachable server), and a
+ * cached payload exists, that takes priority over the generic degraded
+ * state: same amber caution styling, but a specific "you may be offline, as
+ * at [time]" message instead of "we can't reach live data".
  */
 
 const EMERGENCY_REFRESH_MS = 3 * 60 * 1000; // within the roadmap's 2-5 min target
 const DEGRADED_MESSAGE =
   "We can't reach live fire data right now — check Hazards Near Me or call 000.";
+const LAST_KNOWN_GOOD_KEY = "bungendore-rfs:last-known-good";
 
 let _lastLoadPromise = null;
+
+// ─── Last-known-good persistence (client-side, Bet 2) ─────────────────────────
+
+/**
+ * Persist the data just used for a successful render so an offline visit can
+ * fall back to it. Wrapped in try/catch: localStorage can throw (private
+ * browsing quota, disabled storage) and that must never break a live render.
+ */
+function saveLastKnownGood(categoryCounts, filteredFeatures) {
+  try {
+    const payload = {
+      categoryCounts: categoryCounts,
+      filteredFeatures: filteredFeatures,
+      savedAt: Date.now(),
+    };
+    window.localStorage.setItem(LAST_KNOWN_GOOD_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.warn("Could not save last-known-good emergency data:", error);
+  }
+}
+
+/**
+ * @returns {{categoryCounts: object, filteredFeatures: Array, savedAt: number} | null}
+ */
+function loadLastKnownGood() {
+  try {
+    const raw = window.localStorage.getItem(LAST_KNOWN_GOOD_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed.savedAt !== "number" || !parsed.categoryCounts) return null;
+    return parsed;
+  } catch (error) {
+    console.warn("Could not read last-known-good emergency data:", error);
+    return null;
+  }
+}
+
+/**
+ * Best-effort signal that a fetch failure is because THIS device is offline,
+ * rather than the server being unreachable/erroring while the device itself
+ * has a working connection. `navigator.onLine` is the strongest signal when
+ * available (and false is fairly reliable — true is not, browsers can lie
+ * optimistically); a fetch TypeError ("Failed to fetch") is the browser's own
+ * generic network-layer failure text and is what a DNS/timeout/offline fetch
+ * throws, as opposed to an HTTP error status from a server that did respond.
+ */
+function isLikelyOffline(error) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  return (
+    Boolean(error) && error.name === "TypeError" && /failed to fetch/i.test(error.message || "")
+  );
+}
+
+function formatLastKnownGoodTime(savedAt) {
+  const d = new Date(savedAt);
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return hh + ":" + mm;
+}
 
 // ─── Filtering (moved from map.js so it has no Mapbox dependency) ────────────
 
@@ -109,14 +182,20 @@ function renderIncidentSummary(categoryCounts) {
     })
     .map(function (pair) {
       return (
-        "<tr><td><img src=\"" + pair[1] + "\" alt=\"" + pair[0] + "\" /></td><td>" +
-        categoryCounts[pair[0]] + "</td></tr>"
+        "<tr><td><img src=\"" +
+        pair[1] +
+        "\" alt=\"" +
+        pair[0] +
+        "\" /></td><td>" +
+        categoryCounts[pair[0]] +
+        "</td></tr>"
       );
     })
     .join("");
 
   if (incidentCountCell) {
-    incidentCountCell.innerHTML = total === 0 ? "" : DOMPurify.sanitize("<table>" + rows + "</table>");
+    incidentCountCell.innerHTML =
+      total === 0 ? "" : DOMPurify.sanitize("<table>" + rows + "</table>");
   }
 
   if (incidentCountLabel) {
@@ -149,6 +228,18 @@ function renderTimestamp(success) {
   const hh = String(now.getHours()).padStart(2, "0");
   const mm = String(now.getMinutes()).padStart(2, "0");
   el.textContent = "Updated " + hh + ":" + mm;
+}
+
+/**
+ * Bet 2 offline timestamp: explicitly says "you may be offline" rather than
+ * the generic "last check failed" — a different, more specific message
+ * because we actually have data to show, just not fresh data.
+ */
+function renderTimestampOffline(savedAt) {
+  const el = document.getElementById("statusStripTimestamp");
+  if (!el) return;
+  el.textContent =
+    "You appear to be offline — showing data from " + formatLastKnownGoodTime(savedAt);
 }
 
 /**
@@ -188,6 +279,60 @@ function renderDegraded() {
   }
 }
 
+/**
+ * Offline last-known-good state (Bet 2, roadmap §4). Renders the same
+ * surfaces as a live fetch, using the cached data, but every label makes
+ * clear this is NOT live: an honest "as at [time], you may be offline"
+ * rather than either a silent live-looking render or the generic degraded
+ * "can't reach live data" message (which reads as a server problem, not an
+ * on-device connectivity one — residents in a real outage should recognise
+ * their own situation, not wonder if the brigade's site is broken).
+ */
+function renderOffline(cached) {
+  const categoryCounts = cached.categoryCounts;
+  const total = totalFromCounts(categoryCounts);
+  const offlineNote =
+    "You appear to be offline — showing the last data loaded at " +
+    formatLastKnownGoodTime(cached.savedAt) +
+    ".";
+
+  renderIncidentSummary(categoryCounts);
+  renderWarningLevel(categoryCounts);
+
+  const incidentsCell = document.getElementById("incidentsStripCell");
+  const warningCell = document.getElementById("warningStripCell");
+  const incidentCountLabel = document.getElementById("incidentCountLabel");
+  const stripWarningLevelSub = document.getElementById("stripWarningLevelSub");
+
+  // data-state="offline" is applied AFTER renderIncidentSummary/renderWarningLevel
+  // so it overrides their own data-state writes (e.g. "none"/"advice") —
+  // the cached numbers are shown, but the cell styling and sub-copy must
+  // always foreground "this is stale/offline", never look like a live calm
+  // or live escalated state.
+  if (incidentsCell) incidentsCell.setAttribute("data-state", "offline");
+  if (warningCell) warningCell.setAttribute("data-state", "offline");
+  if (incidentCountLabel) incidentCountLabel.textContent = offlineNote;
+  if (stripWarningLevelSub) stripWarningLevelSub.textContent = offlineNote;
+
+  if (typeof populateFireInfoTable === "function") {
+    populateFireInfoTable({
+      features: Array.isArray(cached.filteredFeatures) ? cached.filteredFeatures : [],
+    });
+  }
+
+  if (typeof window.updateEmergencyDashboard === "function") {
+    const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
+    window.updateEmergencyDashboard({
+      dangerLevel: (fireDangerRatingCell && fireDangerRatingCell.textContent) || "NO RATING",
+      message: offlineNote,
+      incidentCount: total,
+      incidents: [],
+    });
+  }
+
+  renderTimestampOffline(cached.savedAt);
+}
+
 // ─── Fetch + orchestration ────────────────────────────────────────────────────
 
 function fetchIncidentGeoJSON() {
@@ -199,6 +344,20 @@ function fetchIncidentGeoJSON() {
     },
   }).then(function (response) {
     if (!response.ok) throw new Error("HTTP error! status: " + response.status);
+    // sw.js's networkFirstWithCacheFallback tags a response with this header
+    // when the network was actually unreachable and it silently served its
+    // own cached copy instead — from this page's point of view that fetch()
+    // call still "succeeded", so without this check the data below would be
+    // rendered as a fresh, live read. Treat it exactly like a network
+    // failure instead (see the .catch() below), which already knows how to
+    // render the honest offline/degraded state — that's a deliberate reuse,
+    // not a hack: a service-worker cache fallback and an on-device offline
+    // fetch failure are the same "not actually live" situation from here.
+    if (response.headers && response.headers.get("X-SW-Served-From") === "cache") {
+      const swCacheError = new Error("Failed to fetch");
+      swCacheError.name = "TypeError";
+      throw swCacheError;
+    }
     return response.json();
   });
 }
@@ -215,6 +374,7 @@ function _fetchAndRender() {
       renderIncidentSummary(categoryCounts);
       renderWarningLevel(categoryCounts);
       renderTimestamp(true);
+      saveLastKnownGood(categoryCounts, filteredFeatures);
 
       if (typeof window.updateEmergencyDashboard === "function") {
         const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
@@ -233,18 +393,37 @@ function _fetchAndRender() {
 
         window.updateEmergencyDashboard({
           dangerLevel: (fireDangerRatingCell && fireDangerRatingCell.textContent) || "MODERATE",
-          message: (fireDangerMessage && fireDangerMessage.textContent) || "Plan and prepare for fires in your area",
+          message:
+            (fireDangerMessage && fireDangerMessage.textContent) ||
+            "Plan and prepare for fires in your area",
           incidentCount: total,
           incidents: incidentsList,
         });
       }
 
-      return { filteredFeatures: filteredFeatures, categoryCounts: categoryCounts, total: total, raw: data };
+      return {
+        filteredFeatures: filteredFeatures,
+        categoryCounts: categoryCounts,
+        total: total,
+        raw: data,
+      };
     })
     .catch(function (error) {
       console.error("Error fetching fire incident data:", getUserFriendlyErrorMessage(error));
-      renderDegraded();
-      renderTimestamp(false);
+
+      // Bet 2: an offline-looking failure with a cached last-known-good
+      // payload gets the honest "you may be offline, as at [time]" render
+      // instead of the generic "can't reach live data" degraded state —
+      // tried first, and only falls through to renderDegraded() if there's
+      // no cache yet (e.g. first-ever visit happens to be offline) or the
+      // failure doesn't look like an on-device connectivity problem.
+      const cached = isLikelyOffline(error) ? loadLastKnownGood() : null;
+      if (cached) {
+        renderOffline(cached);
+      } else {
+        renderDegraded();
+        renderTimestamp(false);
+      }
       throw error;
     });
 
@@ -279,3 +458,6 @@ document.addEventListener("DOMContentLoaded", function () {
 window.loadEmergencyData = loadEmergencyData;
 window.filterFeaturesForEnvironment = filterFeaturesForEnvironment;
 window.computeCategoryCounts = computeCategoryCounts;
+window.saveLastKnownGood = saveLastKnownGood;
+window.loadLastKnownGood = loadLastKnownGood;
+window.isLikelyOffline = isLikelyOffline;

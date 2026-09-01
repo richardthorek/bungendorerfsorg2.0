@@ -83,6 +83,7 @@ is left is manual teardown / config only the owner can do:
 | CI (lint + test + audit)                                                              | Done   | `.github/workflows/ci.yml`                                                                        |
 | Calendar migration off Microsoft Graph to static content files                        | Done   | `public/Content/communityEvents.json`, `trainingSchedule.json`; see README § Editing site content |
 | WEBSITE_ROADMAP Workstream 7 — new external feeds (BOM Fire Weather Warning, BOM wind/temp/humidity, DEA hotspots, BOM rain radar, TfNSW traffic hazards) | Backend done; TfNSW pending an API key (owner action); frontend kept minimal (text/image, no redesign) | `docs/WEBSITE_ROADMAP.md` §3; `api/shared/externalFeeds.js`, `api/{fire-weather-warning,wind-observations,fire-hotspots,traffic-hazards}/` |
+| Website Roadmap "Bet 2" — PWA + offline last-known-good (`public/sw.js`, localStorage last-known-good fallback in `emergency-data.js`, manifest completeness) | Done — service worker's real browser install/fetch lifecycle not yet manually verified (no browser available in dev sandbox) | [`docs/WEBSITE_ROADMAP.md`](docs/WEBSITE_ROADMAP.md) §4 |
 
 ---
 

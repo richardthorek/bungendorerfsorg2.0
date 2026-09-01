@@ -1155,6 +1155,21 @@ a:focus {
   color: var(--clear-incident-fg);
 }
 
+/* Offline last-known-good state (Bet 2, roadmap §4) — distinct from
+   "degraded" (server unreachable but the browser might still be online):
+   this is specifically "you appear to be offline, here is the last data
+   this device actually loaded". Same amber caution language as degraded so
+   it still reads as "not live", but the copy in emergency-data.js is more
+   specific and reassuring than the generic can't-reach-server message. */
+.strip-cell[data-state="offline"] {
+  background-color: var(--clear-incident-bg);
+}
+.strip-cell[data-state="offline"] .strip-cell__label,
+.strip-cell[data-state="offline"] .strip-cell__value,
+.strip-cell[data-state="offline"] .strip-cell__sub {
+  color: var(--clear-incident-fg);
+}
+
 /* Cell 4 (Controlled Burn) escalation — same colour language as the Fire
    Danger cell: amber once fire danger reaches High (permits may be
    suspended), full alert red when a Total Fire Ban is actually in effect
