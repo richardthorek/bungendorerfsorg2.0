@@ -159,6 +159,17 @@ function staleWhileRevalidate(request) {
  * stale cache read — that's the server's own honest-error path
  * (fireDataProxy.js / emergency-data.js's renderDegraded), not something
  * this layer should paper over.
+ *
+ * IMPORTANT: a cache-fallback response is tagged with `X-SW-Served-From:
+ * cache` before it's returned. Without this, the calling page's fetch()
+ * simply resolves successfully and has no way to tell "genuinely live" apart
+ * from "this device (or the server) just had a network failure and you're
+ * looking at whatever this browser last saw" — which is precisely the
+ * "stale data rendered as if live" failure this whole roadmap exists to
+ * eliminate. emergency-data.js checks for this header and renders its own
+ * honest offline/stale state instead of treating the response as fresh.
+ * A Response's headers can't be mutated in place once read from the Cache
+ * API, so this reconstructs a new Response with the extra header.
  */
 function networkFirstWithCacheFallback(request) {
   return caches.open(API_CACHE).then((cache) =>
@@ -171,8 +182,19 @@ function networkFirstWithCacheFallback(request) {
       })
       .catch(() =>
         cache.match(request).then((cached) => {
-          if (cached) return cached;
-          throw new Error("Network request failed and no cached response is available");
+          if (!cached) {
+            throw new Error("Network request failed and no cached response is available");
+          }
+          const headers = new Headers(cached.headers);
+          headers.set("X-SW-Served-From", "cache");
+          return cached.blob().then(
+            (body) =>
+              new Response(body, {
+                status: cached.status,
+                statusText: cached.statusText,
+                headers: headers,
+              })
+          );
         })
       )
   );

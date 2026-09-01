@@ -237,6 +237,17 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok) {
               throw new Error("Failed to fetch fire danger data");
             }
+            // /api/fire-danger is in sw.js's CACHEABLE_API_PATHS list, so a
+            // network failure can be silently served from the service
+            // worker's own cache — this fetch() still "succeeds" from here,
+            // with nothing distinguishing it from a genuinely live read.
+            // There's no last-known-good UI built for this cell (unlike
+            // emergency-data.js's incident/warning data), so the honest
+            // choice is to treat it the same as any other fetch failure
+            // rather than silently render a possibly-stale rating as live.
+            if (response.headers && response.headers.get("X-SW-Served-From") === "cache") {
+              throw new Error("Failed to fetch fire danger data");
+            }
             return response.text();
           })
           .then((data) => {

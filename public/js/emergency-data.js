@@ -80,7 +80,9 @@ function loadLastKnownGood() {
  */
 function isLikelyOffline(error) {
   if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
-  return Boolean(error) && error.name === "TypeError" && /failed to fetch/i.test(error.message || "");
+  return (
+    Boolean(error) && error.name === "TypeError" && /failed to fetch/i.test(error.message || "")
+  );
 }
 
 function formatLastKnownGoodTime(savedAt) {
@@ -180,14 +182,20 @@ function renderIncidentSummary(categoryCounts) {
     })
     .map(function (pair) {
       return (
-        "<tr><td><img src=\"" + pair[1] + "\" alt=\"" + pair[0] + "\" /></td><td>" +
-        categoryCounts[pair[0]] + "</td></tr>"
+        "<tr><td><img src=\"" +
+        pair[1] +
+        "\" alt=\"" +
+        pair[0] +
+        "\" /></td><td>" +
+        categoryCounts[pair[0]] +
+        "</td></tr>"
       );
     })
     .join("");
 
   if (incidentCountCell) {
-    incidentCountCell.innerHTML = total === 0 ? "" : DOMPurify.sanitize("<table>" + rows + "</table>");
+    incidentCountCell.innerHTML =
+      total === 0 ? "" : DOMPurify.sanitize("<table>" + rows + "</table>");
   }
 
   if (incidentCountLabel) {
@@ -230,7 +238,8 @@ function renderTimestamp(success) {
 function renderTimestampOffline(savedAt) {
   const el = document.getElementById("statusStripTimestamp");
   if (!el) return;
-  el.textContent = "You appear to be offline — showing data from " + formatLastKnownGoodTime(savedAt);
+  el.textContent =
+    "You appear to be offline — showing data from " + formatLastKnownGoodTime(savedAt);
 }
 
 /**
@@ -282,8 +291,10 @@ function renderDegraded() {
 function renderOffline(cached) {
   const categoryCounts = cached.categoryCounts;
   const total = totalFromCounts(categoryCounts);
-  const offlineNote = "You appear to be offline — showing the last data loaded at " +
-    formatLastKnownGoodTime(cached.savedAt) + ".";
+  const offlineNote =
+    "You appear to be offline — showing the last data loaded at " +
+    formatLastKnownGoodTime(cached.savedAt) +
+    ".";
 
   renderIncidentSummary(categoryCounts);
   renderWarningLevel(categoryCounts);
@@ -304,7 +315,9 @@ function renderOffline(cached) {
   if (stripWarningLevelSub) stripWarningLevelSub.textContent = offlineNote;
 
   if (typeof populateFireInfoTable === "function") {
-    populateFireInfoTable({ features: Array.isArray(cached.filteredFeatures) ? cached.filteredFeatures : [] });
+    populateFireInfoTable({
+      features: Array.isArray(cached.filteredFeatures) ? cached.filteredFeatures : [],
+    });
   }
 
   if (typeof window.updateEmergencyDashboard === "function") {
@@ -331,6 +344,20 @@ function fetchIncidentGeoJSON() {
     },
   }).then(function (response) {
     if (!response.ok) throw new Error("HTTP error! status: " + response.status);
+    // sw.js's networkFirstWithCacheFallback tags a response with this header
+    // when the network was actually unreachable and it silently served its
+    // own cached copy instead — from this page's point of view that fetch()
+    // call still "succeeded", so without this check the data below would be
+    // rendered as a fresh, live read. Treat it exactly like a network
+    // failure instead (see the .catch() below), which already knows how to
+    // render the honest offline/degraded state — that's a deliberate reuse,
+    // not a hack: a service-worker cache fallback and an on-device offline
+    // fetch failure are the same "not actually live" situation from here.
+    if (response.headers && response.headers.get("X-SW-Served-From") === "cache") {
+      const swCacheError = new Error("Failed to fetch");
+      swCacheError.name = "TypeError";
+      throw swCacheError;
+    }
     return response.json();
   });
 }
@@ -366,13 +393,20 @@ function _fetchAndRender() {
 
         window.updateEmergencyDashboard({
           dangerLevel: (fireDangerRatingCell && fireDangerRatingCell.textContent) || "MODERATE",
-          message: (fireDangerMessage && fireDangerMessage.textContent) || "Plan and prepare for fires in your area",
+          message:
+            (fireDangerMessage && fireDangerMessage.textContent) ||
+            "Plan and prepare for fires in your area",
           incidentCount: total,
           incidents: incidentsList,
         });
       }
 
-      return { filteredFeatures: filteredFeatures, categoryCounts: categoryCounts, total: total, raw: data };
+      return {
+        filteredFeatures: filteredFeatures,
+        categoryCounts: categoryCounts,
+        total: total,
+        raw: data,
+      };
     })
     .catch(function (error) {
       console.error("Error fetching fire incident data:", getUserFriendlyErrorMessage(error));

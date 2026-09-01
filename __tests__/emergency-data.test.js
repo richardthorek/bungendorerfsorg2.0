@@ -228,4 +228,42 @@ describe("emergency-data.js — offline last-known-good (Bet 2, roadmap §4)", (
     const incidentsCell = document.getElementById("incidentsStripCell");
     expect(incidentsCell.getAttribute("data-state")).toBe("degraded");
   });
+
+  test("a response the service worker silently served from its own cache is never rendered as a fresh live read", async () => {
+    // Seed a last-known-good cache via a genuinely live fetch first, same as
+    // the offline test above.
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      headers: { get: () => null },
+      json: async () => ({ features: [featureWithCategory("Watch and Act")] }),
+    });
+    await window.loadEmergencyData();
+
+    // Now simulate sw.js's networkFirstWithCacheFallback: the network was
+    // unreachable, but the fetch() call from this page's point of view still
+    // resolves "successfully" with a response the service worker served
+    // from its own HTTP cache, tagged with X-SW-Served-From. Without the
+    // guard in fetchIncidentGeoJSON(), this would be indistinguishable from
+    // a genuinely fresh read and rendered as live/current.
+    renderStripDOM();
+    loadSourceFiles();
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      headers: { get: (name) => (name === "X-SW-Served-From" ? "cache" : null) },
+      json: async () => ({ features: [featureWithCategory("Emergency Warning")] }),
+    });
+
+    await expect(window.loadEmergencyData()).rejects.toThrow();
+
+    const incidentsCell = document.getElementById("incidentsStripCell");
+    const warningCell = document.getElementById("warningStripCell");
+    const stripWarningLevel = document.getElementById("stripWarningLevel");
+
+    // Must render the honest offline state using the last genuinely-live
+    // data (Watch and Act), never the SW-cache-served body (Emergency
+    // Warning) presented as if it were a fresh, confirmed read.
+    expect(incidentsCell.getAttribute("data-state")).toBe("offline");
+    expect(warningCell.getAttribute("data-state")).toBe("offline");
+    expect(stripWarningLevel.textContent).toBe("Watch and Act");
+  });
 });
