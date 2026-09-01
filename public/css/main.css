@@ -1362,8 +1362,7 @@ a:focus {
    time, Instagram/TikTok-style, replacing the old tab/accordion metaphor
    entirely. See docs/WEBSITE_ROADMAP.md Bet 1 narrowing. */
 .story-rail {
-  max-width: 1100px;
-  margin: var(--space-xxl) auto;
+  margin: var(--space-xxl) 0;
 }
 
 .story-rail__segments {
@@ -1396,15 +1395,8 @@ a:focus {
 
 .story-rail__stage {
   position: relative;
-  border-radius: 18px;
-  min-height: clamp(280px, 30vw, 420px);
-  background: var(--clear-neutral-cell-bg);
   display: flex;
   cursor: pointer;
-}
-
-.story-rail__stage--caution {
-  background: var(--clear-incident-bg);
 }
 
 .story-rail__zone {
@@ -1425,16 +1417,71 @@ a:focus {
   right: 0;
 }
 
-.story-rail__content {
+.story-rail__track {
   position: relative;
   z-index: 1;
+  display: flex;
+  gap: var(--space-lg);
   flex: 1;
+  max-width: 2200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Each visible card is its own styled box — plural on extra-wide screens
+   (.story-rail__track--dual), a single one everywhere else. */
+.story-rail__card {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border-radius: 18px;
+  background: var(--clear-neutral-cell-bg);
+  min-height: clamp(280px, 30vw, 420px);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding: clamp(1.5rem, 5vw, 4rem);
+  padding: clamp(1.5rem, 4vw, 4rem);
+  gap: clamp(0.6rem, 2vw, 1.5rem);
+  box-sizing: border-box;
+}
+
+.story-rail__card--caution {
+  background: var(--clear-incident-bg);
+}
+
+.story-rail__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.6rem;
+  min-width: 0;
+}
+
+/* Icon moves beside the text (instead of stacked above it) once there's
+   enough width to spare — lets the text column genuinely widen with the
+   card rather than floating as a narrow island in a much wider box. */
+@media (min-width: 900px) {
+  .story-rail__card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(2rem, 4vw, 5rem);
+  }
+}
+
+/* Two cards side by side once there's genuinely enough width for a second
+   one to breathe (see getSlotCount() in awareness-cards.js) — each keeps
+   the same icon+text treatment, just narrower, so it reads as its own card
+   rather than a stretched single card with a spare column bolted on. */
+@media (min-width: 1600px) {
+  .story-rail__track--dual .story-rail__card {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    min-height: 480px;
+  }
 }
 
 .story-rail__pillar,
@@ -1449,11 +1496,11 @@ a:focus {
   background: var(--rfs-core-red);
 }
 
-.story-rail__stage[data-pillar="membership"] .story-rail__pillar {
+.story-rail__card[data-pillar="membership"] .story-rail__pillar {
   background: var(--ui-blue);
 }
 
-.story-rail__stage[data-pillar="events"] .story-rail__pillar {
+.story-rail__card[data-pillar="events"] .story-rail__pillar {
   background: var(--ui-green);
 }
 
@@ -1463,26 +1510,27 @@ a:focus {
 }
 
 .story-rail__icon {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: clamp(2.5rem, 5vw, 5.5rem);
   color: var(--clear-text-secondary);
+  flex: none;
 }
 
 .story-rail__title {
-  font-size: clamp(1.3rem, 1rem + 1.6vw, 2.2rem);
+  font-size: clamp(1.3rem, 1rem + 1.4vw, 2.6rem);
   font-weight: 800;
   margin: 0;
-  max-width: 20ch;
+  max-width: 32ch;
   color: var(--clear-body-text);
 }
 
-.story-rail__stage--caution .story-rail__title {
+.story-rail__card--caution .story-rail__title {
   color: var(--clear-incident-fg);
 }
 
 .story-rail__body {
-  font-size: clamp(0.95rem, 0.85rem + 0.3vw, 1.2rem);
-  line-height: 1.5;
-  max-width: 55ch;
+  font-size: clamp(0.95rem, 0.85rem + 0.35vw, 1.35rem);
+  line-height: 1.55;
+  max-width: 80ch;
   color: var(--clear-body-text);
 }
 
@@ -1490,9 +1538,24 @@ a:focus {
   padding-left: 1.2em;
 }
 
+.story-rail__body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.story-rail__body th,
+.story-rail__body td {
+  text-align: left;
+  padding: 0.5em 0.8em 0.5em 0;
+  border-bottom: 1px solid var(--clear-hairline);
+  vertical-align: top;
+}
+
 .story-rail__photo {
-  height: 110px;
-  max-width: 320px;
+  height: clamp(110px, 16vw, 220px);
+  max-width: 480px;
+  width: 100%;
   border-radius: 10px;
   object-fit: cover;
 }
@@ -1542,6 +1605,14 @@ a:focus {
   font-weight: 600;
   cursor: pointer;
   color: var(--clear-text-secondary);
+}
+
+@media (min-width: 1600px) {
+  .story-rail__thumb {
+    width: 68px;
+    height: 68px;
+    font-size: 1.4rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

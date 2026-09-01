@@ -122,6 +122,58 @@
     return DOMPurify.sanitize(marked.parse(md || ""));
   }
 
+  // Two visible cards side by side once there's genuinely enough width for a
+  // second one to breathe (not just stretch the first one's whitespace) —
+  // sliding by one card at a time, so every advance reveals exactly one new
+  // card rather than swapping the whole pair out at once.
+  const DUAL_QUERY = "(min-width: 1600px)";
+  function getSlotCount() {
+    return window.matchMedia(DUAL_QUERY).matches ? 2 : 1;
+  }
+
+  function populateCard(cardEl, card) {
+    cardEl.dataset.pillar = card.pillar;
+    cardEl.classList.toggle("story-rail__card--caution", !!card.caution);
+    cardEl.innerHTML = "";
+
+    // Icon lives in its own column so the text column can genuinely widen
+    // on large screens instead of the icon sitting above a narrow text
+    // island in the middle of a much wider card.
+    const icon = document.createElement("i");
+    icon.className = "fas " + card.icon + " story-rail__icon";
+    icon.setAttribute("aria-hidden", "true");
+    cardEl.appendChild(icon);
+
+    const text = document.createElement("div");
+    text.className = "story-rail__text";
+
+    const pillarTag = document.createElement("span");
+    pillarTag.className = card._sortDate ? "story-rail__featured-tag" : "story-rail__pillar";
+    pillarTag.textContent = card._sortDate ? "Coming up" : PILLAR_LABEL[card.pillar] || card.pillar;
+    text.appendChild(pillarTag);
+
+    const title = document.createElement("h2");
+    title.className = "story-rail__title";
+    title.textContent = card.title;
+    text.appendChild(title);
+
+    const body = document.createElement("div");
+    body.className = "story-rail__body";
+    body.innerHTML = renderMarkdown(card.body);
+    text.appendChild(body);
+
+    if (card.photo) {
+      const img = document.createElement("img");
+      img.className = "story-rail__photo";
+      img.src = card.photo;
+      img.alt = card.title;
+      img.loading = "lazy";
+      text.appendChild(img);
+    }
+
+    cardEl.appendChild(text);
+  }
+
   function buildCarousel(mount, order) {
     const wrapper = document.createElement("div");
     wrapper.className = "story-rail";
@@ -142,12 +194,18 @@
     zoneRight.className = "story-rail__zone story-rail__zone--right";
     zoneRight.setAttribute("aria-label", "Next");
 
-    const content = document.createElement("div");
-    content.className = "story-rail__content";
+    const track = document.createElement("div");
+    track.className = "story-rail__track";
+    const cardEls = [0, 1].map(() => {
+      const cardEl = document.createElement("div");
+      cardEl.className = "story-rail__card";
+      track.appendChild(cardEl);
+      return cardEl;
+    });
 
     stage.appendChild(zoneLeft);
     stage.appendChild(zoneRight);
-    stage.appendChild(content);
+    stage.appendChild(track);
 
     const filmstrip = document.createElement("div");
     filmstrip.className = "story-rail__filmstrip";
@@ -191,40 +249,13 @@
     let timer = null;
 
     function render() {
-      const card = order[index];
-      stage.dataset.pillar = card.pillar;
-      stage.classList.toggle("story-rail__stage--caution", !!card.caution);
+      const slots = getSlotCount();
+      track.classList.toggle("story-rail__track--dual", slots === 2);
 
-      content.innerHTML = "";
-      const pillarTag = document.createElement("span");
-      pillarTag.className = card._sortDate ? "story-rail__featured-tag" : "story-rail__pillar";
-      pillarTag.textContent = card._sortDate
-        ? "Coming up"
-        : PILLAR_LABEL[card.pillar] || card.pillar;
-      content.appendChild(pillarTag);
-
-      const icon = document.createElement("i");
-      icon.className = "fas " + card.icon + " story-rail__icon";
-      icon.setAttribute("aria-hidden", "true");
-      content.appendChild(icon);
-
-      const title = document.createElement("h2");
-      title.className = "story-rail__title";
-      title.textContent = card.title;
-      content.appendChild(title);
-
-      const body = document.createElement("div");
-      body.className = "story-rail__body";
-      body.innerHTML = renderMarkdown(card.body);
-      content.appendChild(body);
-
-      if (card.photo) {
-        const img = document.createElement("img");
-        img.className = "story-rail__photo";
-        img.src = card.photo;
-        img.alt = card.title;
-        img.loading = "lazy";
-        content.appendChild(img);
+      populateCard(cardEls[0], order[index]);
+      cardEls[1].hidden = slots < 2;
+      if (slots === 2) {
+        populateCard(cardEls[1], order[(index + 1) % order.length]);
       }
 
       // Every segment's fill is reset here, not just the "done" class —
@@ -241,7 +272,10 @@
           fill.style.width = i < index ? "100%" : "0%";
         }
       });
-      thumbEls.forEach((t, i) => t.classList.toggle("active", i === index));
+      thumbEls.forEach((t, i) => {
+        const active = slots === 2 ? i === index || i === (index + 1) % order.length : i === index;
+        t.classList.toggle("active", active);
+      });
     }
 
     function startSegmentFill() {
@@ -306,6 +340,15 @@
       pauseBtn.textContent = playing ? "Pause" : "Play";
       if (playing) startSegmentFill();
       restart();
+    });
+
+    let lastSlotCount = getSlotCount();
+    window.addEventListener("resize", () => {
+      const slots = getSlotCount();
+      if (slots !== lastSlotCount) {
+        lastSlotCount = slots;
+        render();
+      }
     });
 
     render();
