@@ -458,6 +458,16 @@ h3 {
   border-radius: 10px;
   padding: 20px 20px 16px;
   align-self: start;
+  /* The Fire Information sidebar is naturally much shorter than the main
+     column once there's a busy incident list beside the map — sticky keeps
+     it in view while scrolling past that instead of leaving it stranded
+     above a lot of blank space below. */
+  position: sticky;
+  top: var(--space-lg);
+}
+
+.quick-links--band {
+  position: static;
 }
 
 .quick-links__kicker {
@@ -856,11 +866,14 @@ a:focus {
      dark-mode adjustment is needed beyond the existing --hero-bg image swap. */
 }
 
-/* Map Container Style */
+/* Map Container Style — height comes from .map-layout's flex-driven size
+   (see .fire-info-map-col) so it grows to match a taller incident list
+   instead of sitting at a fixed height with a gap beside it; min-height is
+   the floor for the common one-incident (or no-incident) case. */
 #map {
-  height: 400px; /* Default height for the map */
-  width: 100%; /* Map takes full width of its container */
-  margin-bottom: var(--space-lg); /* Add some space below the map */
+  height: 100%;
+  min-height: 280px;
+  width: 100%;
 }
 
 /* ─── Live Status Strip (Phase 3) ──────────────────────────────────────────── */
@@ -1349,7 +1362,10 @@ a:focus {
   margin-bottom: var(--space-xl);
   border: 1px solid var(--clear-hairline);
   border-radius: 12px;
-  overflow: hidden;
+  /* No overflow:hidden here — it would clip to establish rounded corners,
+     but that also breaks position:sticky for the Quick Links sidebar
+     nested inside .fire-info-section__detail. Corners are rounded on the
+     summary button itself instead (see below). */
 }
 
 .fire-info-section__summary {
@@ -1364,6 +1380,7 @@ a:focus {
   color: var(--clear-body-text);
   font-weight: 700;
   cursor: pointer;
+  border-radius: 12px;
 }
 
 .fire-info-section__summary:hover,
@@ -1980,7 +1997,6 @@ main {
   display: grid;
   grid-template-columns: 3fr 2fr;
   gap: var(--space-xl);
-  align-items: start;
   margin-top: var(--space-lg);
 }
 
@@ -1988,6 +2004,21 @@ main {
   .fire-info-body {
     grid-template-columns: 1fr;
   }
+}
+
+/* Map grows to match whichever column ends up taller (typically the
+   incident list on a busy day) instead of sitting at its own fixed height
+   with dead space beside a taller stack of cards. The incident list itself
+   stays sized to its own content either way — it shouldn't stretch to fill
+   extra height on a quiet day with just one incident. */
+.fire-info-map-col {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.fire-info-incidents-col {
+  align-self: start;
 }
 
 .fire-info-incidents-col__heading {
@@ -2011,9 +2042,12 @@ main {
   padding-right: 2px;
 }
 
-/* Incident cards (populateFireInfoTable, main.js) — colour-coded by AWS
-   alert level, same blue/amber/red language as the map legend icons, so an
-   incident reads at a glance without having to parse the status text. */
+/* Incident cards (populateFireInfoTable, main.js) — colour-coded to match
+   the Australian Warning System: Advice is yellow, Watch and Act is
+   orange/amber, Emergency Warning is red (same values as
+   .map-detail-badge's marker colours). Blue is reserved for "other" —
+   incidents outside the three AWS levels — since blue isn't part of the
+   AWS palette itself. */
 .incident-card {
   margin: 0;
   padding: var(--space-lg);
@@ -2025,6 +2059,10 @@ main {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+}
+
+.incident-card[data-level="advice"] {
+  border-left-color: #fbe032;
 }
 
 .incident-card[data-level="watch-and-act"] {
@@ -2065,6 +2103,11 @@ main {
   border-radius: 999px;
   color: #fff;
   background: var(--ui-blue);
+}
+
+.incident-card[data-level="advice"] .incident-card__badge {
+  background: #fbe032;
+  color: var(--rfs-black);
 }
 
 .incident-card[data-level="watch-and-act"] .incident-card__badge {
@@ -2152,6 +2195,9 @@ main {
   border: 1px solid var(--rfs-light-grey);
   background-color: var(--rfs-neutral-light);
   min-height: 280px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .map-toolbar {
@@ -2183,7 +2229,8 @@ main {
 .map-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 0;
-  height: 300px;
+  flex: 1;
+  min-height: 280px;
   transition: grid-template-columns 0.25s ease;
 }
 
