@@ -1309,15 +1309,43 @@ a:focus {
   margin-bottom: var(--space-xl);
 }
 
-/* Tab Navigation (Desktop/Tablet) — underline style */
+/* Tab carousel (Desktop/Tablet) — a horizontally scrollable row of
+   preview cards instead of plain text tab labels, so a casual visitor gets
+   a 1-2 sentence teaser for each section without opening it. Arrow buttons
+   are a discoverability aid; native scroll/swipe and the existing
+   arrow-key tablist pattern already work without them. */
+.tab-carousel {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.tab-carousel__arrow {
+  flex: none;
+  width: 36px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--clear-neutral-cell-bg);
+  color: var(--clear-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-carousel__arrow:hover,
+.tab-carousel__arrow:focus {
+  color: var(--rfs-core-red);
+  background-color: var(--clear-card-fill);
+}
+
 .tab-navigation {
   display: flex;
-  gap: 4px;
+  gap: var(--space-sm);
   border-bottom: 2px solid var(--clear-hairline);
-  margin-bottom: var(--space-lg);
   background: none;
   overflow-x: auto;
   overflow-y: hidden;
+  scroll-snap-type: x proximity;
   scrollbar-width: thin;
   align-items: stretch;
   width: 100%;
@@ -1326,20 +1354,23 @@ a:focus {
 
 .tab-btn {
   flex: none;
-  padding: 14px 20px;
-  background: transparent;
+  scroll-snap-align: start;
+  width: 220px;
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  background: var(--clear-neutral-cell-bg);
   border: none;
   border-bottom: 3px solid transparent;
-  margin-bottom: -2px; /* Sit flush over the container's hairline */
+  border-radius: 10px 10px 0 0;
   color: var(--clear-text-secondary);
   font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: var(--space-xs);
   position: relative;
 }
 
@@ -1347,13 +1378,31 @@ a:focus {
   font-size: 1rem;
 }
 
+.tab-btn__title {
+  margin-left: var(--space-xs);
+}
+
+.tab-btn__teaser {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--clear-text-muted);
+  white-space: normal;
+}
+
 .tab-btn:hover {
   color: var(--rfs-core-red);
+  background-color: var(--clear-card-fill);
 }
 
 .tab-btn.active {
   color: var(--rfs-core-red);
   border-bottom-color: var(--rfs-core-red);
+  background-color: var(--clear-card-fill);
+}
+
+.tab-btn.active .tab-btn__teaser {
+  color: var(--clear-text-secondary);
 }
 
 .tab-btn:focus {
@@ -1424,6 +1473,10 @@ a:focus {
 /* Mobile: Hide tabs, show accordion */
 @media (max-width: 768px) {
   .tab-navigation {
+    display: none;
+  }
+
+  .tab-carousel__arrow {
     display: none;
   }
 

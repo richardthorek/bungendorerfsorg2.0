@@ -331,55 +331,93 @@
       <div class="container-fluid content-container">
         <!-- Tabbed Content Navigation -->
         <div class="content-tabs-container">
-          <!-- Tab Navigation (Desktop/Tablet) -->
-          <div class="tab-navigation" role="tablist" aria-label="Main content sections">
+          <!-- Tab Navigation (Desktop/Tablet). Roadmap feedback: casual visitors
+               get more digestible value from a short teaser per section than
+               from four plain-text tab labels — same underlying tab/tabpanel
+               mechanism (tabs-accordion.js), just richer cards. Horizontally
+               scrollable with scroll-snap; arrow buttons are a discoverability
+               aid for non-touch users, not required for it to work (native
+               scroll/swipe/arrow-keys all already work via the existing
+               tablist keyboard pattern). Desktop/tablet only — mobile keeps
+               the accordion pattern below (max-width: 768px). -->
+          <div class="tab-carousel">
             <button
-              class="tab-btn active"
-              role="tab"
-              aria-selected="true"
-              aria-controls="fire-info-tab"
-              id="tab-fire-info"
-              data-tab="fire-info"
-              tabindex="0"
+              type="button"
+              class="tab-carousel__arrow tab-carousel__arrow--prev"
+              id="tabCarouselPrev"
+              aria-label="Scroll to previous section"
             >
-              <i class="fas fa-fire" aria-hidden="true"></i>
-              <span>Fire Information</span>
+              <i class="fas fa-chevron-left" aria-hidden="true"></i>
             </button>
+            <div class="tab-navigation" role="tablist" aria-label="Main content sections">
+              <button
+                class="tab-btn active"
+                role="tab"
+                aria-selected="true"
+                aria-controls="fire-info-tab"
+                id="tab-fire-info"
+                data-tab="fire-info"
+                tabindex="0"
+              >
+                <i class="fas fa-fire" aria-hidden="true"></i>
+                <span class="tab-btn__title">Fire Information</span>
+                <span class="tab-btn__teaser"
+                  >Today's rating, the live incident map, and what to do.</span
+                >
+              </button>
+              <button
+                class="tab-btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="prepare-tab"
+                id="tab-prepare"
+                data-tab="prepare"
+                tabindex="-1"
+              >
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                <span class="tab-btn__title">Prepare</span>
+                <span class="tab-btn__teaser"
+                  >Know your trigger to leave, and what to do by fire danger rating.</span
+                >
+              </button>
+              <button
+                class="tab-btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="membership-tab"
+                id="tab-membership"
+                data-tab="membership"
+                tabindex="-1"
+              >
+                <i class="fas fa-users" aria-hidden="true"></i>
+                <span class="tab-btn__title">Membership</span>
+                <span class="tab-btn__teaser"
+                  >Volunteer roles for every skillset — you don't have to fight fires to help.</span
+                >
+              </button>
+              <button
+                class="tab-btn"
+                role="tab"
+                aria-selected="false"
+                aria-controls="events-tab"
+                id="tab-events"
+                data-tab="events"
+                tabindex="-1"
+              >
+                <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                <span class="tab-btn__title">Events</span>
+                <span class="tab-btn__teaser"
+                  >See where the brigade will be next, and how to get involved.</span
+                >
+              </button>
+            </div>
             <button
-              class="tab-btn"
-              role="tab"
-              aria-selected="false"
-              aria-controls="prepare-tab"
-              id="tab-prepare"
-              data-tab="prepare"
-              tabindex="-1"
+              type="button"
+              class="tab-carousel__arrow tab-carousel__arrow--next"
+              id="tabCarouselNext"
+              aria-label="Scroll to next section"
             >
-              <i class="fas fa-shield-alt" aria-hidden="true"></i>
-              <span>Prepare</span>
-            </button>
-            <button
-              class="tab-btn"
-              role="tab"
-              aria-selected="false"
-              aria-controls="membership-tab"
-              id="tab-membership"
-              data-tab="membership"
-              tabindex="-1"
-            >
-              <i class="fas fa-users" aria-hidden="true"></i>
-              <span>Membership</span>
-            </button>
-            <button
-              class="tab-btn"
-              role="tab"
-              aria-selected="false"
-              aria-controls="events-tab"
-              id="tab-events"
-              data-tab="events"
-              tabindex="-1"
-            >
-              <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-              <span>Events</span>
+              <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </button>
           </div>
 

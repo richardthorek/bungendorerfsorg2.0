@@ -289,6 +289,72 @@ document.addEventListener("DOMContentLoaded", () => {
   const hasExplicitHash = Boolean(getTabFromHash());
   switchTab(initialTab, { updateUrl: hasExplicitHash, scroll: hasExplicitHash });
 
+  // Carousel arrow buttons: scroll one card-width at a time. Purely a
+  // discoverability aid — native scroll/swipe and the tablist's own
+  // arrow-key handling above already move between cards without these.
+  const tabCarouselPrev = document.getElementById("tabCarouselPrev");
+  const tabCarouselNext = document.getElementById("tabCarouselNext");
+  const tabNavigationEl = document.querySelector(".tab-navigation");
+
+  function scrollTabCarousel(direction) {
+    if (!tabNavigationEl) return;
+    const card = tabNavigationEl.querySelector(".tab-btn");
+    const step = card ? card.getBoundingClientRect().width + 8 : 220;
+    tabNavigationEl.scrollBy({ left: direction * step, behavior: "smooth" });
+  }
+
+  if (tabCarouselPrev) tabCarouselPrev.addEventListener("click", () => scrollTabCarousel(-1));
+  if (tabCarouselNext) tabCarouselNext.addEventListener("click", () => scrollTabCarousel(1));
+
+  // Incident-aware default section (roadmap feedback): live incident
+  // information should be first and prominent whenever there's something
+  // active to show; on a calm day the carousel takes over instead, and
+  // which of its sections greets the visitor is randomised so a casual,
+  // occasional visitor sees different content each time rather than the
+  // same "Fire Information" (or their own last-viewed tab) every visit.
+  // Only applies when nothing more specific already decided the tab — a
+  // direct link (#tab=prepare, #prepare, etc.) always wins.
+  function applyIncidentAwareDefaultTab() {
+    if (hasExplicitHash) return;
+    if (typeof window.loadEmergencyData !== "function") return;
+    // Desktop/tablet only — the carousel is a visual replacement for the
+    // plain tab-button row, which mobile doesn't show at all (it uses the
+    // accordion instead). switchTab()'s mobile accordion handling only runs
+    // when scroll:true, so silently calling it with scroll:false here would
+    // change which panel is "active" under the hood without changing which
+    // accordion section is actually expanded on screen — a real mismatch,
+    // not just an inert no-op. Simplest correct fix: don't run this on mobile.
+    if (window.innerWidth <= 768) return;
+
+    window
+      .loadEmergencyData()
+      .then((result) => {
+        const hasActiveIncidents = Boolean(result && result.total > 0);
+        if (hasActiveIncidents) return; // Fire Information is already the default — leave it.
+
+        const carouselTabs = ["prepare", "membership", "events"];
+        const randomTab = carouselTabs[Math.floor(Math.random() * carouselTabs.length)];
+        switchTab(randomTab, { updateUrl: false, scroll: false });
+
+        // Bring the newly-featured card into view within the horizontal
+        // carousel strip itself (not the page — scroll:false above already
+        // avoided that) so a returning visitor actually sees it changed,
+        // rather than the active-state highlight landing on a card
+        // scrolled out of the visible strip.
+        const targetButton = document.querySelector(`[data-tab="${randomTab}"]`);
+        if (targetButton && typeof targetButton.scrollIntoView === "function") {
+          targetButton.scrollIntoView({ inline: "center", block: "nearest" });
+        }
+      })
+      .catch(() => {
+        // Honest-failure-state is already handled by emergency-data.js itself;
+        // on a failed fetch we simply don't know if it's calm, so leave
+        // Fire Information as the default rather than guess.
+      });
+  }
+
+  applyIncidentAwareDefaultTab();
+
   // Ensure first accordion is open on mobile by default
   if (window.innerWidth <= 768) {
     const firstAccordion = accordionHeaders[0];
