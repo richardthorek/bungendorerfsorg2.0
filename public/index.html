@@ -221,6 +221,15 @@
           <p id="incidentCountLabel" class="strip-cell__sub">
             Checking for active incidents&hellip;
           </p>
+          <!-- Nearest incident (roadmap LATER list, scoped down from Bet 1):
+               opt-in only — no geolocation prompt until this button is
+               clicked, and no generated guidance, just a distance figure and
+               the incident's own official fields. See
+               public/js/nearest-incident.js. -->
+          <button type="button" id="nearestIncidentBtn" class="strip-cell__cta-btn" hidden>
+            Show distance to nearest incident
+          </button>
+          <p id="nearestIncidentResult" class="strip-cell__sub" hidden></p>
         </article>
 
         <!-- Cell 3: Warning Level. data-state and text are wired from live
@@ -893,6 +902,7 @@
   <script src="js/fire-weather-warning.js" defer></script>
   <script src="js/wind-observations.js" defer></script>
   <script src="js/alert-banner.js" defer></script>
+  <script src="js/nearest-incident.js" defer></script>
   <script src="js/map.js" defer></script>
   <script src="js/modal-utils.js" defer></script>
   <script src="js/calendar.js" defer></script>
