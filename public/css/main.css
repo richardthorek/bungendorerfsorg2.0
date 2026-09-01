@@ -515,6 +515,37 @@ button.quick-links__row:focus {
   color: var(--rfs-core-red);
 }
 
+/* Consolidated Prepare/Membership/Events links, full width below the
+   carousel — pill chips in a wrapping row rather than the sidebar's
+   vertical underlined list, so this reads as one glanceable band instead
+   of narrowing the carousel back down into a sidebar layout. */
+.quick-links--band {
+  align-self: auto;
+  margin: var(--space-xl) 0;
+  padding: var(--space-lg) var(--space-xl);
+}
+
+.quick-links__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+}
+
+.quick-links--band .quick-links__row {
+  width: auto;
+  padding: 0.6em 1.1em;
+  border: 1px solid var(--clear-hairline-strong);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.quick-links--band a.quick-links__row:hover,
+.quick-links--band a.quick-links__row:focus,
+.quick-links--band button.quick-links__row:hover,
+.quick-links--band button.quick-links__row:focus {
+  border-color: var(--rfs-core-red);
+}
+
 /* Incident map colour legend, next to the Fire Information map */
 .map-legend {
   list-style: none;
@@ -1941,11 +1972,43 @@ main {
   font-size: 0.9em;
 }
 
-/* Grid Container Styles */
-.grid-container {
+/* Map + incident list side by side — sized for the normal case (1
+   incident most likely, up to ~5 in a genuinely busy period; more is
+   unusual and scrolls within its own column rather than distorting the
+   page). Stacks on narrow screens like the rest of .tab-layout. */
+.fire-info-body {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--space-lg);
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-xl);
+  align-items: start;
+  margin-top: var(--space-lg);
+}
+
+@media (max-width: 900px) {
+  .fire-info-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fire-info-incidents-col__heading {
+  margin: 0 0 var(--space-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clear-body-text);
+}
+
+/* A vertical stack, not a multi-column auto-fill grid — with typically 1
+   and rarely more than 5 incidents, a single readable column reads far
+   better than cards stretching to fill a wide row or wrapping oddly at 2
+   columns. Caps out with a scroll rather than growing indefinitely for the
+   genuinely unusual case of a major, multi-incident event. */
+.incident-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: 1100px;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 /* Incident cards (populateFireInfoTable, main.js) — colour-coded by AWS

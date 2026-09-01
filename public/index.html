@@ -375,46 +375,65 @@
                 <div class="tab-layout__main">
                   <div id="fireDangerTableContainer"></div>
                   <div id="fireInfoContent"></div>
-                  <!-- Incident map (moved from summary card in Phase 3) -->
-                  <div class="fire-info-map" id="fireInfoMapContainer">
-                    <div class="map-toolbar">
-                      <button
-                        id="mapExpandBtn"
-                        class="map-expand-btn"
-                        type="button"
-                        aria-expanded="false"
-                      >
-                        <i class="fas fa-expand"></i>
-                        <span>Expand</span>
-                      </button>
+
+                  <!-- Map + incident list side by side: sized for the normal
+                       case (1 incident most likely, up to ~5 in a genuinely
+                       busy period — more is unusual and scrolls within its
+                       own column rather than distorting the layout). -->
+                  <div class="fire-info-body">
+                    <div class="fire-info-map-col">
+                      <!-- Incident map (moved from summary card in Phase 3) -->
+                      <div class="fire-info-map" id="fireInfoMapContainer">
+                        <div class="map-toolbar">
+                          <button
+                            id="mapExpandBtn"
+                            class="map-expand-btn"
+                            type="button"
+                            aria-expanded="false"
+                          >
+                            <i class="fas fa-expand"></i>
+                            <span>Expand</span>
+                          </button>
+                        </div>
+                        <div class="map-layout">
+                          <div id="map" aria-label="Local incident map"></div>
+                          <aside
+                            id="mapDetailPanel"
+                            class="map-detail-panel"
+                            aria-live="polite"
+                            hidden
+                          ></aside>
+                        </div>
+                      </div>
+                      <ul class="map-legend">
+                        <li>
+                          <img src="/Images/advice.png" alt="" class="map-legend__icon" />Advice
+                        </li>
+                        <li>
+                          <img
+                            src="/Images/watch-and-act.png"
+                            alt=""
+                            class="map-legend__icon"
+                          />Watch &amp; Act
+                        </li>
+                        <li>
+                          <img
+                            src="/Images/emergency-warning.png"
+                            alt=""
+                            class="map-legend__icon"
+                          />Emergency Warning
+                        </li>
+                        <li>
+                          <span class="map-legend__dot map-legend__dot--station"></span>Station
+                        </li>
+                      </ul>
+                      <a href="#info" class="map-legend-link">View full incident map &rarr;</a>
                     </div>
-                    <div class="map-layout">
-                      <div id="map" aria-label="Local incident map"></div>
-                      <aside
-                        id="mapDetailPanel"
-                        class="map-detail-panel"
-                        aria-live="polite"
-                        hidden
-                      ></aside>
+                    <div class="fire-info-incidents-col">
+                      <h3 class="fire-info-incidents-col__heading">Active Incidents</h3>
+                      <div id="fireInfoTableContainer" class="incident-list"></div>
                     </div>
                   </div>
-                  <ul class="map-legend">
-                    <li><img src="/Images/advice.png" alt="" class="map-legend__icon" />Advice</li>
-                    <li>
-                      <img src="/Images/watch-and-act.png" alt="" class="map-legend__icon" />Watch
-                      &amp; Act
-                    </li>
-                    <li>
-                      <img
-                        src="/Images/emergency-warning.png"
-                        alt=""
-                        class="map-legend__icon"
-                      />Emergency Warning
-                    </li>
-                    <li><span class="map-legend__dot map-legend__dot--station"></span>Station</li>
-                  </ul>
-                  <a href="#info" class="map-legend-link">View full incident map &rarr;</a>
-                  <div id="fireInfoTableContainer" class="grid-container"></div>
                 </div>
                 <aside class="quick-links">
                   <p class="quick-links__kicker">Quick Links</p>
@@ -455,6 +474,77 @@
              wayfinding, and any imminent training date woven in more often
              than evergreen content. -->
         <div id="awarenessCarousel"></div>
+
+        <!-- Consolidated Quick Links (Prepare/Membership/Events) — these used
+             to live in each tab's own sidebar; now that content rotates
+             through the carousel above, a link buried in one card would take
+             several clicks/waits to find again. Kept as one always-visible,
+             full-width band instead, so it never narrows the carousel back
+             down to a sidebar layout. -->
+        <section class="quick-links quick-links--band" aria-label="Quick links">
+          <p class="quick-links__kicker">Quick Links</p>
+          <div class="quick-links__grid">
+            <a
+              href="https://www.myfireplan.com.au"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-clipboard-list" aria-hidden="true"></i>Make Your Bush Fire Survival
+              Plan</a
+            >
+            <a
+              href="https://www.rfs.nsw.gov.au/__data/assets/pdf_file/0003/36597/BFSP-Complete.pdf"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-file-pdf" aria-hidden="true"></i>Download Survival Plan PDF</a
+            >
+            <a
+              href="https://www.rfs.nsw.gov.au/notify"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-file-signature" aria-hidden="true"></i>Notify a Burn / Apply for a
+              Fire Permit</a
+            >
+            <a
+              href="https://nswrfsprod.service-now.com/rfsembr?id=embr_rfs_role_explorer"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-user-plus" aria-hidden="true"></i>Explore Roles &amp; Apply for
+              Membership</a
+            >
+            <a
+              href="https://www.rfs.nsw.gov.au"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-globe" aria-hidden="true"></i>NSW RFS Website &mdash;
+              Volunteering</a
+            >
+            <div class="quick-links__row">
+              <i class="fas fa-clock" aria-hidden="true"></i>Visit us Friday nights from 7pm
+            </div>
+            <button type="button" class="contact-trigger quick-links__row quick-links__row--btn">
+              <i class="fas fa-envelope" aria-hidden="true"></i>Contact Us
+            </button>
+            <a
+              href="https://facebook.com/BungendoreRFS"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fab fa-facebook" aria-hidden="true"></i>Follow us on Facebook</a
+            >
+            <a
+              href="https://instagram.com/BungendoreRFS"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fab fa-instagram" aria-hidden="true"></i>Follow us on Instagram</a
+            >
+          </div>
+        </section>
       </div>
     </main>
 
