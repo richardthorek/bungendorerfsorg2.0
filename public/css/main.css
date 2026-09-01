@@ -2054,7 +2054,7 @@ main {
   border: 1px solid var(--clear-hairline);
   border-left: 5px solid var(--ui-blue);
   border-radius: 10px;
-  background: #fff;
+  background: var(--clear-card-fill);
   box-shadow: none;
   display: flex;
   flex-direction: column;
