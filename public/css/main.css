@@ -1646,7 +1646,7 @@ a:focus {
   display: block;
   margin: var(--space-md) auto 0;
   border: 1px solid var(--clear-hairline);
-  background: #fff;
+  background: var(--clear-card-fill);
   border-radius: 999px;
   padding: 0.5em 1.1em;
   font-size: 0.85rem;
@@ -2215,7 +2215,7 @@ main {
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 0.5rem;
   background-color: rgba(255, 255, 255, 0.95);
-  color: var(--text-color-dark);
+  color: var(--rfs-dark-grey);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -2240,7 +2240,7 @@ main {
 
 .map-detail-panel {
   border-left: 1px solid var(--rfs-light-grey);
-  background: linear-gradient(180deg, #ffffff, #f6f6f6);
+  background: linear-gradient(180deg, var(--clear-card-fill), var(--clear-neutral-cell-bg));
   padding: var(--space-sm);
   overflow-y: auto;
   overflow-x: hidden;
@@ -2555,7 +2555,7 @@ body.map-fullscreen-active {
 .data-label {
   display: block; /* Make label take full width */
   font-size: 0.8rem; /* Smaller font for label */
-  color: #555;
+  color: var(--clear-text-secondary);
   margin-bottom: 0.25rem; /* Small space between label and value */
 }
 
