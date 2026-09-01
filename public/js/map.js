@@ -287,87 +287,6 @@ function addIncidentAreaLayers(map, areaFeatureCollection) {
   map.on("mouseleave", "incident-areas-fill", function() { map.getCanvas().style.cursor = ""; });
 }
 
-// ─── Satellite hotspots (DEA/Himawari) ────────────────────────────────────────
-//
-// WEBSITE_ROADMAP Workstream 7: "sees ignitions before they're formal
-// incidents". Optional additional layer on the existing map — follows the
-// same addSource/addLayer shape as addIncidentAreaLayers above. Attribution
-// is required by DEA's CC BY 4.0 licence and is rendered into the status
-// line rather than only Mapbox's attribution control, so it's visible even
-// if a user never opens that control.
-function addHotspotLayer(map, hotspotFeatureCollection) {
-  if (map.getSource("fire-hotspots")) {
-    map.getSource("fire-hotspots").setData(hotspotFeatureCollection);
-    return;
-  }
-
-  map.addSource("fire-hotspots", { type: "geojson", data: hotspotFeatureCollection });
-
-  map.addLayer({
-    id: "fire-hotspots-points",
-    type: "circle",
-    source: "fire-hotspots",
-    paint: {
-      "circle-radius": 5,
-      "circle-color": "#ff4500",
-      "circle-stroke-width": 1,
-      "circle-stroke-color": "#7a1f00",
-      "circle-opacity": 0.85,
-    },
-  });
-
-  map.on("click", "fire-hotspots-points", function(e) {
-    const props = (e.features[0] && e.features[0].properties) || {};
-    showDetailPanel(
-      "<div class=\"map-detail-header\"><p class=\"map-detail-title\">Satellite hotspot</p></div>" +
-      "<p>Detected by satellite (Himawari), not yet a confirmed incident.</p>" +
-      (props.datetime ? "<p>Detected: " + props.datetime + "</p>" : "")
-    );
-  });
-
-  map.on("mouseenter", "fire-hotspots-points", function() { map.getCanvas().style.cursor = "pointer"; });
-  map.on("mouseleave", "fire-hotspots-points", function() { map.getCanvas().style.cursor = ""; });
-}
-
-/**
- * Honest-failure-state (roadmap §2.1) status line for the hotspots feed,
- * independent of whether the map itself has loaded — a failed fetch must say
- * so, never silently show zero hotspots (which could read as "all clear").
- */
-function renderHotspotsStatus(count, failed) {
-  const el = document.getElementById("hotspotsStatusLine");
-  if (!el) return;
-
-  if (failed) {
-    el.textContent = "Satellite hotspot data unavailable right now.";
-    return;
-  }
-
-  el.textContent =
-    count > 0
-      ? count + " satellite heat detection(s) within ~50km (Digital Earth Australia / Himawari, updated every 10 min)."
-      : "No satellite heat detections within ~50km (Digital Earth Australia / Himawari).";
-}
-
-function loadHotspotLayer(map) {
-  fetch(getApiBaseUrl() + "/api/fire-hotspots")
-    .then(function(response) {
-      if (!response.ok) throw new Error("HTTP error! status: " + response.status);
-      return response.json();
-    })
-    .then(function(data) {
-      const features = Array.isArray(data && data.features) ? data.features : [];
-      if (features.length > 0) {
-        addHotspotLayer(map, { type: "FeatureCollection", features: features });
-      }
-      renderHotspotsStatus(features.length, false);
-    })
-    .catch(function(error) {
-      console.error("Error fetching satellite hotspots:", getUserFriendlyErrorMessage(error));
-      renderHotspotsStatus(0, true);
-    });
-}
-
 // ─── Incident loading ─────────────────────────────────────────────────────────
 
 // ─── Hero state management (Phase 2) ─────────────────────────────────────────
@@ -796,7 +715,6 @@ function createStandardMap(accessToken) {
   map.on("load", function() {
     updateLightPreset();
     loadIncidentData(map);
-    loadHotspotLayer(map);
     window.setInterval(updateLightPreset, 5 * 60 * 1000);
   });
 

@@ -9,7 +9,6 @@ const { getFireDanger, getFireIncidents } = require("./api/shared/fireDataProxy"
 const {
   getFireWeatherWarning,
   getWindObservations,
-  getFireHotspots,
   getTrafficHazards,
 } = require("./api/shared/externalFeeds");
 const { checkHealth } = require("./api/shared/health");
@@ -177,16 +176,6 @@ app.get("/api/wind-observations", async (req, res) => {
   const result = await getWindObservations(process.env, { logger: console });
   if (!result.ok) {
     return res.status(result.status || 500).json({ error: result.error || "Failed to fetch wind observations" });
-  }
-  res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");
-  res.set("X-Data-Age-Seconds", String(result.ageSeconds));
-  res.json(result.body);
-});
-
-app.get("/api/fire-hotspots", async (req, res) => {
-  const result = await getFireHotspots(process.env, { logger: console });
-  if (!result.ok) {
-    return res.status(result.status || 500).json({ error: result.error || "Failed to fetch fire hotspots" });
   }
   res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");
   res.set("X-Data-Age-Seconds", String(result.ageSeconds));

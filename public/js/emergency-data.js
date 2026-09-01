@@ -53,6 +53,15 @@ function saveLastKnownGood(categoryCounts, filteredFeatures) {
   }
 }
 
+// How old a client-side last-known-good payload can be before it's refused
+// rather than shown. Matches fireDataProxy.js's own server-side staleness
+// ceiling — past this, "last known" is more likely wrong than merely late,
+// which is worse than the honest degraded state. Without this, a resident
+// who last visited weeks ago and opens the site while offline would see a
+// long-since-ended incident/warning rendered as "showing data from HH:MM",
+// which reads as today.
+const LAST_KNOWN_GOOD_MAX_AGE_MS = 30 * 60 * 1000;
+
 /**
  * @returns {{categoryCounts: object, filteredFeatures: Array, savedAt: number} | null}
  */
@@ -62,6 +71,7 @@ function loadLastKnownGood() {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed.savedAt !== "number" || !parsed.categoryCounts) return null;
+    if (Date.now() - parsed.savedAt > LAST_KNOWN_GOOD_MAX_AGE_MS) return null;
     return parsed;
   } catch (error) {
     console.warn("Could not read last-known-good emergency data:", error);
@@ -89,7 +99,18 @@ function formatLastKnownGoodTime(savedAt) {
   const d = new Date(savedAt);
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
-  return hh + ":" + mm;
+  const now = new Date();
+  const isToday =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  // Bare "14:23" reads as today even when it isn't — spell out the date once
+  // the payload is old enough to have crossed midnight, so a stale reading
+  // can never be mistaken for a same-day one.
+  if (isToday) return hh + ":" + mm;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  return day + "/" + month + " " + hh + ":" + mm;
 }
 
 // ─── Filtering (moved from map.js so it has no Mapbox dependency) ────────────
@@ -273,8 +294,11 @@ function renderDegraded() {
     window.updateEmergencyDashboard({
       dangerLevel: (fireDangerRatingCell && fireDangerRatingCell.textContent) || "NO RATING",
       message: DEGRADED_MESSAGE,
-      incidentCount: 0,
       incidents: [],
+      // Deliberately no incidentCount: updateEmergencyDashboard's typeof-number
+      // guard treats an explicit 0 as a real reading and overwrites the "?"
+      // set above with "0" — silently reintroducing the exact "0 = all clear"
+      // failure state this whole pipeline exists to prevent.
     });
   }
 }
@@ -358,6 +382,17 @@ function fetchIncidentGeoJSON() {
       swCacheError.name = "TypeError";
       throw swCacheError;
     }
+    // api/shared/fireDataProxy.js's own stale-while-revalidate cache can
+    // return a successful HTTP 200 carrying data from up to 30 minutes ago
+    // (X-Data-Freshness: stale), when ITS upstream fetch failed but a
+    // recent-enough cached copy existed server-side. That's a real HTTP
+    // success, not a network error, but it is exactly as "not actually
+    // live" as the service-worker cache case above — same treatment.
+    if (response.headers && response.headers.get("X-Data-Freshness") === "stale") {
+      const staleCacheError = new Error("Failed to fetch");
+      staleCacheError.name = "TypeError";
+      throw staleCacheError;
+    }
     return response.json();
   });
 }
@@ -424,6 +459,15 @@ function _fetchAndRender() {
         renderDegraded();
         renderTimestamp(false);
       }
+      // A rejected promise must not be cached: map.js calls loadEmergencyData()
+      // exactly once, from inside map.on("load"). If that single call ever
+      // landed on this rejected promise (a realistic race — a transient
+      // upstream blip resolves in ~100ms, Mapbox can take seconds to boot),
+      // the map's markers would stay empty for the rest of the session even
+      // after the text strip self-heals on the next refresh, since a
+      // .then/.catch chain binds to that specific promise instance, not to
+      // whatever this variable holds later.
+      _lastLoadPromise = null;
       throw error;
     });
 

@@ -491,13 +491,6 @@
                         </p>
                         <p class="rain-radar-panel__source">Source: Bureau of Meteorology</p>
                       </section>
-
-                      <!-- DEA satellite hotspots status line — the layer itself renders on
-                           the map above (see public/js/map.js loadHotspotLayer); this line
-                           gives a non-map-dependent, honest summary of feed health. -->
-                      <p id="hotspotsStatusLine" class="data-label" aria-live="polite">
-                        Checking satellite hotspot data&hellip;
-                      </p>
                     </div>
                     <aside class="quick-links">
                       <p class="quick-links__kicker">Quick Links</p>
@@ -815,9 +808,7 @@
           <!-- Announced to screen readers as validation errors appear/change
                (WCAG 2.2 AA 3.3.1/4.1.3) — kept empty and hidden until needed. -->
           <div id="contactFormErrors" class="form-errors" aria-live="polite" hidden></div>
-          <label for="contactNameInput"
-            >If you'd like more information we can reach out to you</label
-          >
+          <p>If you'd like more information we can reach out to you</p>
           <fieldset>
             <label for="contactNameInput" class="visually-hidden">Name</label>
             <input

@@ -1,19 +1,16 @@
 /**
  * Tests for the new Workstream 7 external feed handlers
  * (api/shared/externalFeeds.js) — BOM Fire Weather Warning, BOM wind
- * observations, DEA hotspots, and TfNSW traffic hazards. Reuses
- * fireDataProxy's fresh/stale/expired cache tiers (already covered by
- * fire-data-proxy.test.js), so these tests focus on per-feed parsing and
- * honest-failure-state behaviour.
+ * observations, and TfNSW traffic hazards. Reuses fireDataProxy's
+ * fresh/stale/expired cache tiers (already covered by fire-data-proxy.test.js),
+ * so these tests focus on per-feed parsing and honest-failure-state behaviour.
  */
 
 const {
   getFireWeatherWarning,
   getWindObservations,
-  getFireHotspots,
   getTrafficHazards,
   parseFireWeatherWarning,
-  buildHotspotsUrl,
 } = require("../api/shared/externalFeeds");
 
 const { _resetCacheForTests } = require("../api/shared/fireDataProxy");
@@ -128,36 +125,6 @@ describe("getWindObservations", () => {
     global.fetch = jest.fn().mockResolvedValue(jsonResponse({ observations: { data: [] } }));
     const result = await getWindObservations({}, { logger: quietLogger });
     expect(result.ok).toBe(false);
-  });
-});
-
-describe("buildHotspotsUrl", () => {
-  test("includes a bbox param scoped around Bungendore", () => {
-    const url = buildHotspotsUrl();
-    expect(url).toMatch(/^https:\/\/hotspots\.dea\.ga\.gov\.au\/geoserver\/wfs\?/);
-    expect(url).toMatch(/outputFormat=application%2Fjson/);
-    expect(url).toMatch(/bbox=/);
-  });
-});
-
-describe("getFireHotspots", () => {
-  test("upstream failure with no cache -> honest error", async () => {
-    global.fetch = jest.fn().mockRejectedValue(new Error("network down"));
-    const result = await getFireHotspots({}, { logger: quietLogger });
-    expect(result.ok).toBe(false);
-  });
-
-  test("successful fetch -> GeoJSON FeatureCollection with attribution", async () => {
-    const geojson = {
-      type: "FeatureCollection",
-      features: [{ type: "Feature", geometry: null, properties: {} }],
-    };
-    global.fetch = jest.fn().mockResolvedValue(jsonResponse(geojson));
-    const result = await getFireHotspots({}, { logger: quietLogger });
-    expect(result.ok).toBe(true);
-    expect(result.body.type).toBe("FeatureCollection");
-    expect(result.body.features).toHaveLength(1);
-    expect(result.body.attribution).toMatch(/CC BY 4.0/);
   });
 });
 

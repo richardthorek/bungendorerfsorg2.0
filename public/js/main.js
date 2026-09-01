@@ -263,6 +263,14 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.headers && response.headers.get("X-SW-Served-From") === "cache") {
               throw new Error("Failed to fetch fire danger data");
             }
+            // Same reasoning for api/shared/fireDataProxy.js's own server-side
+            // stale-while-revalidate cache: a successful 200 can still carry
+            // data up to 30 minutes old (X-Data-Freshness: stale) when the
+            // Logic App itself was unreachable. Treat it as a fetch failure
+            // rather than render a possibly-stale rating as a live one.
+            if (response.headers && response.headers.get("X-Data-Freshness") === "stale") {
+              throw new Error("Failed to fetch fire danger data");
+            }
             return response.text();
           })
           .then((data) => {

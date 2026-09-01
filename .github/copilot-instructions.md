@@ -143,10 +143,10 @@ brigade phone (`DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`,
 
 1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`,
    `fire-danger`, `fire-incidents`, `fire-weather-warning`, `wind-observations`,
-   `fire-hotspots`, `traffic-hazards`, `contact`, `auth-*`, `members`, `duty`,
+   `traffic-hazards`, `contact`, `auth-*`, `members`, `duty`,
    `content`, `enquiries`, `social-chat`, `social-prompt`, `clarity`) are the
    proxy layer / security boundary. Upstream services: Azure Logic Apps webhooks
-   for fire data; public BOM/DEA feeds and (pending an API key) TfNSW Live
+   for fire data; public BOM feeds and (pending an API key) TfNSW Live
    Traffic Hazards for the Workstream 7 feeds; Azure Communication Services
    Email for the contact form **and** members'-area sign-in codes; `brfsstorage`
    Table Storage for the members' area; Azure OpenAI for the Social Studio copy

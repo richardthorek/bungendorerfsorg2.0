@@ -21,7 +21,6 @@ Each function is its own directory with `index.js` + `function.json`.
 | `fire-incidents/` | `GET /api/fire-incidents` | Proxies the incidents GeoJSON (Logic App). Same cache/staleness policy as `fire-danger/` |
 | `fire-weather-warning/` | `GET /api/fire-weather-warning` | BOM Fire Weather Warning bulletin (IDN22000), filtered to the "Southern Ranges" district — see `externalFeeds.js` below |
 | `wind-observations/` | `GET /api/wind-observations` | BOM live wind/temp/humidity, Canberra Airport (IDN60903.94926) — see `externalFeeds.js` below |
-| `fire-hotspots/` | `GET /api/fire-hotspots` | DEA satellite hotspots (Himawari), filtered to ~50km of Bungendore — see `externalFeeds.js` below |
 | `traffic-hazards/` | `GET /api/traffic-hazards` | TfNSW Live Traffic Hazards (Kings Highway). **Pending `TFNSW_API_KEY`** — returns an honest 503 until the key is issued; see `externalFeeds.js` below |
 | `health/` | `GET /api/health` | Public liveness check for external uptime monitoring: `{ status: "ok" \| "degraded", timestamp }` |
 | `contact/` | `POST /api/contact` | Contact-form submit: validates, records to the `enquiries` table, emails the committee DL via ACS (`submit.js` + `notify.js`) |
@@ -44,7 +43,7 @@ Storage), `otpEmail.js` (ACS sign-in code), `aiCopy.js` (Azure OpenAI),
 `contentSchema.js`, `functionAdapter.js`, `contactValidation.js` (contact-form
 rules), `fireDataProxy.js` (fire-danger/fire-incidents fetch + cache), `health.js`
 (the `/api/health` check), `externalFeeds.js` (Workstream 7: BOM Fire Weather
-Warning, BOM wind observations, DEA hotspots, TfNSW traffic hazards — reuses
+Warning, BOM wind observations, TfNSW traffic hazards — reuses
 `fireDataProxy.js`'s `fetchWithFallback` cache-tier helper).
 
 ### Content keys (`contentSchema.js`)
@@ -104,10 +103,6 @@ described above, against different public upstreams:
 - **`wind-observations`** — BOM's IDN60903.94926 JSON feed for Canberra
   Airport (nearest station). Surfaces the latest observation's wind speed/
   direction/gust, air temp and relative humidity.
-- **`fire-hotspots`** — Digital Earth Australia (DEA) Himawari satellite
-  hotspots via WFS `GetFeature`, bounded to ~50km of Bungendore server-side so
-  the frontend never receives all of Australia's hotspots. CC BY 4.0 —
-  attribution is folded into the response body and rendered client-side.
 - **`traffic-hazards`** — TfNSW Live Traffic Hazards. Requires `TFNSW_API_KEY`,
   which is **not yet issued** (free key, reCAPTCHA-gated human signup). While
   the key is absent, this returns the same honest "unavailable" shape as any

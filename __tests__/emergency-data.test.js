@@ -88,6 +88,33 @@ describe("emergency-data.js", () => {
     expect(fireInfoTableContainer.innerHTML).toMatch(/can't reach live fire data|000/i);
   });
 
+  test("degraded state's honest '?' survives updateEmergencyDashboard — never silently overwritten to '0'", async () => {
+    // Reproduces production script load order (error-handler, emergency-dashboard,
+    // main, emergency-data, all deferred) so emergency-dashboard.js's
+    // window.updateEmergencyDashboard is defined when renderDegraded() runs,
+    // the same as in a real page load. The other tests in this file omit
+    // emergency-dashboard.js, which is exactly why this regression wasn't
+    // caught earlier: with updateEmergencyDashboard undefined, renderDegraded's
+    // typeof-function guard short-circuits and the bug never manifests.
+    // Mocked before the dashboard loads: dispatching DOMContentLoaded below
+    // also re-fires emergency-data.js's own already-registered listener
+    // (it self-bootstraps a fetch), so fetch must already be in place.
+    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 });
+
+    const fs = require("fs");
+    const path = require("path");
+    const dashboardCode = fs.readFileSync(
+      path.join(__dirname, "../public/js/emergency-dashboard.js"),
+      "utf8"
+    );
+    eval(dashboardCode);
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    await expect(window.loadEmergencyData()).rejects.toThrow();
+
+    expect(document.getElementById("incidentTotalCount").textContent).toBe("?");
+  });
+
   test("wires the highest active category into the Warning Level cell (roadmap §2.2)", async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,

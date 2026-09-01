@@ -535,9 +535,15 @@ async function handleContentGet(key, env = process.env) {
     return { status: 404, body: { error: "Not found" } };
   }
   const content = await getContent(key, env);
+  // alertBanner is a fast, human-authored update (Bet 3) — a 5-minute
+  // browser/edge cache would delay a published banner reaching an
+  // already-open tab, and worse, could keep showing a banner an admin just
+  // cleared for up to 5 more minutes. events/training change rarely, so the
+  // longer cache is fine for them.
+  const cacheControl = key === "alertBanner" ? "no-cache" : "public, max-age=300";
   return {
     status: 200,
-    headers: { "Cache-Control": "public, max-age=300" },
+    headers: { "Cache-Control": cacheControl },
     body: content ? content.items : [],
   };
 }

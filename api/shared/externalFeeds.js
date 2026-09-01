@@ -1,23 +1,21 @@
 /**
  * New external feeds (WEBSITE_ROADMAP.md §3, Workstream 7), shared by the
  * Azure Function handlers (`api/fire-weather-warning`, `api/wind-observations`,
- * `api/fire-hotspots`, `api/rain-radar`, `api/traffic-hazards`) and the
- * Express mirror (`server.js`).
+ * `api/rain-radar`, `api/traffic-hazards`) and the Express mirror (`server.js`).
  *
  * Every feed here reuses `fireDataProxy.js`'s fresh/stale/expired cache-tier
- * policy (`fetchWithFallback`) so all five behave identically to the existing
- * fire-danger/fire-incidents proxies: a fresh upstream read, a short-TTL
- * in-memory cache to absorb bursts, stale-but-labelled data on a transient
- * upstream failure, and an honest failure past the staleness ceiling — never
- * a silent zero/default that could be mistaken for "all clear". See that
- * file's top comment for the full rationale.
+ * policy (`fetchWithFallback`) so all of them behave identically to the
+ * existing fire-danger/fire-incidents proxies: a fresh upstream read, a
+ * short-TTL in-memory cache to absorb bursts, stale-but-labelled data on a
+ * transient upstream failure, and an honest failure past the staleness
+ * ceiling — never a silent zero/default that could be mistaken for "all
+ * clear". See that file's top comment for the full rationale.
  *
  * Upstreams (all verified against public, no-key endpoints as of Aug 2026 —
  * see the per-feed comments for the specific URL and any caveats):
  *   - BOM Fire Weather Warning bulletin (IDN22000), free text, "Southern
  *     Ranges" district heading appears only when a warning is current.
  *   - BOM live observations, Canberra Airport (IDN60903.94926), JSON.
- *   - DEA Hotspots (Digital Earth Australia / Himawari), WFS GeoJSON.
  *   - BOM rain radar (IDR403, Captains Flat/Canberra) — image loop, no fetch
  *     needed server-side; the frontend embeds BOM's own image directly, so
  *     there's no shared-handler entry for it (see public/index.html).
@@ -26,14 +24,12 @@
  *     process.env.TFNSW_API_KEY end-to-end; while the key is absent this
  *     returns the same honest "unavailable" shape as any other failed feed,
  *     never a 500 and never a silently-omitted response.
+ *
+ * DEA satellite hotspots were dropped (roadmap feedback: confusing for the
+ * general public, a power-user feature) — no code here for them.
  */
 
 const { fetchWithFallback } = require("./fireDataProxy");
-
-// Bungendore approx. coordinates, used to bound the DEA hotspot query.
-const BUNGENDORE_LAT = -35.26;
-const BUNGENDORE_LON = 149.44;
-const HOTSPOT_RADIUS_KM = 50;
 
 async function fetchText(url, options) {
   const response = await fetch(url, options);
@@ -63,6 +59,10 @@ async function fetchJson(url, options) {
 // near-empty body (or the request may 404) — that is the normal "no warning"
 // state for this specific product, not a fetch failure, and must render as
 // "no current fire weather warning", never as an error banner.
+// Deliberately http:// — BOM's legacy cgi-bin product wrapper is known to
+// serve different (wrapper-page, non-bulletin) content over https:// or from
+// some source IPs; the brigade has direct operational experience with this.
+// Not a fix-it-later item.
 const BOM_FWW_URL = "http://www.bom.gov.au/cgi-bin/wrap_fwo.pl?IDN22000.txt=";
 
 /**
@@ -179,75 +179,7 @@ async function getWindObservations(_env, _opts = {}) {
   };
 }
 
-// ─── 3. DEA Hotspots (Himawari satellite, 10-min) ───────────────────────────
-//
-// WFS GetFeature request against the DEA Geoserver. No API key. CC BY 4.0 —
-// attribution required in the frontend, redistribution permitted. We ask for
-// GeoJSON directly and then filter to a ~50km box around Bungendore so we
-// never ship all of Australia's hotspots to the client.
-//
-// Deliberately `public:hotspots_three_days`, NOT the base `public:hotspots`
-// layer: `public:hotspots` is DEA's full unbounded historical archive (a
-// GetFeature request against it timed out entirely when checked, consistent
-// with it being a very large, effectively unindexed-by-time table) with no
-// date filter applied here — querying it with only a spatial bbox would risk
-// surfacing old, long-extinguished hotspots inside the 50km box as if they
-// were current, which is exactly the kind of misleading "looks live but
-// isn't" state this roadmap exists to eliminate. `hotspots_three_days` is
-// DEA's own purpose-built recency-windowed layer and returns quickly.
-const DEA_HOTSPOTS_BASE = "https://hotspots.dea.ga.gov.au/geoserver/wfs";
-const DEA_HOTSPOTS_LAYER = "public:hotspots_three_days";
-
-function hotspotBBox() {
-  // Rough degrees-per-km at this latitude: ~0.009 deg lat/km, ~0.011 deg lon/km.
-  const dLat = HOTSPOT_RADIUS_KM * 0.009;
-  const dLon = HOTSPOT_RADIUS_KM * 0.011;
-  const minLat = BUNGENDORE_LAT - dLat;
-  const maxLat = BUNGENDORE_LAT + dLat;
-  const minLon = BUNGENDORE_LON - dLon;
-  const maxLon = BUNGENDORE_LON + dLon;
-  return `${minLon},${minLat},${maxLon},${maxLat},EPSG:4326`;
-}
-
-function buildHotspotsUrl() {
-  const params = new URLSearchParams({
-    service: "WFS",
-    version: "2.0.0",
-    request: "GetFeature",
-    typeNames: DEA_HOTSPOTS_LAYER,
-    outputFormat: "application/json",
-    bbox: hotspotBBox(),
-    srsName: "EPSG:4326",
-  });
-  return `${DEA_HOTSPOTS_BASE}?${params.toString()}`;
-}
-
-/**
- * @param {NodeJS.ProcessEnv} _env
- * @param {{logger?: {error: Function}}} [opts]
- */
-async function getFireHotspots(_env, _opts = {}) {
-  const result = await fetchWithFallback("fire-hotspots", () => fetchJson(buildHotspotsUrl()));
-
-  if (!result.ok) return result;
-
-  const features = Array.isArray(result.body && result.body.features) ? result.body.features : [];
-
-  return {
-    ok: true,
-    stale: result.stale,
-    ageSeconds: result.ageSeconds,
-    contentType: "application/json",
-    body: {
-      type: "FeatureCollection",
-      features,
-      attribution: "Digital Earth Australia Hotspots (Geoscience Australia), CC BY 4.0",
-      source: "https://hotspots.dea.ga.gov.au/",
-    },
-  };
-}
-
-// ─── 4. TfNSW Live Traffic Hazards (Kings Highway) ──────────────────────────
+// ─── 3. TfNSW Live Traffic Hazards (Kings Highway) ──────────────────────────
 //
 // Requires TFNSW_API_KEY — a free key the site owner is still obtaining
 // (reCAPTCHA-gated human signup, not yet available). Fully wired: when the
@@ -276,7 +208,11 @@ async function getTrafficHazards(env, opts = {}) {
     };
   }
 
-  return fetchWithFallback("traffic-hazards", () =>
+  // Cache key must include hazardType — it's user-controllable via ?type=
+  // (api/traffic-hazards/index.js, server.js), and a constant key would let
+  // a cache hit for one hazard type silently serve back a different type's
+  // cached body within the fresh-TTL window.
+  return fetchWithFallback(`traffic-hazards:${hazardType}`, () =>
     fetchJson(`${TFNSW_BASE_URL}/${encodeURIComponent(hazardType)}`, {
       headers: { Authorization: `apikey ${apiKey}` },
     })
@@ -286,9 +222,7 @@ async function getTrafficHazards(env, opts = {}) {
 module.exports = {
   getFireWeatherWarning,
   getWindObservations,
-  getFireHotspots,
   getTrafficHazards,
   // Exported for tests only.
   parseFireWeatherWarning,
-  buildHotspotsUrl,
 };
