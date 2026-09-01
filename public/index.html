@@ -587,10 +587,16 @@
                         alt="Prepare for Bushfires"
                         class="tab-layout__image"
                       />
+                      <!-- Populated by dynamicContent.js, then split into
+                           individual swipeable cards by content-cards.js
+                           (one per ### section) and hidden — see that file
+                           for why they stay in the DOM rather than being
+                           removed. -->
                       <div id="prepareContent"></div>
                       <div id="bushfireRiskContent"></div>
                       <div id="neighbourhoodSaferPlaceContent"></div>
                       <div id="animalsInBushfireContent"></div>
+                      <div id="prepareCardCarousel"></div>
                     </div>
                     <aside class="quick-links">
                       <p class="quick-links__kicker">Quick Links</p>
@@ -937,6 +943,7 @@
   <script src="js/calendar.js" defer></script>
   <script src="js/contact.js" defer></script>
   <script src="js/dynamicContent.js" defer></script>
+  <script src="js/content-cards.js" defer></script>
 
   <!-- Service worker registration (Bet 2, WEBSITE_ROADMAP.md §4): app-shell +
        last-known-good API caching so the emergency status strip still has

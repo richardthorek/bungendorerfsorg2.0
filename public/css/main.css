@@ -438,32 +438,21 @@ h3 {
   margin-top: var(--space-xs);
 }
 
-/* Heading style shared by every markdown-rendered content block within a
-   tab (prepareContent plus the sub-topic cards below) — keeps ### headings
-   visually consistent wherever they appear, instead of only the first
-   block in a tab getting real heading styling and the rest falling back to
-   browser/Pico defaults. */
-#prepareContent h3,
-#bushfireRiskContent h3,
-#neighbourhoodSaferPlaceContent h3,
-#animalsInBushfireContent h3,
-#permitsContent h3 {
+/* Heading style shared by every markdown-rendered content block — keeps
+   ### headings visually consistent wherever they land, whether that's a
+   plain content div (permitsContent, still a single block for now) or a
+   split-out .content-card (content-cards.js). */
+#permitsContent h3,
+.content-card h3 {
   font-size: var(--font-size-h3);
   font-weight: 800;
   color: var(--clear-body-text);
   margin: 0 0 var(--space-sm);
 }
 
-/* Sub-topic content cards (roadmap content additions: local bushfire risk,
-   Neighbourhood Safer Place, animals, permits). Each markdown block used to
-   render as bare headings/paragraphs concatenated directly under
-   prepareContent/fireInfoContent with no visual separation — a long tab
-   read as one continuous wall of text. Wrapping each in its own card is
-   the minimal fix: distinct chunks a reader can visually parse and skip
-   between, without restructuring the tab/accordion navigation itself. */
-#bushfireRiskContent,
-#neighbourhoodSaferPlaceContent,
-#animalsInBushfireContent,
+/* permitsContent (Fire Information tab) is still a single card for now —
+   content-cards.js's per-section splitting is currently scoped to the
+   Prepare tab only (see WEBSITE_ROADMAP.md follow-up notes). */
 #permitsContent {
   background-color: var(--clear-neutral-cell-bg);
   border-radius: 12px;
@@ -471,19 +460,87 @@ h3 {
   margin-top: var(--space-xl);
 }
 
+/* Within-tab content carousel (content-cards.js) — splits a long tab's
+   markdown sections (one per ###) into individual swipeable cards instead
+   of one continuous scroll. Direct roadmap feedback: card-separated
+   backgrounds alone (the previous fix) still read as a wall of text once
+   there were nine sections stacked in the Prepare tab; each section needs
+   to be its own navigable unit. */
+.content-carousel__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.content-carousel__counter {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--clear-text-secondary);
+  min-width: 48px;
+  text-align: center;
+}
+
+.content-carousel__arrow {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--clear-neutral-cell-bg);
+  color: var(--clear-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.content-carousel__arrow:hover,
+.content-carousel__arrow:focus {
+  color: var(--rfs-core-red);
+  background-color: var(--clear-card-fill);
+}
+
+.content-carousel__track {
+  display: flex;
+  gap: var(--space-lg);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  min-width: 0; /* same flex-child overflow fix as .tab-navigation */
+  padding-bottom: var(--space-xs);
+}
+
+/* Higher specificity than ".tab-panel article" (which zeroes out background/
+   padding/border for the plain-heading tab layout) so cards keep their own
+   chrome even though they're <article> elements living inside a .tab-panel. */
+.tab-panel article.content-card {
+  flex: none;
+  scroll-snap-align: start;
+  width: 100%;
+  background-color: var(--clear-neutral-cell-bg);
+  border-radius: 12px;
+  padding: var(--space-lg) var(--space-xl);
+  box-sizing: border-box;
+}
+
+.content-card > *:first-child {
+  margin-top: 0;
+}
+
 /* Neighbourhood Safer Place is life-safety "last resort" content — the one
-   sub-topic card that should read as caution, not neutral background,
-   using the same amber language as the strip's degraded/high states. */
-#neighbourhoodSaferPlaceContent {
+   card that should read as caution, not neutral background, using the
+   same amber language as the strip's degraded/high states. */
+.tab-panel article.content-card--caution {
   background-color: var(--clear-incident-bg);
   color: var(--clear-incident-fg);
 }
 
-#neighbourhoodSaferPlaceContent h3 {
+.content-card--caution h3 {
   color: var(--clear-incident-fg);
 }
 
-#neighbourhoodSaferPlaceContent a {
+.content-card--caution a {
   color: inherit;
   text-decoration: underline;
 }
@@ -1349,6 +1406,12 @@ a:focus {
   scrollbar-width: thin;
   align-items: stretch;
   width: 100%;
+  /* Flex items default to min-width: auto, which refuses to shrink below
+     the content's intrinsic width — without this, a flex child with its
+     own overflow-x:auto never actually needs to scroll internally,
+     because the flex container just grows past its own bounds instead.
+     That's what made the carousel's own scrolling a no-op. */
+  min-width: 0;
   box-sizing: border-box;
 }
 
