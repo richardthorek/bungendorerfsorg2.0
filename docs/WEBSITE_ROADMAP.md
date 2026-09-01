@@ -143,7 +143,7 @@ highest-leverage quarter the site will ever have.
 | Move to Static Web Apps **Standard** (~$9/mo) | Free tier's 100 GB cap can take the **whole site offline** mid-fire | H | L |
 | Scheduled poller writes last-known-good; proxies serve from cache with `stale-while-revalidate` / `stale-if-error` | Stops upstream fan-out under load; degrades to "showing last known", not "No Rating" | H | M |
 | Storage backup: point-in-time restore + soft-delete + daily export | A single point of total data loss today | M | L |
-| Replace the Clarity `maybeRefreshClarity` race with the same cron | Non-atomic read-then-write can overshoot the daily budget | L | L |
+| Give the Clarity pull a scheduled cadence — **done**: a Logic App Recurrence now hits `POST /api/clarity/cron` (~8×/day) ahead of the shared last-known-good poller below. The read-then-write in `touchClarityAttempt` is still non-atomic, so a cron fire landing at the same moment as a member's opportunistic refresh can still overshoot the daily budget by one call — low-impact (Clarity just rejects the extra call, logged, no user-facing effect) but worth fixing once the shared poller below lands. | Non-atomic read-then-write can overshoot the daily budget | L | L |
 
 *Depends on Workstream 3's shared-handler refactor — don't build the poller twice.*
 

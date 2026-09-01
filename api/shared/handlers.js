@@ -825,6 +825,31 @@ async function handleClarityInsights(req, env = process.env) {
   };
 }
 
+/**
+ * Scheduled entry point for the Clarity pull (an Azure Logic App Recurrence
+ * calls this a handful of times across the day — see docs/API_INTEGRATION.md)
+ * so the analytics table gets a regular cadence independent of whether any
+ * member happens to be logged in. Not member-authenticated: guarded instead
+ * by a shared secret the Logic App sends as a header, since it's a machine
+ * caller with no session. maybeRefreshClarity() still owns the actual budget,
+ * so a cron hit during an already-fresh window is a harmless no-op.
+ */
+async function handleClarityCron(req, env = process.env) {
+  const configured = env.CLARITY_CRON_SECRET;
+  if (!configured) return { status: 401, body: { error: "Unauthorized" } };
+
+  const h = (req && req.headers) || {};
+  const provided = h["x-cron-secret"] || h["X-Cron-Secret"];
+  if (!safeEqual(provided, configured)) {
+    return { status: 401, body: { error: "Unauthorized" } };
+  }
+
+  const refresh = await maybeRefreshClarity(env, { force: true });
+  // A real Clarity-side failure is worth a red Logic App run; an expected
+  // no-op (fresh, over budget, not configured) is still a 200 — it did its job.
+  return { status: refresh.reason === "error" ? 502 : 200, body: refresh };
+}
+
 module.exports = {
   handleAuthRequest,
   handleAuthVerify,
@@ -846,4 +871,5 @@ module.exports = {
   handleSocialPromptGet,
   handleSocialPromptSet,
   handleClarityInsights,
+  handleClarityCron,
 };

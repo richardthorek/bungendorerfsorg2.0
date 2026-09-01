@@ -35,6 +35,7 @@ Each function is its own directory with `index.js` + `function.json`.
 | `social-chat/` | `POST /api/social/chat` | Social Studio AI copy assistant — one `chatTurn` per message, returns `{message, draft}` |
 | `social-prompt/` | `GET/PUT /api/social/prompt` | Admin-editable voice/rules prompt (`content` table, `settings` partition) |
 | `clarity/` | `GET /api/clarity/insights` | Microsoft Clarity analytics snapshot + daily-rollup history |
+| `clarity-cron/` | `POST /api/clarity/cron` | Machine-only, `X-Cron-Secret`. Scheduled Clarity pull for a Logic App Recurrence trigger — keeps the daily snapshot going without needing a member login |
 
 `api/shared/` holds the cross-backend logic: `handlers.js` (all members'-area
 handlers), `auth.js` / `identity.js` (sessions, allow-list), `store.js` (Table
@@ -135,6 +136,7 @@ The authoritative list with dev-friendly values is
 | `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`, `DUTY_ALERT_TO` | `duty` |
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` | `social-chat` |
 | `CLARITY_API_TOKEN` | `clarity` (optional — tab shows "not connected" without it) |
+| `CLARITY_CRON_SECRET` | `clarity-cron` (optional — endpoint 401s while unset, so it's a no-op until wired up) |
 
 Removed: `AZURE_CONTACT_WEBHOOK_URL` (contact moved to ACS) and
 `AZURE_CALENDAR_WEBHOOK_URL` / the `calendar-events` function (events + training

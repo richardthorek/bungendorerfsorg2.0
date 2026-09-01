@@ -33,6 +33,7 @@ const {
   handleSocialPromptGet,
   handleSocialPromptSet,
   handleClarityInsights,
+  handleClarityCron,
 } = require("./api/shared/handlers");
 
 const allowedOrigins = [
@@ -267,6 +268,7 @@ app.get("/api/social/prompt", mirror(handleSocialPromptGet));
 app.put("/api/social/prompt", mirror(handleSocialPromptSet));
 
 app.get("/api/clarity/insights", mirror(handleClarityInsights));
+app.post("/api/clarity/cron", mirror(handleClarityCron));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

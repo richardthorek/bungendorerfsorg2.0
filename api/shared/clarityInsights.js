@@ -5,8 +5,11 @@
  * capped at 10 calls/project/day. So this module:
  *   1. fetches at most once every REFRESH_INTERVAL_MS, and never more than
  *      MAX_FETCHES_PER_DAY times (a safety margin under Clarity's 10);
- *   2. is driven opportunistically off members'-area traffic — no timer — via
- *      maybeRefreshClarity(), which callers fire-and-forget;
+ *   2. is driven both by a scheduled cron hit (api/clarity-cron, ~8 pulls/day
+ *      across daytime hours — see docs/API_INTEGRATION.md) and opportunistically
+ *      off members'-area traffic, via maybeRefreshClarity(), which callers
+ *      fire-and-forget. Both share this same budget, so the cron carries the
+ *      regular cadence and member traffic just tops it up;
  *   3. normalises Clarity's per-metric response into a stable summary and
  *      persists it (latest snapshot + one rollup row per UTC day) so the
  *      admin panel keeps a longer history than Clarity itself retains.
@@ -18,7 +21,7 @@ const { getClarityState, saveClaritySnapshot, touchClarityAttempt } = require(".
 
 const CLARITY_ENDPOINT = "https://www.clarity.ms/export-data/api/v1/project-live-insights";
 const REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6h
-const MAX_FETCHES_PER_DAY = 6; // Clarity allows 10; leave headroom for manual refreshes
+const MAX_FETCHES_PER_DAY = 9; // Clarity allows 10; keep 1 in reserve below its hard cap
 const NUM_OF_DAYS = 3; // widest window Clarity offers
 const TOP_PAGES = 20;
 
