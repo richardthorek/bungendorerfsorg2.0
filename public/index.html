@@ -288,15 +288,6 @@
             Permit &amp; burning rules
             <i class="fas fa-chevron-down" aria-hidden="true"></i>
           </button>
-          <!-- Permits & Burning, Plain English — relevant year-round
-               regardless of today's status, so it lives as an expandable
-               detail on the card that already answers "do I need a permit
-               today", rather than as its own always-scrolled-past card or
-               tab section. Populated by dynamicContent.js from
-               permitsContent.md. -->
-          <div id="permitDetails" class="strip-cell__details" hidden>
-            <div id="permitsContent"></div>
-          </div>
         </article>
 
         <!-- Cell 5: Map context / full-map CTA -->
@@ -313,6 +304,17 @@
           <p class="strip-cell__sub">Open fire incident map</p>
         </article>
       </section>
+
+      <!-- Permits & Burning, Plain English — relevant year-round regardless
+           of today's status, so it lives as an expandable detail triggered
+           from the Controlled Burn cell above, rather than its own
+           always-scrolled-past card or tab section. Full site width (not
+           squeezed into that cell's own narrow column) since a cramped
+           column made any reasonable amount of content very tall.
+           Populated by dynamicContent.js from permitsContent.md. -->
+      <div id="permitDetails" class="strip-details-panel" hidden>
+        <div id="permitsContent"></div>
+      </div>
 
       <!-- Freshness + trust line (roadmap Workstream 1): every load-bearing
            number above came from a live fetch, never assume that; say when it
@@ -413,32 +415,6 @@
                   </ul>
                   <a href="#info" class="map-legend-link">View full incident map &rarr;</a>
                   <div id="fireInfoTableContainer" class="grid-container"></div>
-
-                  <!-- BOM rain radar, Captains Flat/Canberra (IDR403) —
-                       WEBSITE_ROADMAP Workstream 7. A plain embedded loop
-                       image is simpler and more robust than reconstructing
-                       BOM's frame sequence ourselves; the alt text and
-                       fallback note keep this honest if the image 404s. -->
-                  <section class="rain-radar-panel" aria-label="Rain radar, Captains Flat region">
-                    <h3>Rain Radar &mdash; Captains Flat / Canberra (IDR403)</h3>
-                    <img
-                      id="rainRadarImage"
-                      src="https://reg.bom.gov.au/radar/IDR403.gif"
-                      alt="BOM 128km rain radar loop centred on Captains Flat, covering the Bungendore area"
-                      loading="lazy"
-                      class="rain-radar-panel__image"
-                    />
-                    <p id="rainRadarFallback" class="data-label" hidden>
-                      Radar image is currently unavailable &mdash; view it directly on the
-                      <a
-                        href="https://www.bom.gov.au/products/IDR403.loop.shtml"
-                        target="_blank"
-                        rel="noopener"
-                        >Bureau of Meteorology site</a
-                      >.
-                    </p>
-                    <p class="rain-radar-panel__source">Source: Bureau of Meteorology</p>
-                  </section>
                 </div>
                 <aside class="quick-links">
                   <p class="quick-links__kicker">Quick Links</p>

@@ -51,32 +51,40 @@ function populateFireInfoTable(data) {
       extractFields(description);
 
     const iconUrl = getIconUrl(category);
+    const level = getLevelSlug(category);
 
     tableHTML += `
-      <article class="feature-card compact">
-        <div class="compact-header">
-          <span id="feature-card-header-span">
-            <img src="${iconUrl}" alt="${alertlevel}" class="cardIcon">
-            ${status}
-          </span>
-          <p class="compact-card-heading">${title}</p>
-        </div>
-        <div class="card-content">
-          <p>${location}</p>
-          <div class="three-column-grid">
-            <p>${councilarea}</p>
-            <p>${type}</p>
-            <p>${size}</p>
+      <article class="incident-card" data-level="${level}">
+        <header class="incident-card__header">
+          <img src="${iconUrl}" alt="${alertlevel}" class="incident-card__icon">
+          <div class="incident-card__heading">
+            <span class="incident-card__badge">${status}</span>
+            <h4 class="incident-card__title">${title}</h4>
           </div>
-        </div>
-        <div>
-          <p class="align-bottom">${responsibleagency} Updated ${updated}</p>
-        </div>
+        </header>
+        <p class="incident-card__location">
+          <i class="fas fa-map-marker-alt" aria-hidden="true"></i> ${location}
+        </p>
+        <dl class="incident-card__meta">
+          <div><dt>Council area</dt><dd>${councilarea}</dd></div>
+          <div><dt>Type</dt><dd>${type}</dd></div>
+          <div><dt>Size</dt><dd>${size}</dd></div>
+        </dl>
+        <footer class="incident-card__footer">
+          ${responsibleagency} &middot; Updated ${updated}
+        </footer>
       </article>
     `;
   });
 
   fireInfoTableContainer.innerHTML = DOMPurify.sanitize(tableHTML);
+}
+
+function getLevelSlug(category) {
+  if (category.includes("Advice")) return "advice";
+  if (category.includes("Watch and Act")) return "watch-and-act";
+  if (category.includes("Emergency Warning")) return "emergency-warning";
+  return "other";
 }
 
 function getIconUrl(category) {
@@ -112,21 +120,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Add event listener only if elements exist
     window.addEventListener("scroll", toggleNavLogo);
     toggleNavLogo(); // Initial check
-  }
-
-  // BOM rain radar (WEBSITE_ROADMAP Workstream 7): a plain <img> embed of
-  // BOM's own loop, so there's no server-side fetch to proxy. BOM's "classic
-  // radar" image URLs have shifted format before, so honest-failure-state
-  // (§2.1) applies here too — on a broken/changed URL, hide the (now empty
-  // alt-text box) image and show a direct link to BOM's own radar page
-  // instead of a broken-image icon.
-  const rainRadarImage = document.getElementById("rainRadarImage");
-  const rainRadarFallback = document.getElementById("rainRadarFallback");
-  if (rainRadarImage && rainRadarFallback) {
-    rainRadarImage.addEventListener("error", () => {
-      rainRadarImage.hidden = true;
-      rainRadarFallback.hidden = false;
-    });
   }
 
   // Bush Fire Danger Period (BFDP) check.

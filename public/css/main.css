@@ -1019,18 +1019,20 @@ a:focus {
 .strip-cell__details-toggle[aria-expanded="true"] i {
   transform: rotate(180deg);
 }
-.strip-cell__details {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--clear-hairline);
-  text-align: left;
+/* Full site width, not squeezed into the Controlled Burn cell's own narrow
+   column — a cramped column made any reasonable amount of content read as
+   very tall. Sits directly under the strip so it reads as an expansion of
+   it rather than an unrelated block. */
+.strip-details-panel {
+  background-color: var(--pico-card-background-color);
+  border-bottom: 1px solid var(--clear-hairline);
+  padding: var(--space-lg) var(--space-xxl);
 }
-.strip-cell__details #permitsContent {
+.strip-details-panel #permitsContent {
   background: none;
   padding: 0;
   margin-top: 0;
-  font-size: 13.5px;
-  line-height: 1.5;
+  max-width: 900px;
 }
 
 /* ── Fire Danger strip cell colour bands (Cell 1) ────────────────────────────
@@ -1875,6 +1877,128 @@ main {
   gap: var(--space-lg);
 }
 
+/* Incident cards (populateFireInfoTable, main.js) — colour-coded by AWS
+   alert level, same blue/amber/red language as the map legend icons, so an
+   incident reads at a glance without having to parse the status text. */
+.incident-card {
+  margin: 0;
+  padding: var(--space-lg);
+  border: 1px solid var(--clear-hairline);
+  border-left: 5px solid var(--ui-blue);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.incident-card[data-level="watch-and-act"] {
+  border-left-color: var(--ui-amber);
+}
+
+.incident-card[data-level="emergency-warning"] {
+  border-left-color: var(--rfs-core-red);
+}
+
+.incident-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.incident-card__icon {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  margin-top: 2px;
+}
+
+.incident-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.incident-card__badge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.2em 0.7em;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ui-blue);
+}
+
+.incident-card[data-level="watch-and-act"] .incident-card__badge {
+  background: var(--ui-amber);
+  color: #4d3600;
+}
+
+.incident-card[data-level="emergency-warning"] .incident-card__badge {
+  background: var(--rfs-core-red);
+}
+
+.incident-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clear-body-text);
+  line-height: 1.3;
+}
+
+.incident-card__location {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--clear-body-text);
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.incident-card__location i {
+  color: var(--clear-text-secondary);
+}
+
+.incident-card__meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin: 0;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--clear-hairline);
+}
+
+.incident-card__meta dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--clear-text-secondary);
+  margin: 0;
+}
+
+.incident-card__meta dd {
+  font-size: 0.85rem;
+  color: var(--clear-body-text);
+  margin: 2px 0 0;
+}
+
+.incident-card__footer {
+  font-size: 0.78rem;
+  color: var(--clear-text-secondary);
+  padding-top: var(--space-xs);
+}
+
+@media (max-width: 480px) {
+  .incident-card__meta {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 /* Social Icon Styles */
 .social-icon {
   color: var(--rfs-core-red);
@@ -2352,32 +2476,4 @@ body.map-fullscreen-active {
 .strip-cell__sub--wind {
   margin-top: 0.15rem;
   font-style: italic;
-}
-
-/* Rain radar embed, Fire Information tab. */
-.rain-radar-panel {
-  background-color: var(--clear-neutral-cell-bg);
-  border-radius: 12px;
-  padding: var(--space-lg) var(--space-xl);
-  margin: var(--space-xl) 0 0;
-}
-
-.rain-radar-panel h3 {
-  font-size: 1rem;
-  margin-bottom: var(--space-sm);
-}
-
-.rain-radar-panel__image {
-  width: 100%;
-  max-width: 480px;
-  height: auto;
-  border-radius: var(--pico-border-radius);
-  border: 1px solid var(--clear-hairline);
-  display: block;
-}
-
-.rain-radar-panel__source {
-  font-size: 0.78rem;
-  color: var(--clear-text-muted);
-  margin-top: var(--space-xs);
 }
