@@ -546,7 +546,7 @@ button.quick-links__row:focus {
   padding: 0.6em 1.1em;
   border: 1px solid var(--clear-hairline-strong);
   border-radius: 999px;
-  background: #fff;
+  background: var(--clear-neutral-cell-bg);
 }
 
 .quick-links--band a.quick-links__row:hover,
