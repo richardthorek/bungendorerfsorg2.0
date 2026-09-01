@@ -230,6 +230,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Permit & burning rules — expandable detail on the Controlled Burn card
+  // (always relevant, so it's not one of the awareness carousel's rotating
+  // cards). Click-to-expand rather than hover-only so it works by touch and
+  // keyboard, not just a mouse.
+  const permitDetailsToggle = document.getElementById("permitDetailsToggle");
+  const permitDetails = document.getElementById("permitDetails");
+  if (permitDetailsToggle && permitDetails) {
+    permitDetailsToggle.addEventListener("click", function () {
+      const expanded = permitDetailsToggle.getAttribute("aria-expanded") === "true";
+      permitDetailsToggle.setAttribute("aria-expanded", String(!expanded));
+      permitDetails.hidden = expanded;
+    });
+  }
+
   // Fire Danger Rating and Incidents
   const fireDangerTableContainer = document.getElementById("fireDangerTableContainer");
   const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");

@@ -527,7 +527,7 @@ async function findMemberByPhone(e164, env) {
 // Content keys whose GET is public (no session required). PUT/POST always
 // stays session-gated below — only add a key here once its content is meant
 // for every visitor, not just signed-in members.
-const PUBLIC_CONTENT_KEYS = ["events", "training", "alertBanner"];
+const PUBLIC_CONTENT_KEYS = ["events", "training", "alertBanner", "awarenessCards"];
 
 /** Public — returns the plain array (same shape the static JSON files had). */
 async function handleContentGet(key, env = process.env) {

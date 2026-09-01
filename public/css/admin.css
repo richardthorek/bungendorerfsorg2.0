@@ -1317,6 +1317,119 @@ label {
   padding: 0.9rem 0.65rem;
 }
 
+.card-editor__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.card-editor__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.9rem;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--ground);
+}
+.card-editor__row-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.card-editor__icon-preview {
+  font-size: 1.1rem;
+  color: var(--ink-faint);
+  width: 1.4rem;
+  text-align: center;
+}
+.card-editor__pillar {
+  width: auto;
+  flex: none;
+}
+.card-editor__spacer {
+  flex: 1;
+}
+.icon-btn {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.icon-btn:hover {
+  color: var(--ink);
+}
+.icon-picker {
+  position: relative;
+}
+.icon-picker__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 0.4em 0.7em;
+  font-size: 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.icon-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.2rem, 1fr));
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  max-height: 220px;
+  overflow-y: auto;
+}
+.icon-picker__opt {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--ground);
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+.icon-picker__opt:hover {
+  color: var(--ink);
+}
+.icon-picker__opt.is-selected {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.card-editor__photo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.card-editor__photo-thumb {
+  width: 64px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--hairline-strong);
+}
+.card-editor__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.card-editor__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

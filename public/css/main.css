@@ -374,10 +374,10 @@ h3 {
   color: var(--text-color-dark); /* Changed from --rfs-dark-grey */
 }
 
-/* Tab content articles (Fire Information / Prepare / Membership / Events) —
-   "Clear Skies" refresh drops the old per-section coloured banner + card
-   chrome in favour of a plain heading and a two-column layout (see below). */
-.tab-panel article {
+/* Fire Information article — "Clear Skies" refresh drops the old coloured
+   banner + card chrome in favour of a plain heading and a two-column
+   layout (see below). */
+#info {
   padding: 0;
   margin: 0;
   border: none;
@@ -387,7 +387,7 @@ h3 {
   overflow: visible;
 }
 
-.tab-panel article > h2 {
+#info > h2 {
   font-size: 26px;
   font-weight: 800;
   color: var(--clear-body-text);
@@ -396,7 +396,7 @@ h3 {
   border-bottom: none;
 }
 
-/* Main content column + Quick Links sidebar, shared by all four tabs */
+/* Main content column + Quick Links sidebar */
 .tab-layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -438,111 +438,19 @@ h3 {
   margin-top: var(--space-xs);
 }
 
-/* Heading style shared by every markdown-rendered content block — keeps
-   ### headings visually consistent wherever they land, whether that's a
-   plain content div (permitsContent, still a single block for now) or a
-   split-out .content-card (content-cards.js). */
-#permitsContent h3,
-.content-card h3 {
+/* Heading style for permitsContent's markdown-rendered ### headings. */
+#permitsContent h3 {
   font-size: var(--font-size-h3);
   font-weight: 800;
   color: var(--clear-body-text);
   margin: 0 0 var(--space-sm);
 }
 
-/* permitsContent (Fire Information tab) is still a single card for now —
-   content-cards.js's per-section splitting is currently scoped to the
-   Prepare tab only (see WEBSITE_ROADMAP.md follow-up notes). */
 #permitsContent {
   background-color: var(--clear-neutral-cell-bg);
   border-radius: 12px;
   padding: var(--space-lg) var(--space-xl);
   margin-top: var(--space-xl);
-}
-
-/* Within-tab content carousel (content-cards.js) — splits a long tab's
-   markdown sections (one per ###) into individual swipeable cards instead
-   of one continuous scroll. Direct roadmap feedback: card-separated
-   backgrounds alone (the previous fix) still read as a wall of text once
-   there were nine sections stacked in the Prepare tab; each section needs
-   to be its own navigable unit. */
-.content-carousel__header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  margin-bottom: var(--space-sm);
-}
-
-.content-carousel__counter {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--clear-text-secondary);
-  min-width: 48px;
-  text-align: center;
-}
-
-.content-carousel__arrow {
-  flex: none;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 8px;
-  background-color: var(--clear-neutral-cell-bg);
-  color: var(--clear-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.content-carousel__arrow:hover,
-.content-carousel__arrow:focus {
-  color: var(--rfs-core-red);
-  background-color: var(--clear-card-fill);
-}
-
-.content-carousel__track {
-  display: flex;
-  gap: var(--space-lg);
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: thin;
-  min-width: 0; /* same flex-child overflow fix as .tab-navigation */
-  padding-bottom: var(--space-xs);
-}
-
-/* Higher specificity than ".tab-panel article" (which zeroes out background/
-   padding/border for the plain-heading tab layout) so cards keep their own
-   chrome even though they're <article> elements living inside a .tab-panel. */
-.tab-panel article.content-card {
-  flex: none;
-  scroll-snap-align: start;
-  width: 100%;
-  background-color: var(--clear-neutral-cell-bg);
-  border-radius: 12px;
-  padding: var(--space-lg) var(--space-xl);
-  box-sizing: border-box;
-}
-
-.content-card > *:first-child {
-  margin-top: 0;
-}
-
-/* Neighbourhood Safer Place is life-safety "last resort" content — the one
-   card that should read as caution, not neutral background, using the
-   same amber language as the strip's degraded/high states. */
-.tab-panel article.content-card--caution {
-  background-color: var(--clear-incident-bg);
-  color: var(--clear-incident-fg);
-}
-
-.content-card--caution h3 {
-  color: var(--clear-incident-fg);
-}
-
-.content-card--caution a {
-  color: inherit;
-  text-decoration: underline;
 }
 
 .quick-links {
@@ -1087,6 +995,44 @@ a:focus {
   text-decoration: underline;
 }
 
+/* Controlled Burn card's "Permit & burning rules" expandable detail — always
+   relevant regardless of today's status, so it lives here rather than as its
+   own always-scrolled-past card. */
+.strip-cell__details-toggle {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--clear-text-secondary);
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+.strip-cell__details-toggle:hover,
+.strip-cell__details-toggle:focus {
+  color: #c42216;
+}
+.strip-cell__details-toggle i {
+  transition: transform 0.2s ease;
+}
+.strip-cell__details-toggle[aria-expanded="true"] i {
+  transform: rotate(180deg);
+}
+.strip-cell__details {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--clear-hairline);
+  text-align: left;
+}
+.strip-cell__details #permitsContent {
+  background: none;
+  padding: 0;
+  margin-top: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
 /* ── Fire Danger strip cell colour bands (Cell 1) ────────────────────────────
  *
  * Lower-risk levels (No Rating, Moderate, High): a coloured top strip on the
@@ -1360,319 +1306,245 @@ a:focus {
   }
 }
 
-/* Tabbed Content Navigation Styles */
-.content-tabs-container {
+/* Fire Information section — collapsed-by-default summary bar that expands
+   to the full map + detail either on manual toggle or automatically the
+   first time an active incident shows up (fire-info-section.js). Deliberately
+   NOT part of the awareness carousel below, and never duplicates the KPI
+   tiles already in the live status strip above it. */
+.fire-info-section {
   margin-top: var(--space-xl);
   margin-bottom: var(--space-xl);
+  border: 1px solid var(--clear-hairline);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-/* Tab carousel (Desktop/Tablet) — a horizontally scrollable row of
-   preview cards instead of plain text tab labels, so a casual visitor gets
-   a 1-2 sentence teaser for each section without opening it. Arrow buttons
-   are a discoverability aid; native scroll/swipe and the existing
-   arrow-key tablist pattern already work without them. */
-.tab-carousel {
-  display: flex;
-  align-items: stretch;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-lg);
-}
-
-.tab-carousel__arrow {
-  flex: none;
-  width: 36px;
-  border: none;
-  border-radius: 8px;
-  background-color: var(--clear-neutral-cell-bg);
-  color: var(--clear-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tab-carousel__arrow:hover,
-.tab-carousel__arrow:focus {
-  color: var(--rfs-core-red);
-  background-color: var(--clear-card-fill);
-}
-
-.tab-navigation {
-  display: flex;
-  gap: var(--space-sm);
-  border-bottom: 2px solid var(--clear-hairline);
-  background: none;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x proximity;
-  scrollbar-width: thin;
-  align-items: stretch;
-  width: 100%;
-  /* Flex items default to min-width: auto, which refuses to shrink below
-     the content's intrinsic width — without this, a flex child with its
-     own overflow-x:auto never actually needs to scroll internally,
-     because the flex container just grows past its own bounds instead.
-     That's what made the carousel's own scrolling a no-op. */
-  min-width: 0;
+.fire-info-section__summary {
+  all: unset;
   box-sizing: border-box;
-}
-
-.tab-btn {
-  flex: none;
-  scroll-snap-align: start;
-  width: 220px;
-  padding: var(--space-md) var(--space-lg) var(--space-lg);
-  background: var(--clear-neutral-cell-bg);
-  border: none;
-  border-bottom: 3px solid transparent;
-  border-radius: 10px 10px 0 0;
-  color: var(--clear-text-secondary);
-  font-size: 14.5px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--clear-card-fill);
+  color: var(--clear-body-text);
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+}
+
+.fire-info-section__summary:hover,
+.fire-info-section__summary:focus-visible {
+  background: var(--clear-neutral-cell-bg);
+}
+
+.fire-info-section__summary i:first-child {
+  color: var(--rfs-core-red);
+}
+
+.fire-info-section__chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.fire-info-section__summary[aria-expanded="true"] .fire-info-section__chevron {
+  transform: rotate(180deg);
+}
+
+.fire-info-section__detail {
+  padding: var(--space-xl);
+  border-top: 1px solid var(--clear-hairline);
+}
+
+/* Prepare/Membership/Events awareness carousel (Story Rail) — one card at a
+   time, Instagram/TikTok-style, replacing the old tab/accordion metaphor
+   entirely. See docs/WEBSITE_ROADMAP.md Bet 1 narrowing. */
+.story-rail {
+  max-width: 1100px;
+  margin: var(--space-xxl) auto;
+}
+
+.story-rail__segments {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-md);
+}
+
+.story-rail__segments button {
+  all: unset;
+  flex: 1;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--clear-hairline);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.story-rail__segments button .fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: var(--clear-body-text);
+}
+
+.story-rail__segments button.done .fill {
+  width: 100%;
+}
+
+.story-rail__stage {
+  position: relative;
+  border-radius: 18px;
+  min-height: clamp(280px, 30vw, 420px);
+  background: var(--clear-neutral-cell-bg);
+  display: flex;
+  cursor: pointer;
+}
+
+.story-rail__stage--caution {
+  background: var(--clear-incident-bg);
+}
+
+.story-rail__zone {
+  all: unset;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.story-rail__zone--left {
+  left: 0;
+}
+
+.story-rail__zone--right {
+  right: 0;
+}
+
+.story-rail__content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  text-align: left;
-  gap: var(--space-xs);
-  position: relative;
+  justify-content: center;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  gap: 0.6rem;
 }
 
-.tab-btn i {
-  font-size: 1rem;
+.story-rail__pillar,
+.story-rail__featured-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.3em 0.8em;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--rfs-core-red);
 }
 
-.tab-btn__title {
-  margin-left: var(--space-xs);
+.story-rail__stage[data-pillar="membership"] .story-rail__pillar {
+  background: var(--ui-blue);
 }
 
-.tab-btn__teaser {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: var(--clear-text-muted);
-  white-space: normal;
+.story-rail__stage[data-pillar="events"] .story-rail__pillar {
+  background: var(--ui-green);
 }
 
-.tab-btn:hover {
-  color: var(--rfs-core-red);
-  background-color: var(--clear-card-fill);
+.story-rail__featured-tag {
+  background: var(--ui-amber);
+  color: #4d3600;
 }
 
-.tab-btn.active {
-  color: var(--rfs-core-red);
-  border-bottom-color: var(--rfs-core-red);
-  background-color: var(--clear-card-fill);
-}
-
-.tab-btn.active .tab-btn__teaser {
+.story-rail__icon {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
   color: var(--clear-text-secondary);
 }
 
-.tab-btn:focus {
-  outline: 2px solid var(--rfs-core-red);
-  outline-offset: -2px;
+.story-rail__title {
+  font-size: clamp(1.3rem, 1rem + 1.6vw, 2.2rem);
+  font-weight: 800;
+  margin: 0;
+  max-width: 20ch;
+  color: var(--clear-body-text);
 }
 
-/* Tab Content Panels */
-.tab-content-container {
-  position: relative;
-  min-height: 400px;
+.story-rail__stage--caution .story-rail__title {
+  color: var(--clear-incident-fg);
 }
 
-.tab-panel {
-  display: none;
-  animation: fadeInTab 0.3s ease-in;
+.story-rail__body {
+  font-size: clamp(0.95rem, 0.85rem + 0.3vw, 1.2rem);
+  line-height: 1.5;
+  max-width: 55ch;
+  color: var(--clear-body-text);
 }
 
-.tab-panel.active {
-  display: block;
+.story-rail__body ul {
+  padding-left: 1.2em;
 }
 
-@keyframes fadeInTab {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.story-rail__photo {
+  height: 110px;
+  max-width: 320px;
+  border-radius: 10px;
+  object-fit: cover;
 }
 
-/* Accordion Headers (Mobile Only) */
-/* .accordion-header is a real <button> (WCAG 2.2 AA: keyboard focus + native
-   Enter/Space activation, announced as a button by screen readers) — unset
-   the browser's default button chrome so it still matches the accordion's
-   visual language rather than looking like a form control. */
-.accordion-header {
-  display: none;
+.story-rail__filmstrip {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  margin-top: var(--space-lg);
+  padding-bottom: 0.3rem;
+}
+
+.story-rail__thumb {
   all: unset;
-  box-sizing: border-box;
-  width: 100%;
-  font: inherit;
-  color: inherit;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--clear-neutral-cell-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--clear-text-secondary);
+  border: 2px solid transparent;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
-.mobile-only {
-  display: none;
+.story-rail__thumb.active {
+  border-color: var(--clear-body-text);
+  color: var(--clear-body-text);
 }
 
-/* Desktop: Show tabs, hide accordion headers */
-@media (min-width: 769px) {
-  .tab-navigation {
-    display: flex;
-  }
-
-  .accordion-header.mobile-only {
-    display: none !important;
-  }
-
-  .accordion-content {
-    display: block !important;
-  }
+.story-rail__thumb--caution {
+  background: var(--clear-incident-bg);
 }
 
-/* Mobile: Hide tabs, show accordion */
-@media (max-width: 768px) {
-  .tab-navigation {
-    display: none;
-  }
-
-  .tab-carousel__arrow {
-    display: none;
-  }
-
-  .tab-panel {
-    display: block !important;
-    border: 1px solid var(--rfs-light-grey);
-    border-radius: var(--pico-border-radius);
-    margin-bottom: var(--space-md);
-    background-color: var(--pico-card-background-color);
-    animation: none;
-  }
-
-  .accordion-header.mobile-only {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-md);
-    background-color: var(--rfs-neutral-light);
-    cursor: pointer;
-    border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
-    font-weight: 600;
-    font-size: 1.1rem;
-    gap: var(--space-sm);
-    transition: background-color 0.2s ease;
-  }
-
-  .accordion-header.mobile-only:hover {
-    background-color: var(--rfs-neutral-medium);
-  }
-
-  .accordion-header.mobile-only.active {
-    background-color: var(--rfs-core-red);
-    color: var(--text-color-light);
-    border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
-  }
-
-  .accordion-header.mobile-only i:first-child {
-    font-size: 1.3rem;
-  }
-
-  .accordion-header span {
-    flex: 1;
-  }
-
-  .accordion-icon {
-    transition: transform 0.3s ease;
-    font-size: 0.9rem;
-  }
-
-  .accordion-header.active .accordion-icon {
-    transform: rotate(180deg);
-  }
-
-  .accordion-content {
-    display: none;
-    padding: var(--space-md);
-    animation: slideDownAccordion 0.3s ease-out;
-    overflow: hidden;
-  }
-
-  .accordion-content.active {
-    display: block;
-  }
-
-  .accordion-content article {
-    animation: none;
-    transform: none;
-    box-shadow: none;
-  }
-
-  @keyframes slideDownAccordion {
-    from {
-      opacity: 0;
-      max-height: 0;
-    }
-    to {
-      opacity: 1;
-      max-height: 2000px;
-    }
-  }
-
-  /* Make sure first accordion is open by default on mobile */
-  .tab-panel:first-of-type .accordion-header.mobile-only {
-    background-color: var(--rfs-core-red);
-    color: var(--text-color-light);
-  }
-
-  .tab-panel:first-of-type .accordion-content {
-    display: block;
-  }
-
-  .tab-panel:first-of-type .accordion-icon {
-    transform: rotate(180deg);
-  }
+.story-rail__pause {
+  display: block;
+  margin: var(--space-md) auto 0;
+  border: 1px solid var(--clear-hairline);
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.5em 1.1em;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--clear-text-secondary);
 }
 
-/* Dark Mode for Tabs and Accordion */
-@media (prefers-color-scheme: dark) {
-  .tab-navigation {
-    border-bottom-color: var(--clear-hairline);
-  }
-
-  .tab-btn {
-    color: var(--clear-text-secondary);
-  }
-
-  .tab-btn.active {
-    color: var(--rfs-core-red);
-  }
-
-  @media (max-width: 768px) {
-    /* Fixed: --rfs-neutral-dark and --text-color-dark both resolve to the
-       same light grey in dark mode, which made these bars render as
-       invisible light-on-light text. Use the dark-mode-aware Clear Skies
-       tokens instead so background and text always contrast. */
-    .accordion-header.mobile-only {
-      background-color: var(--clear-card-fill);
-      color: var(--clear-body-text);
-    }
-
-    .accordion-header.mobile-only:hover {
-      background-color: var(--clear-hairline);
-    }
-
-    .accordion-header.mobile-only.active {
-      background-color: var(--rfs-core-red);
-      color: var(--text-color-light);
-    }
-
-    .tab-panel {
-      background-color: var(--pico-card-background-color);
-      border-color: var(--clear-hairline);
-    }
+@media (prefers-reduced-motion: reduce) {
+  .story-rail__segments button .fill {
+    transition: none !important;
   }
 }
 

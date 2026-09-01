@@ -46,6 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (incidentTotalCount) {
         incidentTotalCount.textContent = String(count);
       }
+      // Lets fire-info-section.js (which owns the collapsed/expanded Fire
+      // Information section) auto-expand on a real incident count, without
+      // this module needing to know anything about that UI.
+      document.dispatchEvent(new CustomEvent("bungendore:incident-count", { detail: { count } }));
     }
 
     // Apply danger-level data attribute to the live status strip for colour coding
