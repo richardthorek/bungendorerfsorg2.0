@@ -438,60 +438,54 @@ h3 {
   margin-top: var(--space-xs);
 }
 
-/* "Prepare" tab action-plan steps — numbered red circle badges at the same
-   compact scale as the rest of the Clear Skies page (.quick-links,
-   .strip-cell), replacing the browser's default blockquote/list styling.
-   Scoped to #prepareContent since that's the only markdown-rendered block
-   using this ol/li pattern. */
-#prepareContent h3 {
+/* Heading style shared by every markdown-rendered content block within a
+   tab (prepareContent plus the sub-topic cards below) — keeps ### headings
+   visually consistent wherever they appear, instead of only the first
+   block in a tab getting real heading styling and the rest falling back to
+   browser/Pico defaults. */
+#prepareContent h3,
+#bushfireRiskContent h3,
+#neighbourhoodSaferPlaceContent h3,
+#animalsInBushfireContent h3,
+#permitsContent h3 {
   font-size: var(--font-size-h3);
   font-weight: 800;
   color: var(--clear-body-text);
-  margin: var(--space-lg) 0 var(--space-sm);
+  margin: 0 0 var(--space-sm);
 }
 
-#prepareContent ol {
-  list-style: none;
-  counter-reset: step;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  margin: 0 0 var(--space-lg);
-  padding: 0;
+/* Sub-topic content cards (roadmap content additions: local bushfire risk,
+   Neighbourhood Safer Place, animals, permits). Each markdown block used to
+   render as bare headings/paragraphs concatenated directly under
+   prepareContent/fireInfoContent with no visual separation — a long tab
+   read as one continuous wall of text. Wrapping each in its own card is
+   the minimal fix: distinct chunks a reader can visually parse and skip
+   between, without restructuring the tab/accordion navigation itself. */
+#bushfireRiskContent,
+#neighbourhoodSaferPlaceContent,
+#animalsInBushfireContent,
+#permitsContent {
+  background-color: var(--clear-neutral-cell-bg);
+  border-radius: 12px;
+  padding: var(--space-lg) var(--space-xl);
+  margin-top: var(--space-xl);
 }
 
-/* Badge is an absolutely-positioned ::before rather than a flex sibling —
-   a block-level heading followed by plain text inside a flex item gets
-   blockified into two separate side-by-side flex items instead of
-   stacking, so plain block flow (with padding to clear the badge) is used
-   here instead. */
-#prepareContent ol li {
-  counter-increment: step;
-  position: relative;
-  padding-left: 40px;
-  min-height: 28px;
+/* Neighbourhood Safer Place is life-safety "last resort" content — the one
+   sub-topic card that should read as caution, not neutral background,
+   using the same amber language as the strip's degraded/high states. */
+#neighbourhoodSaferPlaceContent {
+  background-color: var(--clear-incident-bg);
+  color: var(--clear-incident-fg);
 }
 
-#prepareContent ol li::before {
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 28px;
-  text-align: center;
+#neighbourhoodSaferPlaceContent h3 {
+  color: var(--clear-incident-fg);
 }
 
-#prepareContent ol li strong:first-child {
-  display: block;
-  color: var(--clear-body-text);
-  margin-bottom: 2px;
+#neighbourhoodSaferPlaceContent a {
+  color: inherit;
+  text-decoration: underline;
 }
 
 .quick-links {
@@ -2374,7 +2368,10 @@ body.map-fullscreen-active {
 
 /* Rain radar embed, Fire Information tab. */
 .rain-radar-panel {
-  margin: var(--space-xl) 0;
+  background-color: var(--clear-neutral-cell-bg);
+  border-radius: 12px;
+  padding: var(--space-lg) var(--space-xl);
+  margin: var(--space-xl) 0 0;
 }
 
 .rain-radar-panel h3 {
