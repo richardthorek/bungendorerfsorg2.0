@@ -227,7 +227,20 @@
         content.appendChild(img);
       }
 
-      segEls.forEach((seg, i) => seg.classList.toggle("done", i < index));
+      // Every segment's fill is reset here, not just the "done" class —
+      // startSegmentFill() drives the current segment's fill via an inline
+      // style (needed for the linear-timed animation), and inline styles
+      // beat the CSS class rule. Without this reset, a segment visited
+      // earlier keeps showing its last inline width forever once you
+      // navigate backward past it, even after its "done" class is removed.
+      segEls.forEach((seg, i) => {
+        seg.classList.toggle("done", i < index);
+        if (i !== index) {
+          const fill = seg.querySelector(".fill");
+          fill.style.transition = "none";
+          fill.style.width = i < index ? "100%" : "0%";
+        }
+      });
       thumbEls.forEach((t, i) => t.classList.toggle("active", i === index));
     }
 
@@ -257,7 +270,15 @@
       // Autoplay never depends on a click/hover — it's on its own timer, so
       // this runs unattended on a kiosk/signage screen. Manual interaction
       // (zones, thumbnails, pause) only ever re-arms or overrides that timer.
-      if (playing) timer = setTimeout(next, AUTOPLAY_MS);
+      // The timeout re-arms itself on every fire (not just on manual
+      // interaction) — a bare setTimeout(next, ...) only ever advances once,
+      // since next() itself doesn't loop.
+      if (playing) {
+        timer = setTimeout(() => {
+          next();
+          restart();
+        }, AUTOPLAY_MS);
+      }
     }
 
     zoneLeft.addEventListener("click", () => {
