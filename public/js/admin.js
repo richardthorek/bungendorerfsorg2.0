@@ -84,6 +84,18 @@
     clarityPages: document.getElementById("clarityPages"),
     claritySignals: document.getElementById("claritySignals"),
     clarityHistory: document.getElementById("clarityHistory"),
+    alertBannerMessage: document.getElementById("alertBannerMessage"),
+    alertBannerSeverity: document.getElementById("alertBannerSeverity"),
+    alertBannerCount: document.getElementById("alertBannerCount"),
+    alertBannerMeta: document.getElementById("alertBannerMeta"),
+    alertBannerSave: document.getElementById("alertBannerSave"),
+    alertBannerClear: document.getElementById("alertBannerClear"),
+    alertBannerMsg: document.getElementById("alertBannerMsg"),
+    cardList: document.getElementById("cardList"),
+    cardAdd: document.getElementById("cardAdd"),
+    cardSave: document.getElementById("cardSave"),
+    cardMeta: document.getElementById("cardMeta"),
+    cardMsg: document.getElementById("cardMsg"),
   };
 
   const state = {
@@ -97,27 +109,48 @@
 
   /* ---------------------------------------------------------------- helpers */
 
+  const API_TIMEOUT_MS = 20000;
+
   function api(path, options) {
     options = options || {};
+    const controller = new AbortController();
+    const timer = setTimeout(function () {
+      controller.abort();
+    }, API_TIMEOUT_MS);
     return fetch(path, {
       method: options.method || "GET",
       headers: options.body ? CSRF : { "X-BRFS-Auth": "1" },
       body: options.body ? JSON.stringify(options.body) : undefined,
       credentials: "same-origin",
-    }).then(function (res) {
-      if (res.status === 401 && state.me) {
-        // session ended mid-use
-        return showSignin("Your session ended. Please sign in again.");
-      }
-      return res
-        .json()
-        .catch(function () {
-          return {};
-        })
-        .then(function (data) {
-          return { ok: res.ok, status: res.status, data: data };
-        });
-    });
+      signal: controller.signal,
+    })
+      .then(function (res) {
+        clearTimeout(timer);
+        if (res.status === 401 && state.me) {
+          // session ended mid-use
+          return showSignin("Your session ended. Please sign in again.");
+        }
+        return res
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (data) {
+            return { ok: res.ok, status: res.status, data: data };
+          });
+      })
+      .catch(function (err) {
+        // Network failure, dropped connection, or our own timeout — surface it
+        // the same way as a server error rather than leaving callers hanging
+        // on a promise that never resolves (this is what left the sign-in
+        // screen stuck with no feedback).
+        clearTimeout(timer);
+        const message =
+          err && err.name === "AbortError"
+            ? "That's taking too long. Check your connection and try again."
+            : "Network problem. Check your connection and try again.";
+        return { ok: false, status: 0, data: { error: message } };
+      });
   }
 
   function setMsg(node, text, kind) {
@@ -170,24 +203,36 @@
   el.requestForm.addEventListener("submit", function (e) {
     e.preventDefault();
     const email = el.email.value.trim().toLowerCase();
-    setMsg(el.signinMsg, "");
-    busy(el.requestBtn, true);
+
+    // Move to the code screen right away instead of waiting on the round trip.
+    // The server always answers with the same generic shape whether or not
+    // this email belongs to a member (so it can't be used to enumerate the
+    // allow-list) — there's nothing in a successful response the UI needs
+    // before showing the code field. The request keeps going in the
+    // background and updates the status line once it settles.
+    el.verifyEmailLabel.textContent = email;
+    el.requestForm.hidden = true;
+    el.verifyForm.hidden = false;
+    el.code.value = "";
+    setMsg(el.signinMsg, "Sending your code…", "pending");
+    el.code.focus();
+
     api("/api/auth/request", { method: "POST", body: { email: email } }).then(function (r) {
-      busy(el.requestBtn, false);
       if (!r) return;
-      if (r.status === 429) {
-        setMsg(el.signinMsg, r.data.error || "Too many requests. Try again shortly.", "err");
-        return;
-      }
       if (!r.ok) {
-        setMsg(el.signinMsg, r.data.error || "Could not send a code.", "err");
+        // Nothing to wait for on this screen if the request failed outright —
+        // send them back to try again rather than leaving a dead code field.
+        el.verifyForm.hidden = true;
+        el.requestForm.hidden = false;
+        setMsg(
+          el.signinMsg,
+          r.data.error ||
+            (r.status === 429 ? "Too many requests. Try again shortly." : "Could not send a code."),
+          "err"
+        );
         return;
       }
-      el.verifyEmailLabel.textContent = email;
-      el.requestForm.hidden = true;
-      el.verifyForm.hidden = false;
       setMsg(el.signinMsg, "If " + email + " is a brigade member, a code is on its way.", "ok");
-      el.code.focus();
     });
   });
 
@@ -246,7 +291,16 @@
     if (currentViewFromHash() !== "enquiries") loadEnquiries(); // for the nav badge
   }
 
-  const VIEWS = ["duty", "enquiries", "events", "social", "analytics", "members"];
+  const VIEWS = [
+    "duty",
+    "alertBanner",
+    "enquiries",
+    "events",
+    "awarenessCards",
+    "social",
+    "analytics",
+    "members",
+  ];
 
   function currentViewFromHash() {
     const h = (location.hash || "").replace("#", "");
@@ -265,7 +319,9 @@
     if (location.hash.replace("#", "") !== name) history.replaceState(null, "", "#" + name);
     if (name === "members") loadMembers();
     if (name === "duty") loadDuty();
+    if (name === "alertBanner") loadAlertBanner();
     if (name === "events") loadAllContent();
+    if (name === "awarenessCards") loadAwarenessCards();
     if (name === "enquiries") loadEnquiries();
     if (name === "social") initSocialStudio();
     if (name === "analytics") loadClarity();
@@ -814,7 +870,7 @@
       msg: document.getElementById("eventMsg"),
       fields: [
         { key: "name", placeholder: "Event name", type: "text" },
-        { key: "timing", placeholder: "Timing, e.g. Date TBC", type: "text" },
+        { key: "timing", placeholder: "Timing, e.g. Saturday 14 March, 10am", type: "text" },
         { key: "description", placeholder: "Short description", type: "textarea" },
       ],
     },
@@ -1032,6 +1088,447 @@
   });
   document.getElementById("trainSave").addEventListener("click", function (e) {
     saveContent("training", e.currentTarget);
+  });
+
+  /* -------------------------------------------------------- awareness cards */
+  // Homepage Prepare/Membership/Events carousel (roadmap Bet 1 narrowing).
+  // Mirrored client-side icon allow-list — keep in sync with
+  // api/shared/contentSchema.js's AWARENESS_ICONS; it's the server's source
+  // of truth and re-validates regardless of what this picker offers.
+  const CARD_ICONS = [
+    "fa-shield-alt",
+    "fa-fire",
+    "fa-fire-alt",
+    "fa-door-open",
+    "fa-clock",
+    "fa-clipboard-list",
+    "fa-exclamation-triangle",
+    "fa-triangle-exclamation",
+    "fa-map-marked-alt",
+    "fa-map-pin",
+    "fa-route",
+    "fa-paw",
+    "fa-dog",
+    "fa-horse",
+    "fa-users",
+    "fa-user-plus",
+    "fa-handshake",
+    "fa-hand-holding-heart",
+    "fa-home",
+    "fa-warehouse",
+    "fa-truck",
+    "fa-hard-hat",
+    "fa-tint",
+    "fa-wind",
+    "fa-sun",
+    "fa-cloud-rain",
+    "fa-radio",
+    "fa-phone",
+    "fa-envelope",
+    "fa-calendar-alt",
+    "fa-calendar-check",
+    "fa-graduation-cap",
+    "fa-book",
+    "fa-pen",
+    "fa-file-signature",
+    "fa-check-circle",
+    "fa-campground",
+    "fa-tree",
+    "fa-seedling",
+    "fa-first-aid",
+    "fa-heartbeat",
+    "fa-bullhorn",
+    "fa-star",
+    "fa-circle-info",
+    "fa-image",
+  ];
+  const CARD_PILLARS = ["prepare", "membership", "events"];
+  const cardState = { cards: [] };
+
+  function newCard() {
+    return {
+      pillar: "prepare",
+      icon: "fa-circle-info",
+      title: "",
+      body: "",
+      photo: "",
+      caution: false,
+      eventDate: "",
+      active: true,
+    };
+  }
+
+  /** Downscale to a small max edge before storing — these render at well
+   * under 320px in every carousel layout, and the whole card set has to fit
+   * in one Table Storage string property (see contentSchema.js). */
+  function resizeImageForCard(file, cb, onErr) {
+    const fail = typeof onErr === "function" ? onErr : function () {};
+    const reader = new FileReader();
+    reader.onerror = fail;
+    reader.onload = function () {
+      const img = new Image();
+      img.onerror = fail;
+      img.onload = function () {
+        const maxDim = 320;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        cb(c.toDataURL("image/jpeg", 0.6));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function buildIconPicker(card, iconPreviewEl) {
+    const wrap = document.createElement("div");
+    wrap.className = "icon-picker";
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "icon-picker__trigger";
+    trigger.innerHTML =
+      "<i class=\"fas " + card.icon + "\" aria-hidden=\"true\"></i><span>Change icon</span>";
+    const grid = document.createElement("div");
+    grid.className = "icon-picker__grid";
+    grid.hidden = true;
+    CARD_ICONS.forEach(function (icon) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "icon-picker__opt" + (icon === card.icon ? " is-selected" : "");
+      btn.innerHTML = "<i class=\"fas " + icon + "\" aria-hidden=\"true\"></i>";
+      btn.title = icon.replace("fa-", "");
+      btn.addEventListener("click", function () {
+        card.icon = icon;
+        iconPreviewEl.className = "fas " + icon;
+        trigger.querySelector("i").className = "fas " + icon;
+        grid.querySelectorAll(".icon-picker__opt").forEach(function (o) {
+          o.classList.toggle("is-selected", o === btn);
+        });
+        grid.hidden = true;
+      });
+      grid.appendChild(btn);
+    });
+    trigger.addEventListener("click", function () {
+      grid.hidden = !grid.hidden;
+    });
+    wrap.appendChild(trigger);
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  function cardRowEl(card, index) {
+    const row = document.createElement("div");
+    row.className = "card-editor__row";
+
+    const head = document.createElement("div");
+    head.className = "card-editor__row-head";
+
+    const iconPreview = document.createElement("i");
+    iconPreview.className = "fas " + card.icon + " card-editor__icon-preview";
+    head.appendChild(iconPreview);
+
+    const pillarSelect = document.createElement("select");
+    pillarSelect.className = "editor__input card-editor__pillar";
+    CARD_PILLARS.forEach(function (p) {
+      const opt = document.createElement("option");
+      opt.value = p;
+      opt.textContent = cap(p);
+      if (p === card.pillar) opt.selected = true;
+      pillarSelect.appendChild(opt);
+    });
+    pillarSelect.addEventListener("change", function () {
+      card.pillar = pillarSelect.value;
+    });
+    head.appendChild(pillarSelect);
+
+    const spacer = document.createElement("span");
+    spacer.className = "card-editor__spacer";
+    head.appendChild(spacer);
+
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "icon-btn";
+    upBtn.setAttribute("aria-label", "Move card up");
+    upBtn.innerHTML = "<i class=\"fas fa-arrow-up\" aria-hidden=\"true\"></i>";
+    upBtn.addEventListener("click", function () {
+      if (index === 0) return;
+      const tmp = cardState.cards[index - 1];
+      cardState.cards[index - 1] = cardState.cards[index];
+      cardState.cards[index] = tmp;
+      renderCardList();
+    });
+    head.appendChild(upBtn);
+
+    const downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "icon-btn";
+    downBtn.setAttribute("aria-label", "Move card down");
+    downBtn.innerHTML = "<i class=\"fas fa-arrow-down\" aria-hidden=\"true\"></i>";
+    downBtn.addEventListener("click", function () {
+      if (index === cardState.cards.length - 1) return;
+      const tmp = cardState.cards[index + 1];
+      cardState.cards[index + 1] = cardState.cards[index];
+      cardState.cards[index] = tmp;
+      renderCardList();
+    });
+    head.appendChild(downBtn);
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "row-remove";
+    del.textContent = "Remove";
+    del.addEventListener("click", function () {
+      cardState.cards.splice(index, 1);
+      renderCardList();
+    });
+    head.appendChild(del);
+
+    row.appendChild(head);
+    row.appendChild(buildIconPicker(card, iconPreview));
+
+    const titleInput = document.createElement("input");
+    titleInput.type = "text";
+    titleInput.className = "editor__input";
+    titleInput.placeholder = "Card title";
+    titleInput.maxLength = 120;
+    titleInput.value = card.title || "";
+    titleInput.addEventListener("input", function () {
+      card.title = titleInput.value;
+    });
+    row.appendChild(titleInput);
+
+    const bodyInput = document.createElement("textarea");
+    bodyInput.className = "editor__input";
+    bodyInput.rows = 4;
+    bodyInput.maxLength = 2000;
+    bodyInput.placeholder = "Body — plain text, or markdown for bullet lists / bold / links";
+    bodyInput.value = card.body || "";
+    bodyInput.addEventListener("input", function () {
+      card.body = bodyInput.value;
+    });
+    row.appendChild(bodyInput);
+
+    // Photo: shows the current photo (uploaded data: URL or a bundled
+    // /Images/ path) with a swap/remove control, matching the resize+compress
+    // pattern already used for Social Studio's chat attachment.
+    const photoWrap = document.createElement("div");
+    photoWrap.className = "card-editor__photo";
+    const photoThumb = document.createElement("img");
+    photoThumb.className = "card-editor__photo-thumb";
+    photoThumb.hidden = !card.photo;
+    if (card.photo) photoThumb.src = card.photo;
+    const photoInput = document.createElement("input");
+    photoInput.type = "file";
+    photoInput.accept = "image/*";
+    photoInput.className = "sr-only";
+    const photoLabel = document.createElement("label");
+    photoLabel.className = "btn btn--ghost";
+    photoLabel.textContent = card.photo ? "Change photo" : "Add photo";
+    photoLabel.appendChild(photoInput);
+    const photoRemove = document.createElement("button");
+    photoRemove.type = "button";
+    photoRemove.className = "row-remove";
+    photoRemove.textContent = "Remove photo";
+    photoRemove.hidden = !card.photo;
+    photoInput.addEventListener("change", function () {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file) return;
+      if (file.size > 8 * 1024 * 1024) {
+        setMsg(el.cardMsg, "That photo is too large (max 8MB).", "err");
+        photoInput.value = "";
+        return;
+      }
+      resizeImageForCard(
+        file,
+        function (dataUrl) {
+          card.photo = dataUrl;
+          photoThumb.src = dataUrl;
+          photoThumb.hidden = false;
+          photoRemove.hidden = false;
+          photoLabel.textContent = "Change photo";
+        },
+        function () {
+          setMsg(el.cardMsg, "That photo couldn't be read. Try a different image.", "err");
+        }
+      );
+    });
+    photoRemove.addEventListener("click", function () {
+      card.photo = "";
+      photoInput.value = "";
+      photoThumb.hidden = true;
+      photoRemove.hidden = true;
+      photoLabel.textContent = "Add photo";
+    });
+    photoWrap.appendChild(photoThumb);
+    photoWrap.appendChild(photoLabel);
+    photoWrap.appendChild(photoRemove);
+    row.appendChild(photoWrap);
+
+    const metaRow = document.createElement("div");
+    metaRow.className = "card-editor__meta-row";
+
+    const cautionLabel = document.createElement("label");
+    cautionLabel.className = "card-editor__check";
+    const cautionInput = document.createElement("input");
+    cautionInput.type = "checkbox";
+    cautionInput.checked = !!card.caution;
+    cautionInput.addEventListener("change", function () {
+      card.caution = cautionInput.checked;
+    });
+    cautionLabel.appendChild(cautionInput);
+    cautionLabel.appendChild(
+      document.createTextNode(" Show as caution (amber, last-resort style)")
+    );
+    metaRow.appendChild(cautionLabel);
+
+    const activeLabel = document.createElement("label");
+    activeLabel.className = "card-editor__check";
+    const activeInput = document.createElement("input");
+    activeInput.type = "checkbox";
+    activeInput.checked = card.active !== false;
+    activeInput.addEventListener("change", function () {
+      card.active = activeInput.checked;
+    });
+    activeLabel.appendChild(activeInput);
+    activeLabel.appendChild(document.createTextNode(" Active"));
+    metaRow.appendChild(activeLabel);
+
+    row.appendChild(metaRow);
+    return row;
+  }
+
+  function renderCardList() {
+    el.cardList.innerHTML = "";
+    if (!cardState.cards.length) {
+      const empty = document.createElement("p");
+      empty.className = "editor__empty";
+      empty.textContent = "No cards yet. Add one below.";
+      el.cardList.appendChild(empty);
+      return;
+    }
+    cardState.cards.forEach(function (card, i) {
+      el.cardList.appendChild(cardRowEl(card, i));
+    });
+  }
+
+  function loadAwarenessCards() {
+    setMsg(el.cardMsg, "");
+    api("/api/content/awarenessCards").then(function (r) {
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.cardMsg, (r.data && r.data.error) || "Could not load cards.", "err");
+        return;
+      }
+      cardState.cards = Array.isArray(r.data) ? r.data : [];
+      renderCardList();
+    });
+  }
+
+  function saveAwarenessCards() {
+    setMsg(el.cardMsg, "");
+    el.cardSave.disabled = true;
+    const items = cardState.cards.map(function (c, i) {
+      return { ...c, order: i };
+    });
+    api("/api/content/awarenessCards", { method: "PUT", body: { items: items } }).then(
+      function (r) {
+        el.cardSave.disabled = false;
+        if (!r) return;
+        if (!r.ok) {
+          setMsg(el.cardMsg, (r.data && r.data.error) || "Could not save.", "err");
+          return;
+        }
+        setMsg(el.cardMsg, "Saved. Live within a few minutes.", "ok");
+        el.cardMeta.textContent = "Updated just now by you";
+        cardState.cards = r.data.items;
+        renderCardList();
+      }
+    );
+  }
+
+  el.cardAdd.addEventListener("click", function () {
+    cardState.cards.push(newCard());
+    renderCardList();
+  });
+  el.cardSave.addEventListener("click", saveAwarenessCards);
+
+  /* ------------------------------------------------------------ alert banner */
+  // Roadmap Bet 3: one admin-published banner shown on the public homepage.
+  // Uses the same generic /api/content/:key contract as events/training, but
+  // as a single-item (0 or 1) form rather than a repeatable-rows list.
+
+  function fmtPostedAt(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString(undefined, {
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function renderAlertBanner(items) {
+    const current = Array.isArray(items) && items.length ? items[0] : null;
+    el.alertBannerMessage.value = current ? current.message : "";
+    el.alertBannerSeverity.value = current && current.severity ? current.severity : "info";
+    el.alertBannerCount.textContent = el.alertBannerMessage.value.length + " / 280";
+    el.alertBannerMeta.textContent = current
+      ? "Live now" + (current.postedAt ? " — posted " + fmtPostedAt(current.postedAt) : "")
+      : "No banner currently live.";
+  }
+
+  function loadAlertBanner() {
+    setMsg(el.alertBannerMsg, "");
+    api("/api/content/alertBanner").then(function (r) {
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.alertBannerMsg, (r.data && r.data.error) || "Could not load the banner.", "err");
+        return;
+      }
+      renderAlertBanner(Array.isArray(r.data) ? r.data : []);
+    });
+  }
+
+  function saveAlertBanner(items, btn, successMsg) {
+    setMsg(el.alertBannerMsg, "");
+    btn.disabled = true;
+    api("/api/content/alertBanner", { method: "PUT", body: { items: items } }).then(function (r) {
+      btn.disabled = false;
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.alertBannerMsg, (r.data && r.data.error) || "Could not save.", "err");
+        return;
+      }
+      setMsg(el.alertBannerMsg, successMsg, "ok");
+      renderAlertBanner(r.data.items);
+    });
+  }
+
+  el.alertBannerMessage.addEventListener("input", function () {
+    el.alertBannerCount.textContent = el.alertBannerMessage.value.length + " / 280";
+  });
+
+  el.alertBannerSave.addEventListener("click", function (e) {
+    const message = el.alertBannerMessage.value.trim();
+    if (!message) {
+      setMsg(el.alertBannerMsg, "Write a message before publishing.", "err");
+      return;
+    }
+    saveAlertBanner(
+      [{ message: message, severity: el.alertBannerSeverity.value }],
+      e.currentTarget,
+      "Published. Live on the homepage within a few minutes."
+    );
+  });
+
+  el.alertBannerClear.addEventListener("click", function (e) {
+    saveAlertBanner([], e.currentTarget, "Banner cleared.");
   });
 
   /* ------------------------------------------------------------ social studio */

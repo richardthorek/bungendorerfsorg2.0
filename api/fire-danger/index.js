@@ -1,57 +1,37 @@
 /**
  * Azure Function: Fire Danger Rating
- * Proxies requests to Azure Logic Apps for fire danger data
+ * Proxies requests to Azure Logic Apps for fire danger data. Caching /
+ * stale-while-revalidate logic lives in ../shared/fireDataProxy.js so this
+ * handler and the server.js mirror share one implementation.
  */
 
+const { getFireDanger } = require("../shared/fireDataProxy");
+
 module.exports = async function (context, _req) {
-  try {
-    const webhookUrl = process.env.AZURE_FIRE_DANGER_WEBHOOK_URL;
+  const result = await getFireDanger(process.env, { logger: context.log });
 
-    if (!webhookUrl) {
-      context.log.error("AZURE_FIRE_DANGER_WEBHOOK_URL not configured");
-      context.res = {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: { error: "Server configuration error" },
-      };
-      return;
-    }
-
-    const response = await fetch(webhookUrl);
-
-    if (!response.ok) {
-      context.log.error(`Azure webhook returned status ${response.status}`);
-      context.res = {
-        status: response.status,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: { error: "Failed to fetch fire danger" },
-      };
-      return;
-    }
-
-    const data = await response.text();
-
+  if (!result.ok) {
     context.res = {
-      status: 200,
-      headers: {
-        "Content-Type": "application/xml",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-      },
-      body: data,
-    };
-  } catch (error) {
-    context.log.error("Error fetching fire danger:", error);
-    context.res = {
-      status: 500,
+      status: result.status || 500,
       headers: {
         "Content-Type": "application/json",
       },
-      body: { error: "Failed to fetch fire danger" },
+      body: { error: result.error || "Failed to fetch fire danger" },
     };
+    return;
   }
+
+  const headers = {
+    "Content-Type": result.contentType || "application/xml",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "X-Data-Freshness": result.stale ? "stale" : "fresh",
+    "X-Data-Age-Seconds": String(result.ageSeconds),
+  };
+
+  context.res = {
+    status: 200,
+    headers,
+    body: result.body,
+  };
 };

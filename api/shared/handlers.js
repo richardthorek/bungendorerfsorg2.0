@@ -524,15 +524,26 @@ async function findMemberByPhone(e164, env) {
 
 /* ------------------------------------------------------- editable site content */
 
+// Content keys whose GET is public (no session required). PUT/POST always
+// stays session-gated below — only add a key here once its content is meant
+// for every visitor, not just signed-in members.
+const PUBLIC_CONTENT_KEYS = ["events", "training", "alertBanner", "awarenessCards"];
+
 /** Public — returns the plain array (same shape the static JSON files had). */
 async function handleContentGet(key, env = process.env) {
-  if (key !== "events" && key !== "training") {
+  if (!PUBLIC_CONTENT_KEYS.includes(key)) {
     return { status: 404, body: { error: "Not found" } };
   }
   const content = await getContent(key, env);
+  // alertBanner is a fast, human-authored update (Bet 3) — a 5-minute
+  // browser/edge cache would delay a published banner reaching an
+  // already-open tab, and worse, could keep showing a banner an admin just
+  // cleared for up to 5 more minutes. events/training change rarely, so the
+  // longer cache is fine for them.
+  const cacheControl = key === "alertBanner" ? "no-cache" : "public, max-age=300";
   return {
     status: 200,
-    headers: { "Cache-Control": "public, max-age=300" },
+    headers: { "Cache-Control": cacheControl },
     body: content ? content.items : [],
   };
 }
@@ -547,12 +558,20 @@ async function handleContentSet(key, req, env = process.env) {
   const result = validateContent(key, incoming);
   if (!result.ok) return { status: 400, body: { error: result.error } };
 
-  const saved = await setContent(key, result.items, s.member.email, env);
+  // The alert banner's postedAt is never trusted from the client — stamp it
+  // here, server-side, at the moment of save (roadmap Bet 3).
+  let items = result.items;
+  if (key === "alertBanner" && items.length) {
+    const postedAt = new Date().toISOString();
+    items = [{ ...items[0], postedAt }];
+  }
+
+  const saved = await setContent(key, items, s.member.email, env);
   await audit(
     "content_updated",
     {
       email: s.member.email,
-      detail: `${key} (${result.items.length} items)`,
+      detail: `${key} (${items.length} items)`,
     },
     env
   );
@@ -805,6 +824,31 @@ async function handleClarityInsights(req, env = process.env) {
   };
 }
 
+/**
+ * Scheduled entry point for the Clarity pull (an Azure Logic App Recurrence
+ * calls this a handful of times across the day — see docs/API_INTEGRATION.md)
+ * so the analytics table gets a regular cadence independent of whether any
+ * member happens to be logged in. Not member-authenticated: guarded instead
+ * by a shared secret the Logic App sends as a header, since it's a machine
+ * caller with no session. maybeRefreshClarity() still owns the actual budget,
+ * so a cron hit during an already-fresh window is a harmless no-op.
+ */
+async function handleClarityCron(req, env = process.env) {
+  const configured = env.CLARITY_CRON_SECRET;
+  if (!configured) return { status: 401, body: { error: "Unauthorized" } };
+
+  const h = (req && req.headers) || {};
+  const provided = h["x-cron-secret"] || h["X-Cron-Secret"];
+  if (!safeEqual(provided, configured)) {
+    return { status: 401, body: { error: "Unauthorized" } };
+  }
+
+  const refresh = await maybeRefreshClarity(env, { force: true });
+  // A real Clarity-side failure is worth a red Logic App run; an expected
+  // no-op (fresh, over budget, not configured) is still a 200 — it did its job.
+  return { status: refresh.reason === "error" ? 502 : 200, body: refresh };
+}
+
 module.exports = {
   handleAuthRequest,
   handleAuthVerify,
@@ -826,4 +870,5 @@ module.exports = {
   handleSocialPromptGet,
   handleSocialPromptSet,
   handleClarityInsights,
+  handleClarityCron,
 };

@@ -19,6 +19,8 @@ module.exports = [
         luxon: "readonly",
         DOMPurify: "readonly",
         showModal: "readonly",
+        openDialog: "readonly",
+        closeDialog: "readonly",
         showErrorMessage: "readonly",
         showLoadingMessage: "readonly",
         getUserFriendlyErrorMessage: "readonly",

@@ -8,11 +8,18 @@ coverage/
 .nyc_output/
 
 # IDE
-.vscode/
+
 .idea/
 
 # Claude Code personal/machine-specific overrides (shared .claude/settings.json is tracked)
 .claude/settings.local.json
+
+# Claude Code worktrees — local scratch checkouts, never meant to be committed.
+# Previously three of these landed in the index as broken gitlinks (no
+# .gitmodules entry), which failed `git submodule update --init` in the
+# Azure Static Web Apps deploy workflow on every PR. See WEBSITE_ROADMAP.md
+# PR history if this regresses.
+.claude/worktrees/
 
 # macOS artifacts
 .DS_Store
@@ -22,3 +29,8 @@ __MACOSX/
 *~
 *.bak
 .scratch
+.vscode
+Screenshot_1-9-2026_11278_lively-flower-0577f4700-111.eastasia.5.azurestaticapps.net.jpeg
+Screenshot_1-9-2026_112637_lively-flower-0577f4700-111.eastasia.5.azurestaticapps.net.jpeg
+Screenshot_1-9-2026_112648_lively-flower-0577f4700-111.eastasia.5.azurestaticapps.net.jpeg
+Screenshot_1-9-2026_112658_lively-flower-0577f4700-111.eastasia.5.azurestaticapps.net.jpeg

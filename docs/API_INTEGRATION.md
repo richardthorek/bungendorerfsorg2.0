@@ -7,7 +7,7 @@ This document describes all API integrations used in the Bungendore RFS website.
 ## Table of Contents
 
 - [Overview](#overview)
-- [Server-Side Proxy Endpoints](#server-side-proxy-endpoints) — contact, events/training, fire incidents, fire danger, mapbox token, members' area, brigade phone
+- [Server-Side Proxy Endpoints](#server-side-proxy-endpoints) — contact, events/training, fire incidents, fire danger, health check, mapbox token, members' area, brigade phone
 - [Social Studio — Azure OpenAI copy assistant](#social-studio--azure-openai-copy-assistant)
 - [Analytics — Microsoft Clarity](#analytics--microsoft-clarity)
 - [Azure Logic Apps Integration](#azure-logic-apps-integration)
@@ -163,6 +163,13 @@ The old Microsoft 365 calendar feed — `api/calendar-events`,
 3. Creates map markers with appropriate icons
 4. Populates incident table
 
+**Freshness headers:** the proxy keeps an in-memory last-known-good cache
+(`api/shared/fireDataProxy.js`) and serves it — clearly marked — if the live
+upstream fetch fails. Every response carries `X-Data-Freshness: fresh|stale`
+and `X-Data-Age-Seconds: <n>`. Cache older than 30 minutes is not served; the
+endpoint errors instead (an hours-old incident count during an active fire is
+worse than an honest failure).
+
 ---
 
 ### 4. Fire Danger Rating
@@ -192,6 +199,31 @@ The old Microsoft 365 calendar feed — `api/calendar-events`,
    - Fire behavior message
    - Key safety message
 4. Displays in fire danger section
+
+**Freshness headers:** same last-known-good cache and `X-Data-Freshness` /
+`X-Data-Age-Seconds` headers as `/api/fire-incidents` above — see
+`api/shared/fireDataProxy.js`.
+
+---
+
+### 3a. Health Check
+
+**Endpoint:** `GET /api/health`
+
+**Purpose:** Public, unauthenticated liveness probe for an external uptime
+monitor (the monitor itself is configured outside this repo).
+
+**Response:**
+
+```json
+{ "status": "ok", "timestamp": "2026-08-31T10:00:00.000Z" }
+```
+
+`status` is `"degraded"` (still HTTP 200 — the body carries the signal, not
+the status code) when the fire-data upstream looks unreachable. The check
+reuses `fireDataProxy`'s own fetch/cache path rather than issuing a second
+independent upstream request, so polling this endpoint doesn't add extra load
+beyond what `/api/fire-danger` already causes.
 
 ---
 
@@ -247,6 +279,7 @@ and mirrored in `server.js`.
 | `POST /api/social/chat` `{messages, …}`         | Members only, `X-BRFS-Auth: 1`. One Social Studio turn — see [Social Studio](#social-studio--azure-openai-copy-assistant).                                                                     |
 | `GET/PUT /api/social/prompt`                    | `GET` members / `PUT` admin, `X-BRFS-Auth: 1`. The editable voice/rules prompt (`content` table, `settings` partition).                                                                        |
 | `GET /api/clarity/insights`                     | Members only. Stored Clarity snapshot + daily history — see [Analytics](#analytics--microsoft-clarity).                                                                                        |
+| `POST /api/clarity/cron`                        | Machine only, `X-Cron-Secret`. Scheduled Clarity pull — see [Analytics](#analytics--microsoft-clarity).                                                                                        |
 
 **Storage:** Azure Storage tables in `brfsstorage` (`BRFS_STORAGE_CONNECTION`),
 created on first use — `members`, `authcodes`, `ratelimits`, `auditlog`, `duty`,
@@ -363,9 +396,11 @@ friction signals) plus a daily-rollup history and a `configured` flag.
 **10 calls / project / day**. So `api/shared/clarityInsights.js`:
 
 - fetches at most once every `REFRESH_INTERVAL_MS` (6 h) and never more than
-  `MAX_FETCHES_PER_DAY` (6) times per UTC day — a margin under Clarity's 10;
-- is driven **opportunistically** — no timer. `maybeRefreshClarity()` is
-  fire-and-forgotten from `handleAuthMe` (every members'-area page load) and from
+  `MAX_FETCHES_PER_DAY` (9) times per UTC day — one call held in reserve under
+  Clarity's 10;
+- is driven by a **scheduled cron hit** (below) for the regular cadence, plus
+  **opportunistically** off members'-area traffic as a top-up: `maybeRefreshClarity()`
+  is fire-and-forgotten from `handleAuthMe` (every members'-area page load) and from
   the Analytics panel; the refresh slot is claimed in storage *before* the
   network call so concurrent loads don't stampede;
 - normalises Clarity's per-metric response into a stable summary and persists it
@@ -374,6 +409,29 @@ friction signals) plus a daily-rollup history and a `configured` flag.
 
 **Config:** `CLARITY_API_TOKEN` (Clarity → Settings → Data Export → Generate
 token). Optional — the tab shows a "not connected" state when unset.
+
+**Scheduled pull:** `POST /api/clarity/cron` is a machine-only endpoint (not
+member-authenticated) that forces a `maybeRefreshClarity()` call, guarded by a
+shared secret — the caller must send `X-Cron-Secret` matching the
+`CLARITY_CRON_SECRET` app setting, or the endpoint returns 401. It's unset by
+default, so the route is a no-op until deliberately wired up. It exists so the
+`analytics` table gets a regular snapshot independent of whether any member
+happens to log in that day — opportunistic-only refresh means a quiet week in
+the portal is a quiet week in the trend data, even though Clarity itself keeps
+recording visitors the whole time.
+
+Wire it up with an Azure Logic App: **Recurrence** trigger, frequency Day /
+interval 1, `schedule.hours` set to `[7, 9, 11, 13, 15, 17, 19, 21]` (8 fires
+across the day, no overnight/4am runs — visitor and member activity is
+negligible then and the portal's own opportunistic refresh covers any gap),
+time zone `AUS Eastern Standard Time` so the hours stay local through DST →
+**HTTP** action, `POST` to `https://<site>/api/clarity/cron`, header
+`X-Cron-Secret: <the same value as CLARITY_CRON_SECRET>`. Store the secret the
+same way the other Logic App credentials are handled — Azure App Settings in
+prod, `.env`/`local.settings.json` locally, never in source. 8 scheduled pulls
++ headroom for opportunistic/manual refreshes keeps the total comfortably
+under Clarity's 10/project/day cap even if a member's Analytics-tab refresh
+lands in the same window as a cron fire.
 
 ---
 
@@ -416,7 +474,8 @@ feature:
 | Members' auth | `AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES` |
 | Brigade phone | `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`, `DUTY_ALERT_TO` |
 | Social Studio AI | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` |
-| Analytics | `CLARITY_API_TOKEN` |
+| Analytics | `CLARITY_API_TOKEN`, `CLARITY_CRON_SECRET` (scheduled pull, optional) |
+| App Insights (API function telemetry) | `APPLICATIONINSIGHTS_CONNECTION_STRING` (optional locally; see `infra/README.md`) |
 
 Obsolete (removed): `AZURE_CONTACT_WEBHOOK_URL` (contact → ACS),
 `AZURE_CALENDAR_WEBHOOK_URL` (calendar feed removed).
@@ -565,6 +624,7 @@ Web App Application settings (and your local `.env` / `api/local.settings.json`)
 | `DUTY_LOOKUP_KEY` / `DUTY_CLAIM_PIN` | Pick new values; update the Twilio flow's URL / PIN too |
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI resource (`brfs-openai`) → Keys → regenerate |
 | `CLARITY_API_TOKEN` | Clarity → Settings → Data Export → revoke + generate new |
+| `CLARITY_CRON_SECRET` | Generate a new random string; update it in the Logic App's HTTP action too |
 
 ---
 
@@ -590,6 +650,9 @@ curl http://localhost:3000/api/fire-incidents
 
 # Test fire danger
 curl http://localhost:3000/api/fire-danger
+
+# Test health check
+curl http://localhost:3000/api/health
 
 # Test mapbox token
 curl http://localhost:3000/mapbox-token
@@ -622,13 +685,35 @@ The Express server logs:
 - User-visible errors shown in UI
 - Validation errors displayed in forms
 
+### Azure Application Insights
+
+`infra/main.bicep` provisions an Application Insights resource
+(`<staticWebAppName>-insights`, backed by a `<staticWebAppName>-logs` Log
+Analytics workspace) alongside the Static Web App shell. It isn't wired up
+automatically — like every other setting, connecting it is a one-time,
+out-of-band step (see `infra/README.md`):
+
+```bash
+CONN=$(az deployment group show -g BungendoreRFS -n main \
+  --query properties.outputs.appInsightsConnectionString.value -o tsv)
+az staticwebapp appsettings set \
+  --name bungendorerfs-static --resource-group BungendoreRFS \
+  --setting-names "APPLICATIONINSIGHTS_CONNECTION_STRING=$CONN"
+```
+
+Once set, the SWA's managed Functions runtime auto-instruments with it — no
+code changes needed in `api/`. Query it with `az monitor app-insights query`
+(or, if that extension won't install, `az rest` against
+`https://api.applicationinsights.io/v1/apps/<AppId>/query` using an
+`az account get-access-token --resource https://api.applicationinsights.io`
+token).
+
 ### Recommended Monitoring
 
 For production:
 
-1. Set up Azure Application Insights
-2. Monitor Logic Apps execution history
-3. Set up alerts for:
+1. Monitor Logic Apps execution history
+2. Set up alerts for:
    - Failed API calls
    - High error rates
    - Unusual traffic patterns

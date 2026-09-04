@@ -1,10 +1,14 @@
 {
   "routes": [
     { "route": "/admin", "rewrite": "/admin.html" },
-    { "route": "/admin.html", "headers": { "X-Robots-Tag": "noindex, nofollow" } }
+    { "route": "/admin.html", "headers": { "X-Robots-Tag": "noindex, nofollow" } },
+    {
+      "route": "/sw.js",
+      "headers": { "Cache-Control": "no-cache" }
+    }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/Images/*", "/css/*", "/js/*", "/Content/*", "/api/*", "/admin*"]
+    "exclude": ["/Images/*", "/css/*", "/js/*", "/Content/*", "/api/*", "/admin*", "/sw.js"]
   }
 }

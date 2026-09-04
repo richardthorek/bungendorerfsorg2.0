@@ -66,6 +66,11 @@ is left is manual teardown / config only the owner can do:
   plus the `office365` / `office365-1` / `sharepointonline` / `teams` connections.
 - Remove `AZURE_CALENDAR_WEBHOOK_URL` (and any `AZURE_CONTACT_WEBHOOK_URL`) from
   the Static Web App settings if still present.
+- **TfNSW Live Traffic Hazards key** — sign up at
+  https://opendata.transport.nsw.gov.au/ (reCAPTCHA-gated, human step) and set
+  `TFNSW_API_KEY` as a Static Web App application setting. `/api/traffic-hazards`
+  is fully wired and will start returning live data as soon as the key is set —
+  no code change needed. Until then it honestly reports "unavailable" (503).
 
 ---
 
@@ -77,6 +82,8 @@ is left is manual teardown / config only the owner can do:
 | Test infrastructure (Jest + Testing-Library)                                          | Done   | [`docs/TESTING.md`](docs/TESTING.md), `__tests__/`                                                |
 | CI (lint + test + audit)                                                              | Done   | `.github/workflows/ci.yml`                                                                        |
 | Calendar migration off Microsoft Graph to static content files                        | Done   | `public/Content/communityEvents.json`, `trainingSchedule.json`; see README § Editing site content |
+| WEBSITE_ROADMAP Workstream 7 — new external feeds (BOM Fire Weather Warning, BOM wind/temp/humidity, BOM rain radar, TfNSW traffic hazards) | Backend done; TfNSW pending an API key (owner action); frontend kept minimal (text/image, no redesign). DEA satellite hotspots dropped — confusing for the general public | `docs/WEBSITE_ROADMAP.md` §3; `api/shared/externalFeeds.js`, `api/{fire-weather-warning,wind-observations,traffic-hazards}/` |
+| Website Roadmap "Bet 2" — PWA + offline last-known-good (`public/sw.js`, localStorage last-known-good fallback in `emergency-data.js`, manifest completeness) | Done — service worker's real browser install/fetch lifecycle not yet manually verified (no browser available in dev sandbox) | [`docs/WEBSITE_ROADMAP.md`](docs/WEBSITE_ROADMAP.md) §4 |
 | Error pipeline: App Insights exception / CI failure on `main` -> GitHub issue -> Claude auto-diagnosis -> draft PR (never auto-merges) | Code-complete, not yet deployed — needs `infra/modules/error-relay.bicep` deployed by hand (owner action, secrets required) and `CLAUDE_CODE_OAUTH_TOKEN` repo secret added | `infra/README.md` § "Error relay", `.github/workflows/{auto-diagnose,auto-diagnose-retry,create-issue-on-failure}.yml`; adapted from `richardthorek/Station-Manager`'s `docs/wiki/developer/error-pipeline-blueprint.md` |
 
 ---
@@ -135,6 +142,8 @@ tenant — simpler, no SWA Standard upgrade, and the allow-list is needed either
 | PR 7 follow-up — collapsed the separate "chat reply" / "draft post copy" round-trips into one `chatTurn` call returning `{message, draft}`; admin UI now shows the chat thread and a live-updating draft panel side by side instead of a chat-then-click-to-draft flow                                                  | Done — branch `claude/ai-copy-response-structure-cne5xe` |
 | PR 8 — Microsoft Clarity: analytics tag on `public/index.html` (project `yaxo089b41`, public site only — not `admin.html`); "Analytics" tab in the members' area reading the Clarity Data Export API via `api/clarity` (+ `server.js` mirror). Rolling 3-day window normalised to a stable summary and stored in a new `analytics` table (`latest` + one `day:<date>` rollup row) so the trend outlives Clarity's own retention. Refresh is opportunistic off members'-area traffic (`maybeRefreshClarity` fired from `handleAuthMe` + the panel), gated to ≥6h apart and ≤6 pulls/UTC-day (Clarity's cap is 10) | Done — branch `feat/site-analytics` (PR #105) |
 | PR 8 config — set `CLARITY_API_TOKEN` on the SWA | Done — live on `bungendorerfs-static` (set with `az staticwebapp appsettings set`, like every other members'-area setting; `infra/main.bicep` no longer manages app settings — see `infra/README.md`). Data stays empty until the Clarity tag has production traffic |
+| PR 9 — Alert banner (roadmap `docs/WEBSITE_ROADMAP.md` §4 "Bet 3"): new `alertBanner` content key (`api/shared/contentSchema.js`, `handlers.js`), 0-or-1-item banner shown near the top of `#liveStatusStrip` on the public home page (`public/js/alert-banner.js`), "Alert banner" editor in the members' area with a non-dismissible governance notice (`public/admin.html`/`admin.js`). `postedAt` stamped server-side, never client-trusted. `GET /api/content/{key}` made public for a named allow-list (`events`, `training`, `alertBanner`) rather than all keys; `PUT` stays session-gated for every key | Done — branch `bet3-alert-banner` |
+| PR 9 follow-up — brigade governance: agree who's authorised to post, wording norms, and a take-down expectation for stale banners; the admin UI notice is a prompt, not a substitute for an actual process | Pending — owner |
 
 Twilio flow notes: inbound calls hit widget `phoneNumbers` → `prod-08` Logic App
 `32aded0a…`; inbound SMS hit `phoneNumbers2` → `prod-00` Logic App `86da0e0d…` and

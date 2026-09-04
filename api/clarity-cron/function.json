@@ -1,0 +1,13 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": ["post"],
+      "route": "clarity/cron"
+    },
+    { "type": "http", "direction": "out", "name": "res" }
+  ]
+}

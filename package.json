@@ -10,32 +10,33 @@
     "prestart": "node replace-token.js",
     "start": "node server.js",
     "dev": "node server.js",
-    "lint": "eslint public/js server.js replace-token.js",
-    "lint:fix": "eslint public/js server.js replace-token.js --fix",
+    "lint": "eslint public/js public/sw.js server.js replace-token.js",
+    "lint:fix": "eslint public/js public/sw.js server.js replace-token.js --fix",
     "format": "prettier --write \"**/*.{js,json,css,html,md}\"",
     "format:check": "prettier --check \"**/*.{js,json,css,html,md}\"",
     "build": "npm run lint && npm run test:coverage",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:a11y": "axe http://localhost:3000 --exit"
   },
   "dependencies": {
     "@azure/communication-email": "^1.1.0",
     "@azure/data-tables": "^13.3.2",
-    "applicationinsights": "^2.9.8",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "marked": "^18.0.7"
+    "marked": "^18.0.11"
   },
   "devDependencies": {
+    "@axe-core/cli": "^4.13.0",
     "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^7.0.0",
-    "eslint": "^10.8.0",
-    "globals": "^17.0.0",
-    "jest": "^30.4.2",
-    "jest-environment-jsdom": "^30.4.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "eslint": "^10.9.1",
+    "globals": "^17.11.0",
+    "jest": "^30.5.0",
+    "jest-environment-jsdom": "^30.5.0",
     "prettier": "^3.9.6"
   },
   "keywords": [

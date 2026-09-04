@@ -84,12 +84,20 @@
           <button class="nav__item is-active" data-view="duty" type="button">
             Brigade phone<span class="nav__note">where public calls go</span>
           </button>
+          <button class="nav__item" data-view="alertBanner" type="button">
+            Alert banner<span class="nav__note">homepage message</span>
+          </button>
           <button class="nav__item" data-view="enquiries" type="button">
             Enquiries<span class="nav__note">contact form</span
             ><span class="nav__badge" id="enqBadge" hidden></span>
           </button>
           <button class="nav__item" data-view="events" type="button">
             Events &amp; training<span class="nav__note">community &amp; drill calendar</span>
+          </button>
+          <button class="nav__item" data-view="awarenessCards" type="button">
+            Awareness cards<span class="nav__note"
+              >homepage Prepare/Membership/Events carousel</span
+            >
           </button>
           <button class="nav__item" data-view="social" type="button">
             Social Studio<span class="nav__note">Instagram &amp; Facebook posts</span>
@@ -165,6 +173,59 @@
             <p id="dutyMsg" class="msg" role="status" aria-live="polite" hidden></p>
           </section>
 
+          <!-- Alert banner (roadmap Bet 3) -->
+          <section id="view-alertBanner" class="view" hidden>
+            <h2>Alert banner</h2>
+            <p class="view__lead">
+              A short, human-written line that appears at the top of the homepage&rsquo;s live
+              status strip &mdash; e.g. &ldquo;Brigade update 2:40pm &mdash; crews are backburning
+              off Bungendore Rd, expect smoke and appliances, road remains open.&rdquo;
+            </p>
+
+            <p class="alert-banner-editor__notice" role="note">
+              <strong
+                >Anything posted here appears immediately on the public homepage to every
+                visitor.</strong
+              >
+              Keep it factual, dated, and remove it once it&rsquo;s no longer current. Only post
+              what you&rsquo;re authorised to confirm on the brigade&rsquo;s behalf.
+            </p>
+
+            <div class="editor">
+              <div class="editor__field">
+                <label for="alertBannerMessage">Message</label>
+                <textarea
+                  id="alertBannerMessage"
+                  class="editor__input"
+                  maxlength="280"
+                  rows="3"
+                  placeholder="Brigade update 2:40pm — crews are backburning off Bungendore Rd, expect smoke and appliances, road remains open."
+                ></textarea>
+                <span id="alertBannerCount" class="editor__meta">0 / 280</span>
+              </div>
+
+              <div class="editor__field">
+                <label for="alertBannerSeverity">Severity</label>
+                <select id="alertBannerSeverity" class="editor__input">
+                  <option value="info">Info (standard update)</option>
+                  <option value="warning">Warning (more urgent)</option>
+                </select>
+              </div>
+
+              <p id="alertBannerMeta" class="editor__meta"></p>
+
+              <div class="editor__foot">
+                <button type="button" class="btn btn--primary" id="alertBannerSave">
+                  Publish banner
+                </button>
+                <button type="button" class="btn btn--ghost" id="alertBannerClear">
+                  Clear banner
+                </button>
+              </div>
+              <p id="alertBannerMsg" class="msg" role="status" aria-live="polite" hidden></p>
+            </div>
+          </section>
+
           <!-- Events & training -->
           <section id="view-events" class="view" hidden>
             <h2>Events &amp; training</h2>
@@ -197,6 +258,30 @@
                 <span id="trainMeta" class="editor__meta"></span>
               </div>
               <p id="trainMsg" class="msg" role="status" aria-live="polite" hidden></p>
+            </div>
+          </section>
+
+          <!-- Awareness cards (roadmap: Prepare/Membership/Events carousel) -->
+          <section id="view-awarenessCards" class="view" hidden>
+            <h2>Awareness cards</h2>
+            <p class="view__lead">
+              These are the cards that rotate through the homepage's Prepare / Membership / Events
+              carousel — each one is a self-contained topic (icon, title, a paragraph or a short
+              list, optional photo). Next training and any upcoming event with a date get woven in
+              automatically alongside these; you don't need to add those here.
+            </p>
+
+            <div class="editor">
+              <div class="editor__head">
+                <h3>Cards</h3>
+                <button type="button" class="btn btn--ghost" id="cardAdd">Add card</button>
+              </div>
+              <div id="cardList" class="card-editor__list"></div>
+              <div class="editor__foot">
+                <button type="button" class="btn btn--primary" id="cardSave">Save cards</button>
+                <span id="cardMeta" class="editor__meta"></span>
+              </div>
+              <p id="cardMsg" class="msg" role="status" aria-live="polite" hidden></p>
             </div>
           </section>
 
@@ -347,7 +432,12 @@
                   The system prompt the assistant follows for every reply and draft &mdash; brigade
                   voice and hard rules. Changes apply immediately for everyone using Social Studio.
                 </p>
-                <textarea id="socialPromptText" class="editor__input" rows="14" maxlength="6000"></textarea>
+                <textarea
+                  id="socialPromptText"
+                  class="editor__input"
+                  rows="14"
+                  maxlength="6000"
+                ></textarea>
                 <div class="social__foot">
                   <button type="button" class="btn btn--primary" id="socialPromptSave">
                     Save guidelines
@@ -424,9 +514,9 @@
               <div>
                 <h2>Analytics</h2>
                 <p class="view__lead">
-                  Visitor activity on the public website, from Microsoft Clarity. Clarity keeps
-                  only the last few days &mdash; this page stores a daily snapshot so the trend
-                  builds up over time.
+                  Visitor activity on the public website, from Microsoft Clarity. Clarity keeps only
+                  the last few days &mdash; this page stores a daily snapshot so the trend builds up
+                  over time.
                 </p>
               </div>
               <button id="clarityRefresh" type="button" class="btn btn--ghost">Refresh</button>
@@ -454,7 +544,9 @@
                 </table>
               </div>
 
-              <h3 class="clarity-h3">Friction signals <span class="clarity-h3__sub">last 3 days</span></h3>
+              <h3 class="clarity-h3">
+                Friction signals <span class="clarity-h3__sub">last 3 days</span>
+              </h3>
               <div class="stat-grid stat-grid--compact" id="claritySignals"></div>
 
               <h3 class="clarity-h3">Daily sessions</h3>

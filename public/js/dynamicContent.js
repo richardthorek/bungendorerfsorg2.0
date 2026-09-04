@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const contentIds = ["prepareContent", "fireInfoContent", "membershipContent", "eventsContent"];
+  // Prepare/Membership/Events content moved to admin-managed cards
+  // (awareness-cards.js) — only Fire Information's markdown remains here.
+  const contentIds = ["fireInfoContent", "permitsContent"];
   const localBasePath = "/Content/";
 
   function fetchLocalMarkdownContent(contentId, filePath) {
@@ -18,8 +20,5 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch((error) => console.error(`Error fetching ${filePath} from local:`, error));
   }
 
-  contentIds.forEach((contentId) => {
-    const filePath = `${contentId}.md`;
-    fetchLocalMarkdownContent(contentId, filePath);
-  });
+  contentIds.forEach((contentId) => fetchLocalMarkdownContent(contentId, `${contentId}.md`));
 });

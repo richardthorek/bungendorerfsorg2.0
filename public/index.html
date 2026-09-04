@@ -127,9 +127,7 @@
         </div>
         <ul>
           <li><a class="active" href="#info">Fire Information</a></li>
-          <li><a href="#prepare">Prepare</a></li>
-          <li><a href="#membership">Membership</a></li>
-          <li><a href="#events">Events</a></li>
+          <li><a href="#awarenessCarousel">Get Involved</a></li>
         </ul>
       </nav>
     </header>
@@ -157,11 +155,32 @@
         </hgroup>
       </div>
 
-      <!-- Live Status Strip (Phase 3): replaces header status bar, dashboard overlay, mobile panel, and fire-info summary card -->
+      <!-- BOM Fire Weather Warning banner (WEBSITE_ROADMAP Workstream 7).
+           Honest-failure-state (§2.1): hidden by default and only shown when
+           fire-weather-warning.js confirms a live "Southern Ranges" warning —
+           a fetch error must never flip this to visible, and an absent
+           warning is the normal state, not an error. See public/js/fire-weather-warning.js. -->
+      <div id="fireWeatherWarningBanner" class="fire-weather-warning-banner" role="alert" hidden>
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>
+          <p class="fire-weather-warning-banner__title">
+            Fire Weather Warning &mdash; Southern Ranges
+          </p>
+          <p id="fireWeatherWarningText" class="fire-weather-warning-banner__text"></p>
+          <p class="fire-weather-warning-banner__source">Source: Bureau of Meteorology</p>
+        </div>
+      </div>
+
+      <!-- Live Status Strip (Phase 3): replaces header status bar, dashboard overlay, mobile panel, and fire-info summary card.
+           aria-live="polite" (roadmap Workstream 1): screen-reader users must hear
+           escalations (a rating change, a new incident, the warning level moving)
+           without needing to re-visit the strip. -->
       <section
         id="liveStatusStrip"
         class="live-status-strip"
         aria-label="Current fire status for our area"
+        aria-live="polite"
+        aria-atomic="false"
       >
         <!-- Cell 1: Fire Danger Rating -->
         <article
@@ -175,10 +194,18 @@
           </p>
           <div id="fireDangerRatingCell" class="strip-cell__value tabular-nums">Loading…</div>
           <p id="fireDangerMessage" class="strip-cell__sub">Fetching latest data…</p>
+          <!-- BOM wind/temp/humidity, Canberra Airport (nearest station) —
+               WEBSITE_ROADMAP Workstream 7. Honest-failure-state: shows
+               "Wind data unavailable" rather than blank or a stale-looking
+               default on fetch failure. See public/js/wind-observations.js. -->
+          <p id="windObservationsSub" class="strip-cell__sub strip-cell__sub--wind">
+            Checking wind conditions&hellip;
+          </p>
         </article>
 
         <!-- Cell 2: Active Incidents -->
         <article
+          id="incidentsStripCell"
           class="strip-cell strip-cell--incidents"
           role="group"
           aria-label="Active Incidents"
@@ -189,21 +216,38 @@
           </p>
           <div class="strip-cell__value tabular-nums"><span id="incidentTotalCount">0</span></div>
           <div id="incidentCountCell" class="strip-cell__breakdown"></div>
-          <p id="incidentCountLabel" class="strip-cell__sub">No active incidents in our area</p>
+          <p id="incidentCountLabel" class="strip-cell__sub">
+            Checking for active incidents&hellip;
+          </p>
+          <!-- Nearest incident (roadmap LATER list, scoped down from Bet 1):
+               opt-in only — no geolocation prompt until this button is
+               clicked, and no generated guidance, just a distance figure and
+               the incident's own official fields. See
+               public/js/nearest-incident.js. -->
+          <button type="button" id="nearestIncidentBtn" class="strip-cell__cta-btn" hidden>
+            Show distance to nearest incident
+          </button>
+          <p id="nearestIncidentResult" class="strip-cell__sub" hidden></p>
         </article>
 
-        <!-- Cell 3: Warning Level -->
+        <!-- Cell 3: Warning Level. data-state and text are wired from live
+             incident data in emergency-data.js (never hard-coded — see
+             WEBSITE_ROADMAP.md §2.2). -->
         <article
+          id="warningStripCell"
           class="strip-cell strip-cell--warning"
           role="group"
           aria-label="Current Warning Level"
           tabindex="0"
+          data-state="none"
         >
           <p class="strip-cell__label">
             <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Warning Level
           </p>
-          <div id="stripWarningLevel" class="strip-cell__value">None</div>
-          <p class="strip-cell__sub">No current warning</p>
+          <div id="stripWarningLevel" class="strip-cell__value">Checking&hellip;</div>
+          <p id="stripWarningLevelSub" class="strip-cell__sub">
+            Checking for current warnings&hellip;
+          </p>
         </article>
 
         <!-- Cell 4: Controlled Burn requirements — dynamic: escalates from
@@ -217,7 +261,10 @@
           tabindex="0"
         >
           <p class="strip-cell__label">
-            <i class="fas fa-fire" aria-hidden="true"></i> Controlled Burn
+            <span id="stripBurnIcon" class="icon-prohibit-slot" aria-hidden="true"
+              ><i class="fas fa-fire"></i
+            ></span>
+            Controlled Burn
           </p>
           <div id="stripBurnStatus" class="strip-cell__value tabular-nums">Loading&hellip;</div>
           <p id="stripBurnSub" class="strip-cell__sub">
@@ -231,6 +278,16 @@
             class="strip-cell__cta"
             >Notify RFS &rarr;</a
           >
+          <button
+            type="button"
+            id="permitDetailsToggle"
+            class="strip-cell__details-toggle"
+            aria-expanded="false"
+            aria-controls="permitDetails"
+          >
+            Permit &amp; burning rules
+            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          </button>
         </article>
 
         <!-- Cell 5: Map context / full-map CTA -->
@@ -248,83 +305,83 @@
         </article>
       </section>
 
+      <!-- Permits & Burning, Plain English — relevant year-round regardless
+           of today's status, so it lives as an expandable detail triggered
+           from the Controlled Burn cell above, rather than its own
+           always-scrolled-past card or tab section. Full site width (not
+           squeezed into that cell's own narrow column) since a cramped
+           column made any reasonable amount of content very tall.
+           Populated by dynamicContent.js from permitsContent.md. -->
+      <div id="permitDetails" class="strip-details-panel" hidden>
+        <div id="permitsContent"></div>
+      </div>
+
+      <!-- Freshness + trust line (roadmap Workstream 1): every load-bearing
+           number above came from a live fetch, never assume that; say when it
+           last worked and where the authoritative source is. -->
+      <p id="statusStripMeta" class="strip-meta">
+        <span id="statusStripTimestamp" class="strip-meta__timestamp"
+          >Checking for updates&hellip;</span
+        >
+        <span class="strip-meta__divider" aria-hidden="true">&middot;</span>
+        <span class="strip-meta__trust"
+          >Local summary, may be delayed &mdash; official warnings at
+          <a
+            href="https://www.nsw.gov.au/emergency/hazards-near-me-app"
+            target="_blank"
+            rel="noopener"
+            >Hazards Near Me</a
+          >
+          or call <strong>000</strong> in an emergency.</span
+        >
+      </p>
+
+      <!-- Admin-published alert banner (roadmap Bet 3): a short, human-written
+           update from the brigade — additive to the strip above, not part of
+           the honest-failure-state system, so it's hidden entirely when
+           there's no active banner rather than showing an empty/error state.
+           Populated by public/js/alert-banner.js from a public GET on
+           /api/content/alertBanner. -->
+      <p id="alertBanner" class="alert-banner" hidden>
+        <span id="alertBannerText" class="alert-banner__text"></span>
+      </p>
+
       <!-- Grid section with article cards -->
       <div class="container-fluid content-container">
-        <!-- Tabbed Content Navigation -->
-        <div class="content-tabs-container">
-          <!-- Tab Navigation (Desktop/Tablet) -->
-          <div class="tab-navigation" role="tablist" aria-label="Main content sections">
-            <button
-              class="tab-btn active"
-              role="tab"
-              aria-selected="true"
-              aria-controls="fire-info-tab"
-              id="tab-fire-info"
-              data-tab="fire-info"
-              tabindex="0"
+        <!-- Fire Information: its own static section, not part of the
+             carousel below — kept collapsed to a one-line summary by default
+             so it never duplicates the KPI tiles already in the live status
+             strip above, and expands to the full map + incident detail the
+             moment there's an active incident (fire-info-section.js), or on
+             manual toggle at any time. -->
+        <section class="fire-info-section" id="fireInfoSection">
+          <button
+            type="button"
+            class="fire-info-section__summary"
+            id="fireInfoToggle"
+            aria-expanded="false"
+            aria-controls="fireInfoDetail"
+          >
+            <i class="fas fa-fire" aria-hidden="true"></i>
+            <span id="fireInfoSummaryText"
+              >Fire Information &mdash; checking for active incidents&hellip;</span
             >
-              <i class="fas fa-fire" aria-hidden="true"></i>
-              <span>Fire Information</span>
-            </button>
-            <button
-              class="tab-btn"
-              role="tab"
-              aria-selected="false"
-              aria-controls="prepare-tab"
-              id="tab-prepare"
-              data-tab="prepare"
-              tabindex="-1"
-            >
-              <i class="fas fa-shield-alt" aria-hidden="true"></i>
-              <span>Prepare</span>
-            </button>
-            <button
-              class="tab-btn"
-              role="tab"
-              aria-selected="false"
-              aria-controls="membership-tab"
-              id="tab-membership"
-              data-tab="membership"
-              tabindex="-1"
-            >
-              <i class="fas fa-users" aria-hidden="true"></i>
-              <span>Membership</span>
-            </button>
-            <button
-              class="tab-btn"
-              role="tab"
-              aria-selected="false"
-              aria-controls="events-tab"
-              id="tab-events"
-              data-tab="events"
-              tabindex="-1"
-            >
-              <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-              <span>Events</span>
-            </button>
-          </div>
+            <i class="fas fa-chevron-down fire-info-section__chevron" aria-hidden="true"></i>
+          </button>
+          <div class="fire-info-section__detail" id="fireInfoDetail" hidden>
+            <article id="info">
+              <h2>Fire Information in Our Area</h2>
+              <div class="tab-layout">
+                <div class="tab-layout__main">
+                  <div id="fireDangerTableContainer"></div>
+                  <div id="fireInfoContent"></div>
 
-          <!-- Tab Content Panels -->
-          <div class="tab-content-container">
-            <!-- Fire Information Tab -->
-            <div
-              class="tab-panel active"
-              role="tabpanel"
-              id="fire-info-tab"
-              aria-labelledby="tab-fire-info"
-            >
-              <div class="accordion-header mobile-only" data-accordion="fire-info">
-                <i class="fas fa-fire"></i>
-                <span>Fire Information</span>
-                <i class="fas fa-chevron-down accordion-icon"></i>
-              </div>
-              <div class="accordion-content" data-content="fire-info">
-                <article id="info">
-                  <h2>Fire Information in Our Area</h2>
-                  <div class="tab-layout">
-                    <div class="tab-layout__main">
-                      <div id="fireDangerTableContainer"></div>
-                      <div id="fireInfoContent"></div>
+                  <!-- Map + incident list side by side: sized for the normal
+                       case (1 incident most likely, up to ~5 in a genuinely
+                       busy period — more is unusual and scrolls within its
+                       own column rather than distorting the layout). -->
+                  <div class="fire-info-body">
+                    <div class="fire-info-map-col">
                       <!-- Incident map (moved from summary card in Phase 3) -->
                       <div class="fire-info-map" id="fireInfoMapContainer">
                         <div class="map-toolbar">
@@ -371,203 +428,123 @@
                         </li>
                       </ul>
                       <a href="#info" class="map-legend-link">View full incident map &rarr;</a>
-                      <div id="fireInfoTableContainer" class="grid-container"></div>
                     </div>
-                    <aside class="quick-links">
-                      <p class="quick-links__kicker">Quick Links</p>
-                      <a
-                        href="https://www.rfs.nsw.gov.au"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fas fa-globe" aria-hidden="true"></i>NSW RFS Website</a
-                      >
-                      <a
-                        href="https://www.nsw.gov.au/emergency/hazards-near-me-app"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fas fa-mobile-alt" aria-hidden="true"></i>Hazards Near Me NSW
-                        App</a
-                      >
-                      <a
-                        href="https://www.rfs.nsw.gov.au/fire-information/BFDP"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fas fa-ban" aria-hidden="true"></i>Total Fire Ban Info</a
-                      >
-                      <div class="quick-links__row quick-links__row--emphasis">
-                        <i class="fas fa-phone" aria-hidden="true"></i>Emergency &mdash; always call
-                        000
-                      </div>
-                    </aside>
-                  </div>
-                </article>
-              </div>
-            </div>
-
-            <!-- Prepare Tab -->
-            <div class="tab-panel" role="tabpanel" id="prepare-tab" aria-labelledby="tab-prepare">
-              <div class="accordion-header mobile-only" data-accordion="prepare">
-                <i class="fas fa-shield-alt"></i>
-                <span>Prepare</span>
-                <i class="fas fa-chevron-down accordion-icon"></i>
-              </div>
-              <div class="accordion-content" data-content="prepare">
-                <article id="prepare">
-                  <h2>Prepare for Bushfires</h2>
-                  <div class="tab-layout">
-                    <div class="tab-layout__main">
-                      <img
-                        src="/Images/prepare.jpeg"
-                        alt="Prepare for Bushfires"
-                        class="tab-layout__image"
-                      />
-                      <div id="prepareContent"></div>
+                    <div class="fire-info-incidents-col">
+                      <h3 class="fire-info-incidents-col__heading">Active Incidents</h3>
+                      <div id="fireInfoTableContainer" class="incident-list"></div>
                     </div>
-                    <aside class="quick-links">
-                      <p class="quick-links__kicker">Quick Links</p>
-                      <a
-                        href="https://www.myfireplan.com.au"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fas fa-clipboard-list" aria-hidden="true"></i>Make Your Bush Fire
-                        Survival Plan</a
-                      >
-                      <a
-                        href="https://www.rfs.nsw.gov.au/__data/assets/pdf_file/0003/36597/BFSP-Complete.pdf"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fas fa-file-pdf" aria-hidden="true"></i>Download Survival Plan
-                        PDF</a
-                      >
-                      <a
-                        href="https://www.rfs.nsw.gov.au/notify"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fas fa-file-signature" aria-hidden="true"></i>Notify a Burn /
-                        Apply for a Fire Permit</a
-                      >
-                    </aside>
                   </div>
-                </article>
-              </div>
-            </div>
-
-            <!-- Membership Tab -->
-            <div
-              class="tab-panel"
-              role="tabpanel"
-              id="membership-tab"
-              aria-labelledby="tab-membership"
-            >
-              <div class="accordion-header mobile-only" data-accordion="membership">
-                <i class="fas fa-users"></i>
-                <span>Membership</span>
-                <i class="fas fa-chevron-down accordion-icon"></i>
-              </div>
-              <div class="accordion-content" data-content="membership">
-                <article id="membership">
-                  <h2>Membership</h2>
-                  <div class="tab-layout">
-                    <div class="tab-layout__main">
-                      <div id="membershipContent"></div>
-                      <div id="membershipSection">
-                        <h4>Upcoming Training</h4>
-                        <div id="membershipCalendar" class="calendar-widget"></div>
-                      </div>
-                    </div>
-                    <aside class="quick-links">
-                      <p class="quick-links__kicker">Quick Links</p>
-                      <a
-                        href="https://nswrfsprod.service-now.com/rfsembr?id=embr_rfs_role_explorer"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fas fa-user-plus" aria-hidden="true"></i>Explore Roles &amp;
-                        Apply for Membership</a
-                      >
-                      <a
-                        href="https://www.rfs.nsw.gov.au"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fas fa-globe" aria-hidden="true"></i>NSW RFS Website &mdash;
-                        Volunteering</a
-                      >
-                      <div class="quick-links__row">
-                        <i class="fas fa-clock" aria-hidden="true"></i>Visit us Friday nights from
-                        7pm
-                      </div>
-                    </aside>
+                </div>
+                <aside class="quick-links">
+                  <p class="quick-links__kicker">Quick Links</p>
+                  <a
+                    href="https://www.rfs.nsw.gov.au"
+                    target="_blank"
+                    rel="noopener"
+                    class="quick-links__row"
+                    ><i class="fas fa-globe" aria-hidden="true"></i>NSW RFS Website</a
+                  >
+                  <a
+                    href="https://www.nsw.gov.au/emergency/hazards-near-me-app"
+                    target="_blank"
+                    rel="noopener"
+                    class="quick-links__row"
+                    ><i class="fas fa-mobile-alt" aria-hidden="true"></i>Hazards Near Me NSW App</a
+                  >
+                  <a
+                    href="https://www.rfs.nsw.gov.au/fire-information/BFDP"
+                    target="_blank"
+                    rel="noopener"
+                    class="quick-links__row"
+                    ><i class="fas fa-ban" aria-hidden="true"></i>Total Fire Ban Info</a
+                  >
+                  <div class="quick-links__row quick-links__row--emphasis">
+                    <i class="fas fa-phone" aria-hidden="true"></i>Emergency &mdash; always call 000
                   </div>
-                </article>
+                </aside>
               </div>
-            </div>
-
-            <!-- Events Tab -->
-            <div class="tab-panel" role="tabpanel" id="events-tab" aria-labelledby="tab-events">
-              <div class="accordion-header mobile-only" data-accordion="events">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Events</span>
-                <i class="fas fa-chevron-down accordion-icon"></i>
-              </div>
-              <div class="accordion-content" data-content="events">
-                <article id="events">
-                  <h2>Upcoming Events</h2>
-                  <div class="tab-layout">
-                    <div class="tab-layout__main">
-                      <div id="eventsContent"></div>
-                      <figure class="tab-layout__figure">
-                        <img
-                          src="/Images/communityEvent.jpeg"
-                          alt="The brigade at the donation of the Black Summer Bungendore Fridge"
-                          class="tab-layout__image"
-                        />
-                        <figcaption>
-                          The brigade at the donation of the Black Summer Bungendore Fridge
-                        </figcaption>
-                      </figure>
-                      <div id="communityEventsSection">
-                        <h4>Community Events</h4>
-                        <div id="communityEventsCalendar" class="calendar-widget"></div>
-                      </div>
-                    </div>
-                    <aside class="quick-links">
-                      <p class="quick-links__kicker">Quick Links</p>
-                      <button
-                        type="button"
-                        id="eventsContactBtn"
-                        class="contact-trigger quick-links__row quick-links__row--btn"
-                      >
-                        <i class="fas fa-envelope" aria-hidden="true"></i>Contact Us
-                      </button>
-                      <a
-                        href="https://facebook.com/BungendoreRFS"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fab fa-facebook" aria-hidden="true"></i>Follow us on Facebook</a
-                      >
-                      <a
-                        href="https://instagram.com/BungendoreRFS"
-                        target="_blank"
-                        rel="noopener"
-                        class="quick-links__row"
-                        ><i class="fab fa-instagram" aria-hidden="true"></i>Follow us on
-                        Instagram</a
-                      >
-                    </aside>
-                  </div>
-                </article>
-              </div>
-            </div>
+            </article>
           </div>
-        </div>
+        </section>
+
+        <!-- Prepare / Membership / Events awareness carousel (Story Rail) —
+             built entirely from admin-managed cards by
+             public/js/awareness-cards.js. No tab metaphor: cards from all
+             three pillars rotate together, with a coloured pillar chip for
+             wayfinding, and any imminent training date woven in more often
+             than evergreen content. -->
+        <div id="awarenessCarousel"></div>
+
+        <!-- Consolidated Quick Links (Prepare/Membership/Events) — these used
+             to live in each tab's own sidebar; now that content rotates
+             through the carousel above, a link buried in one card would take
+             several clicks/waits to find again. Kept as one always-visible,
+             full-width band instead, so it never narrows the carousel back
+             down to a sidebar layout. -->
+        <section class="quick-links quick-links--band" aria-label="Quick links">
+          <p class="quick-links__kicker">Quick Links</p>
+          <div class="quick-links__grid">
+            <a
+              href="https://www.myfireplan.com.au"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-clipboard-list" aria-hidden="true"></i>Make Your Bush Fire Survival
+              Plan</a
+            >
+            <a
+              href="https://www.rfs.nsw.gov.au/__data/assets/pdf_file/0003/36597/BFSP-Complete.pdf"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-file-pdf" aria-hidden="true"></i>Download Survival Plan PDF</a
+            >
+            <a
+              href="https://www.rfs.nsw.gov.au/notify"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-file-signature" aria-hidden="true"></i>Notify a Burn / Apply for a
+              Fire Permit</a
+            >
+            <a
+              href="https://nswrfsprod.service-now.com/rfsembr?id=embr_rfs_role_explorer"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-user-plus" aria-hidden="true"></i>Explore Roles &amp; Apply for
+              Membership</a
+            >
+            <a
+              href="https://www.rfs.nsw.gov.au"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fas fa-globe" aria-hidden="true"></i>NSW RFS Website &mdash;
+              Volunteering</a
+            >
+            <div class="quick-links__row">
+              <i class="fas fa-clock" aria-hidden="true"></i>Visit us Friday nights from 7pm
+            </div>
+            <button type="button" class="contact-trigger quick-links__row quick-links__row--btn">
+              <i class="fas fa-envelope" aria-hidden="true"></i>Contact Us
+            </button>
+            <a
+              href="https://facebook.com/BungendoreRFS"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fab fa-facebook" aria-hidden="true"></i>Follow us on Facebook</a
+            >
+            <a
+              href="https://instagram.com/BungendoreRFS"
+              target="_blank"
+              rel="noopener"
+              class="quick-links__row"
+              ><i class="fab fa-instagram" aria-hidden="true"></i>Follow us on Instagram</a
+            >
+          </div>
+        </section>
       </div>
     </main>
 
@@ -618,20 +595,63 @@
             incidents.
           </p>
         </section>
+        <!-- Roadmap Workstream 2: an info line + emergency radio fallback needs to be on
+             every page, not just findable from the fire-danger strip. -->
+        <section>
+          <header>
+            <i class="fas fa-phone-volume" aria-hidden="true"></i>
+            <strong> During a Fire</strong>
+          </header>
+          <p>
+            NSW RFS Bush Fire Info Line:
+            <a href="tel:1800679737">1800 679 737</a><br />
+            ABC Radio Canberra: <strong>666 AM</strong><br />
+            Emergency: always call <strong>000</strong>
+          </p>
+        </section>
+        <!-- Roadmap Workstream 5: lead with TIS National rather than attempting our own
+             translations, which rot; link the RFS's professionally translated resources. -->
+        <section>
+          <header>
+            <i class="fas fa-language" aria-hidden="true"></i>
+            <strong> Other Languages</strong>
+          </header>
+          <p>
+            Need an interpreter? Call TIS National on
+            <a href="tel:131450">131 450</a> and ask for the NSW Rural Fire Service.<br />
+            <a
+              href="https://www.rfs.nsw.gov.au/resources/factsheets/translated-fact-sheets"
+              target="_blank"
+              rel="noopener"
+              >Translated bush fire fact sheets &rarr;</a
+            >
+          </p>
+        </section>
       </div>
     </footer>
 
     <!-- Modal -->
-    <dialog id="contactModal">
+    <dialog id="contactModal" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
       <article>
         <header>
-          <button class="close" aria-label="Close" rel="prev"></button>
-          <h2>Contact Us</h2>
+          <button type="button" class="close" aria-label="Close" rel="prev"></button>
+          <h2 id="contactModalTitle">Contact Us</h2>
         </header>
-        <form id="contactForm">
-          <label>If you'd like more information we can reach out to you</label>
+        <form id="contactForm" novalidate>
+          <!-- Announced to screen readers as validation errors appear/change
+               (WCAG 2.2 AA 3.3.1/4.1.3) — kept empty and hidden until needed. -->
+          <div id="contactFormErrors" class="form-errors" aria-live="polite" hidden></div>
+          <p>If you'd like more information we can reach out to you</p>
           <fieldset>
-            <input name="name" placeholder="Name" autocomplete="name" required />
+            <label for="contactNameInput" class="visually-hidden">Name</label>
+            <input
+              id="contactNameInput"
+              name="name"
+              placeholder="Name"
+              autocomplete="name"
+              required
+            />
+            <label for="emailInput" class="visually-hidden">Email</label>
             <input
               id="emailInput"
               type="email"
@@ -640,15 +660,23 @@
               autocomplete="email"
               required
             />
-            <input name="phone" placeholder="Phone" autocomplete="tel" />
+            <label for="contactPhoneInput" class="visually-hidden">Phone</label>
+            <input id="contactPhoneInput" name="phone" placeholder="Phone" autocomplete="tel" />
+            <label for="contactMessageInput" class="visually-hidden"
+              >What would you like to know?</label
+            >
             <textarea
+              id="contactMessageInput"
               name="message"
               placeholder="what would you like to know?"
-              aria-label="What would you like to know?"
               required
             ></textarea>
             <!-- Honeypot field for spam prevention - hidden from users -->
+            <label for="contactWebsiteInput" class="visually-hidden" aria-hidden="true"
+              >Website (leave blank)</label
+            >
             <input
+              id="contactWebsiteInput"
               name="website"
               type="text"
               placeholder="Website"
@@ -666,11 +694,17 @@
     </dialog>
 
     <!-- Modal Structure -->
-    <dialog id="eventModal">
+    <dialog id="eventModal" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
       <article class="modal-content">
         <header>
-          <button id="eventModalClose" class="close" aria-label="Close" rel="prev"></button>
-          <h2><i class="fas fa-calendar-alt"></i> Event</h2>
+          <button
+            type="button"
+            id="eventModalClose"
+            class="close"
+            aria-label="Close"
+            rel="prev"
+          ></button>
+          <h2 id="eventModalTitle"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Event</h2>
         </header>
         <div id="modalEventContent"></div>
       </article>
@@ -686,11 +720,32 @@
   <!-- Load my own scripts -->
   <script src="js/error-handler.js" defer></script>
   <script src="js/emergency-dashboard.js" defer></script>
-  <script src="js/tabs-accordion.js" defer></script>
   <script src="js/main.js" defer></script>
+  <script src="js/emergency-data.js" defer></script>
+  <script src="js/fire-weather-warning.js" defer></script>
+  <script src="js/wind-observations.js" defer></script>
+  <script src="js/alert-banner.js" defer></script>
+  <script src="js/nearest-incident.js" defer></script>
   <script src="js/map.js" defer></script>
   <script src="js/modal-utils.js" defer></script>
-  <script src="js/calendar.js" defer></script>
   <script src="js/contact.js" defer></script>
   <script src="js/dynamicContent.js" defer></script>
+  <script src="js/fire-info-section.js" defer></script>
+  <script src="js/awareness-cards.js" defer></script>
+
+  <!-- Service worker registration (Bet 2, WEBSITE_ROADMAP.md §4): app-shell +
+       last-known-good API caching so the emergency status strip still has
+       something honest to show when the client is fully offline. Feature-
+       detected and deliberately outside the deferred script chain above so a
+       registration failure (unsupported browser, disabled SW) can never block
+       or delay the page's own scripts. -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function (error) {
+          console.warn("Service worker registration failed:", error);
+        });
+      });
+    }
+  </script>
 </html>

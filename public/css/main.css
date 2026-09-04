@@ -105,6 +105,37 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Utility: visually hidden but still announced by screen readers (WCAG 2.2 AA
+   1.3.1/4.1.2) — used for <label>s that would otherwise duplicate visible
+   placeholder text, e.g. the contact form's inputs. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Contact form validation errors: an aria-live region, hidden until a
+   validation message is set (WCAG 2.2 AA 3.3.1). */
+.form-errors {
+  color: var(--rfs-core-red);
+  background-color: rgba(229, 40, 27, 0.08);
+  border: 1px solid var(--rfs-core-red);
+  border-radius: var(--pico-border-radius);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+  font-size: 0.9rem;
+}
+
+.form-errors:empty {
+  display: none;
+}
+
 /* ── Skip link (Phase 7) ─────────────────────────────────────────────────────
    Visually hidden until focused; moves into view for keyboard users.
    Position: fixed so it works regardless of scroll state. */
@@ -343,10 +374,10 @@ h3 {
   color: var(--text-color-dark); /* Changed from --rfs-dark-grey */
 }
 
-/* Tab content articles (Fire Information / Prepare / Membership / Events) —
-   "Clear Skies" refresh drops the old per-section coloured banner + card
-   chrome in favour of a plain heading and a two-column layout (see below). */
-.tab-panel article {
+/* Fire Information article — "Clear Skies" refresh drops the old coloured
+   banner + card chrome in favour of a plain heading and a two-column
+   layout (see below). */
+#info {
   padding: 0;
   margin: 0;
   border: none;
@@ -356,7 +387,7 @@ h3 {
   overflow: visible;
 }
 
-.tab-panel article > h2 {
+#info > h2 {
   font-size: 26px;
   font-weight: 800;
   color: var(--clear-body-text);
@@ -365,7 +396,7 @@ h3 {
   border-bottom: none;
 }
 
-/* Main content column + Quick Links sidebar, shared by all four tabs */
+/* Main content column + Quick Links sidebar */
 .tab-layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -407,60 +438,19 @@ h3 {
   margin-top: var(--space-xs);
 }
 
-/* "Prepare" tab action-plan steps — numbered red circle badges at the same
-   compact scale as the rest of the Clear Skies page (.quick-links,
-   .strip-cell), replacing the browser's default blockquote/list styling.
-   Scoped to #prepareContent since that's the only markdown-rendered block
-   using this ol/li pattern. */
-#prepareContent h3 {
+/* Heading style for permitsContent's markdown-rendered ### headings. */
+#permitsContent h3 {
   font-size: var(--font-size-h3);
   font-weight: 800;
   color: var(--clear-body-text);
-  margin: var(--space-lg) 0 var(--space-sm);
+  margin: 0 0 var(--space-sm);
 }
 
-#prepareContent ol {
-  list-style: none;
-  counter-reset: step;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-  margin: 0 0 var(--space-lg);
-  padding: 0;
-}
-
-/* Badge is an absolutely-positioned ::before rather than a flex sibling —
-   a block-level heading followed by plain text inside a flex item gets
-   blockified into two separate side-by-side flex items instead of
-   stacking, so plain block flow (with padding to clear the badge) is used
-   here instead. */
-#prepareContent ol li {
-  counter-increment: step;
-  position: relative;
-  padding-left: 40px;
-  min-height: 28px;
-}
-
-#prepareContent ol li::before {
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: var(--rfs-core-red);
-  color: var(--text-color-light);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 28px;
-  text-align: center;
-}
-
-#prepareContent ol li strong:first-child {
-  display: block;
-  color: var(--clear-body-text);
-  margin-bottom: 2px;
+#permitsContent {
+  background-color: var(--clear-neutral-cell-bg);
+  border-radius: 12px;
+  padding: var(--space-lg) var(--space-xl);
+  margin-top: var(--space-xl);
 }
 
 .quick-links {
@@ -468,6 +458,16 @@ h3 {
   border-radius: 10px;
   padding: 20px 20px 16px;
   align-self: start;
+  /* The Fire Information sidebar is naturally much shorter than the main
+     column once there's a busy incident list beside the map — sticky keeps
+     it in view while scrolling past that instead of leaving it stranded
+     above a lot of blank space below. */
+  position: sticky;
+  top: var(--space-lg);
+}
+
+.quick-links--band {
+  position: static;
 }
 
 .quick-links__kicker {
@@ -523,6 +523,37 @@ button.quick-links__row:focus {
 
 .quick-links__row--emphasis i {
   color: var(--rfs-core-red);
+}
+
+/* Consolidated Prepare/Membership/Events links, full width below the
+   carousel — pill chips in a wrapping row rather than the sidebar's
+   vertical underlined list, so this reads as one glanceable band instead
+   of narrowing the carousel back down into a sidebar layout. */
+.quick-links--band {
+  align-self: auto;
+  margin: var(--space-xl) 0;
+  padding: var(--space-lg) var(--space-xl);
+}
+
+.quick-links__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-md);
+}
+
+.quick-links--band .quick-links__row {
+  width: auto;
+  padding: 0.6em 1.1em;
+  border: 1px solid var(--clear-hairline-strong);
+  border-radius: 999px;
+  background: var(--clear-neutral-cell-bg);
+}
+
+.quick-links--band a.quick-links__row:hover,
+.quick-links--band a.quick-links__row:focus,
+.quick-links--band button.quick-links__row:hover,
+.quick-links--band button.quick-links__row:focus {
+  border-color: var(--rfs-core-red);
 }
 
 /* Incident map colour legend, next to the Fire Information map */
@@ -835,11 +866,14 @@ a:focus {
      dark-mode adjustment is needed beyond the existing --hero-bg image swap. */
 }
 
-/* Map Container Style */
+/* Map Container Style — height comes from .map-layout's flex-driven size
+   (see .fire-info-map-col) so it grows to match a taller incident list
+   instead of sitting at a fixed height with a gap beside it; min-height is
+   the floor for the common one-incident (or no-incident) case. */
 #map {
-  height: 400px; /* Default height for the map */
-  width: 100%; /* Map takes full width of its container */
-  margin-bottom: var(--space-lg); /* Add some space below the map */
+  height: 100%;
+  min-height: 280px;
+  width: 100%;
 }
 
 /* ─── Live Status Strip (Phase 3) ──────────────────────────────────────────── */
@@ -892,6 +926,36 @@ a:focus {
 
 .strip-cell__label i {
   margin-right: 0.25rem;
+}
+
+/* Total Fire Ban indicator (roadmap feedback: TFB is an icon, not a colour
+   scale — the standard pictogram is a black flame inside a red "no" circle,
+   as used on real TFB signage). Composed from two free Font Awesome glyphs
+   stacked with CSS rather than a hand-drawn asset: fa-ban is a hollow red
+   ring, so overlaying it on fa-fire reproduces the prohibition symbol without
+   a new icon file. updateControlledBurnCell() (main.js) swaps this in only
+   while a Total Fire Ban is actually in effect; otherwise it's a plain flame. */
+.icon-prohibit-slot {
+  margin-right: 0.25rem;
+  display: inline-block;
+}
+
+.icon-prohibit {
+  position: relative;
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+}
+
+.icon-prohibit i {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+}
+
+.icon-prohibit .icon-prohibit__ring {
+  color: var(--rfs-core-red);
 }
 
 .strip-cell__value {
@@ -956,6 +1020,63 @@ a:focus {
 .strip-cell__cta:hover,
 .strip-cell__cta:focus {
   text-decoration: underline;
+}
+
+/* Nearest-incident opt-in button — same visual language as .strip-cell__cta,
+   reset for a real <button> so it doesn't pick up default button chrome. */
+.strip-cell__cta-btn {
+  all: unset;
+  cursor: pointer;
+  color: #c42216;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.strip-cell__cta-btn:hover,
+.strip-cell__cta-btn:focus {
+  text-decoration: underline;
+}
+
+/* Controlled Burn card's "Permit & burning rules" expandable detail — always
+   relevant regardless of today's status, so it lives here rather than as its
+   own always-scrolled-past card. */
+.strip-cell__details-toggle {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--clear-text-secondary);
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+.strip-cell__details-toggle:hover,
+.strip-cell__details-toggle:focus {
+  color: #c42216;
+}
+.strip-cell__details-toggle i {
+  transition: transform 0.2s ease;
+}
+.strip-cell__details-toggle[aria-expanded="true"] i {
+  transform: rotate(180deg);
+}
+/* Full site width, not squeezed into the Controlled Burn cell's own narrow
+   column — a cramped column made any reasonable amount of content read as
+   very tall. Sits directly under the strip so it reads as an expansion of
+   it rather than an unrelated block. */
+.strip-details-panel {
+  background-color: var(--pico-card-background-color);
+  border-bottom: 1px solid var(--clear-hairline);
+  padding: var(--space-lg) var(--space-xxl);
+}
+.strip-details-panel #permitsContent {
+  background: none;
+  padding: 0;
+  margin-top: 0;
+  max-width: 900px;
 }
 
 /* ── Fire Danger strip cell colour bands (Cell 1) ────────────────────────────
@@ -1041,6 +1162,74 @@ a:focus {
   color: var(--clear-neutral-cell-fg);
 }
 
+/* Cell 3 (Warning Level) escalation — wired from live incident data in
+   emergency-data.js (roadmap §2.2: this was previously a hard-coded "None").
+   Colours are the official Australian Warning System (AWS) palette, not the
+   Fire Danger Rating's AFDRS palette (§961 below) — the two systems are
+   distinct and must not be blended into a single invented scale. These three
+   hexes must stay identical to AREA_FILL_COLOUR in map.js, which samples the
+   same colours from the official advice/watch-and-act/emergency-warning icon
+   assets. data-state lives on the article itself (set directly by JS),
+   unlike the Fire Danger/Burn cells which target a child element via :has(). */
+.strip-cell--warning[data-state="advice"] {
+  background-color: #fbe032; /* AWS Advice yellow */
+}
+.strip-cell--warning[data-state="advice"] .strip-cell__label,
+.strip-cell--warning[data-state="advice"] #stripWarningLevel,
+.strip-cell--warning[data-state="advice"] #stripWarningLevelSub {
+  color: var(--rfs-black);
+}
+
+.strip-cell--warning[data-state="watch-and-act"] {
+  background-color: #ff7900; /* AWS Watch and Act orange */
+}
+.strip-cell--warning[data-state="watch-and-act"] .strip-cell__label,
+.strip-cell--warning[data-state="watch-and-act"] #stripWarningLevel,
+.strip-cell--warning[data-state="watch-and-act"] #stripWarningLevelSub {
+  color: var(--rfs-black);
+}
+
+.strip-cell--warning[data-state="emergency-warning"] {
+  background-color: #d6001c; /* AWS Emergency Warning red — not --rfs-core-red,
+                                 which is the brand/AFDRS red for a different system */
+}
+.strip-cell--warning[data-state="emergency-warning"]:hover {
+  background-color: #b40017;
+}
+.strip-cell--warning[data-state="emergency-warning"] .strip-cell__label,
+.strip-cell--warning[data-state="emergency-warning"] #stripWarningLevel,
+.strip-cell--warning[data-state="emergency-warning"] #stripWarningLevelSub {
+  color: var(--rfs-white);
+}
+
+/* Degraded/failed data-fetch state (roadmap §2.1) — applies to the
+   Incidents and Warning Level cells whenever the live fetch fails. Amber,
+   matching the Controlled Burn "high" treatment, so a failure always reads
+   as caution and is never mistaken for the calm "nothing happening" state. */
+.strip-cell[data-state="degraded"] {
+  background-color: var(--clear-incident-bg);
+}
+.strip-cell[data-state="degraded"] .strip-cell__label,
+.strip-cell[data-state="degraded"] .strip-cell__value,
+.strip-cell[data-state="degraded"] .strip-cell__sub {
+  color: var(--clear-incident-fg);
+}
+
+/* Offline last-known-good state (Bet 2, roadmap §4) — distinct from
+   "degraded" (server unreachable but the browser might still be online):
+   this is specifically "you appear to be offline, here is the last data
+   this device actually loaded". Same amber caution language as degraded so
+   it still reads as "not live", but the copy in emergency-data.js is more
+   specific and reassuring than the generic can't-reach-server message. */
+.strip-cell[data-state="offline"] {
+  background-color: var(--clear-incident-bg);
+}
+.strip-cell[data-state="offline"] .strip-cell__label,
+.strip-cell[data-state="offline"] .strip-cell__value,
+.strip-cell[data-state="offline"] .strip-cell__sub {
+  color: var(--clear-incident-fg);
+}
+
 /* Cell 4 (Controlled Burn) escalation — same colour language as the Fire
    Danger cell: amber once fire danger reaches High (permits may be
    suspended), full alert red when a Total Fire Ban is actually in effect
@@ -1081,6 +1270,50 @@ a:focus {
   font-weight: 600;
 }
 
+/* Freshness + trust line (roadmap Workstream 1) — thin bar directly under the
+   strip: an "as-at" timestamp so a stale page is visible as stale, plus a
+   permanent pointer to the authoritative sources. */
+.strip-meta {
+  margin: 0;
+  padding: 8px 24px;
+  background-color: var(--clear-neutral-cell-bg);
+  color: var(--clear-text-secondary);
+  font-size: 12px;
+  text-align: center;
+  border-bottom: 1px solid var(--clear-hairline);
+}
+
+.strip-meta__divider {
+  margin: 0 0.5em;
+}
+
+/* Admin-published alert banner (roadmap Bet 3) — a short brigade-authored
+   update, published from the members' area, that sits directly under the
+   freshness/trust line. Hidden entirely (via the [hidden] attribute set in
+   JS) when there's no active banner, so it never occupies space or reads as
+   an empty status. Reuses the same neutral/amber tokens as the status strip
+   cells above rather than inventing a new colour language — "info" mirrors
+   the calm neutral-cell tint, "warning" mirrors the strip's degraded/high
+   amber treatment. */
+.alert-banner {
+  margin: 0;
+  padding: 12px 24px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--clear-hairline);
+}
+
+.alert-banner[data-severity="info"] {
+  background-color: var(--clear-neutral-cell-bg);
+  color: var(--clear-neutral-cell-fg);
+}
+
+.alert-banner[data-severity="warning"] {
+  background-color: var(--clear-incident-bg);
+  color: var(--clear-incident-fg);
+}
+
 /* Responsive: ≥ 900 px → full 5-column row */
 @media (min-width: 900px) {
   .live-status-strip {
@@ -1119,250 +1352,320 @@ a:focus {
   }
 }
 
-/* Tabbed Content Navigation Styles */
-.content-tabs-container {
+/* Fire Information section — collapsed-by-default summary bar that expands
+   to the full map + detail either on manual toggle or automatically the
+   first time an active incident shows up (fire-info-section.js). Deliberately
+   NOT part of the awareness carousel below, and never duplicates the KPI
+   tiles already in the live status strip above it. */
+.fire-info-section {
   margin-top: var(--space-xl);
   margin-bottom: var(--space-xl);
+  border: 1px solid var(--clear-hairline);
+  border-radius: 12px;
+  /* No overflow:hidden here — it would clip to establish rounded corners,
+     but that also breaks position:sticky for the Quick Links sidebar
+     nested inside .fire-info-section__detail. Corners are rounded on the
+     summary button itself instead (see below). */
 }
 
-/* Tab Navigation (Desktop/Tablet) — underline style */
-.tab-navigation {
+.fire-info-section__summary {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--clear-card-fill);
+  color: var(--clear-body-text);
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.fire-info-section__summary:hover,
+.fire-info-section__summary:focus-visible {
+  background: var(--clear-neutral-cell-bg);
+}
+
+.fire-info-section__summary i:first-child {
+  color: var(--rfs-core-red);
+}
+
+.fire-info-section__chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.fire-info-section__summary[aria-expanded="true"] .fire-info-section__chevron {
+  transform: rotate(180deg);
+}
+
+.fire-info-section__detail {
+  padding: var(--space-xl);
+  border-top: 1px solid var(--clear-hairline);
+}
+
+/* Prepare/Membership/Events awareness carousel (Story Rail) — one card at a
+   time, Instagram/TikTok-style, replacing the old tab/accordion metaphor
+   entirely. See docs/WEBSITE_ROADMAP.md Bet 1 narrowing. */
+.story-rail {
+  margin: var(--space-xxl) 0;
+}
+
+.story-rail__segments {
   display: flex;
   gap: 4px;
-  border-bottom: 2px solid var(--clear-hairline);
-  margin-bottom: var(--space-lg);
-  background: none;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  align-items: stretch;
+  margin-bottom: var(--space-md);
+}
+
+.story-rail__segments button {
+  all: unset;
+  flex: 1;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--clear-hairline);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.story-rail__segments button .fill {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  background: var(--clear-body-text);
+}
+
+.story-rail__segments button.done .fill {
   width: 100%;
+}
+
+.story-rail__stage {
+  position: relative;
+  display: flex;
+  cursor: pointer;
+}
+
+.story-rail__zone {
+  all: unset;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.story-rail__zone--left {
+  left: 0;
+}
+
+.story-rail__zone--right {
+  right: 0;
+}
+
+.story-rail__track {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: var(--space-lg);
+  flex: 1;
+  max-width: 2200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Each visible card is its own styled box — plural on extra-wide screens
+   (.story-rail__track--dual), a single one everywhere else. */
+.story-rail__card {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border-radius: 18px;
+  background: var(--clear-neutral-cell-bg);
+  min-height: clamp(280px, 30vw, 420px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 4rem);
+  gap: clamp(0.6rem, 2vw, 1.5rem);
   box-sizing: border-box;
 }
 
-.tab-btn {
-  flex: none;
-  padding: 14px 20px;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px; /* Sit flush over the container's hairline */
+.story-rail__card--caution {
+  background: var(--clear-incident-bg);
+}
+
+.story-rail__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+/* Icon moves beside the text (instead of stacked above it) once there's
+   enough width to spare — lets the text column genuinely widen with the
+   card rather than floating as a narrow island in a much wider box. */
+@media (min-width: 900px) {
+  .story-rail__card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(2rem, 4vw, 5rem);
+  }
+}
+
+/* Two cards side by side once there's genuinely enough width for a second
+   one to breathe (see getSlotCount() in awareness-cards.js) — each keeps
+   the same icon+text treatment, just narrower, so it reads as its own card
+   rather than a stretched single card with a spare column bolted on. */
+@media (min-width: 1600px) {
+  .story-rail__track--dual .story-rail__card {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    min-height: 480px;
+  }
+}
+
+.story-rail__pillar,
+.story-rail__featured-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.3em 0.8em;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--rfs-core-red);
+}
+
+.story-rail__card[data-pillar="membership"] .story-rail__pillar {
+  background: var(--ui-blue);
+}
+
+.story-rail__card[data-pillar="events"] .story-rail__pillar {
+  background: var(--ui-green);
+}
+
+.story-rail__featured-tag {
+  background: var(--ui-amber);
+  color: #4d3600;
+}
+
+.story-rail__icon {
+  font-size: clamp(2.5rem, 5vw, 5.5rem);
   color: var(--clear-text-secondary);
-  font-size: 14.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  flex: none;
+}
+
+.story-rail__title {
+  font-size: clamp(1.3rem, 1rem + 1.4vw, 2.6rem);
+  font-weight: 800;
+  margin: 0;
+  max-width: 32ch;
+  color: var(--clear-body-text);
+}
+
+.story-rail__card--caution .story-rail__title {
+  color: var(--clear-incident-fg);
+}
+
+.story-rail__body {
+  font-size: clamp(0.95rem, 0.85rem + 0.35vw, 1.35rem);
+  line-height: 1.55;
+  max-width: 80ch;
+  color: var(--clear-body-text);
+}
+
+.story-rail__body ul {
+  padding-left: 1.2em;
+}
+
+.story-rail__body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.story-rail__body th,
+.story-rail__body td {
+  text-align: left;
+  padding: 0.5em 0.8em 0.5em 0;
+  border-bottom: 1px solid var(--clear-hairline);
+  vertical-align: top;
+}
+
+.story-rail__photo {
+  height: clamp(110px, 16vw, 220px);
+  max-width: 480px;
+  width: 100%;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.story-rail__filmstrip {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  margin-top: var(--space-lg);
+  padding-bottom: 0.3rem;
+}
+
+.story-rail__thumb {
+  all: unset;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  background: var(--clear-neutral-cell-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  position: relative;
+  font-size: 1.2rem;
+  color: var(--clear-text-secondary);
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
-.tab-btn i {
-  font-size: 1rem;
+.story-rail__thumb.active {
+  border-color: var(--clear-body-text);
+  color: var(--clear-body-text);
 }
 
-.tab-btn:hover {
-  color: var(--rfs-core-red);
+.story-rail__thumb--caution {
+  background: var(--clear-incident-bg);
 }
 
-.tab-btn.active {
-  color: var(--rfs-core-red);
-  border-bottom-color: var(--rfs-core-red);
-}
-
-.tab-btn:focus {
-  outline: 2px solid var(--rfs-core-red);
-  outline-offset: -2px;
-}
-
-/* Tab Content Panels */
-.tab-content-container {
-  position: relative;
-  min-height: 400px;
-}
-
-.tab-panel {
-  display: none;
-  animation: fadeInTab 0.3s ease-in;
-}
-
-.tab-panel.active {
+.story-rail__pause {
   display: block;
+  margin: var(--space-md) auto 0;
+  border: 1px solid var(--clear-hairline);
+  background: var(--clear-card-fill);
+  border-radius: 999px;
+  padding: 0.5em 1.1em;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--clear-text-secondary);
 }
 
-@keyframes fadeInTab {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Accordion Headers (Mobile Only) */
-.accordion-header {
-  display: none;
-}
-
-.mobile-only {
-  display: none;
-}
-
-/* Desktop: Show tabs, hide accordion headers */
-@media (min-width: 769px) {
-  .tab-navigation {
-    display: flex;
-  }
-
-  .accordion-header.mobile-only {
-    display: none !important;
-  }
-
-  .accordion-content {
-    display: block !important;
+@media (min-width: 1600px) {
+  .story-rail__thumb {
+    width: 68px;
+    height: 68px;
+    font-size: 1.4rem;
   }
 }
 
-/* Mobile: Hide tabs, show accordion */
-@media (max-width: 768px) {
-  .tab-navigation {
-    display: none;
-  }
-
-  .tab-panel {
-    display: block !important;
-    border: 1px solid var(--rfs-light-grey);
-    border-radius: var(--pico-border-radius);
-    margin-bottom: var(--space-md);
-    background-color: var(--pico-card-background-color);
-    animation: none;
-  }
-
-  .accordion-header.mobile-only {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-md);
-    background-color: var(--rfs-neutral-light);
-    cursor: pointer;
-    border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
-    font-weight: 600;
-    font-size: 1.1rem;
-    gap: var(--space-sm);
-    transition: background-color 0.2s ease;
-  }
-
-  .accordion-header.mobile-only:hover {
-    background-color: var(--rfs-neutral-medium);
-  }
-
-  .accordion-header.mobile-only.active {
-    background-color: var(--rfs-core-red);
-    color: var(--text-color-light);
-    border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
-  }
-
-  .accordion-header.mobile-only i:first-child {
-    font-size: 1.3rem;
-  }
-
-  .accordion-header span {
-    flex: 1;
-  }
-
-  .accordion-icon {
-    transition: transform 0.3s ease;
-    font-size: 0.9rem;
-  }
-
-  .accordion-header.active .accordion-icon {
-    transform: rotate(180deg);
-  }
-
-  .accordion-content {
-    display: none;
-    padding: var(--space-md);
-    animation: slideDownAccordion 0.3s ease-out;
-    overflow: hidden;
-  }
-
-  .accordion-content.active {
-    display: block;
-  }
-
-  .accordion-content article {
-    animation: none;
-    transform: none;
-    box-shadow: none;
-  }
-
-  @keyframes slideDownAccordion {
-    from {
-      opacity: 0;
-      max-height: 0;
-    }
-    to {
-      opacity: 1;
-      max-height: 2000px;
-    }
-  }
-
-  /* Make sure first accordion is open by default on mobile */
-  .tab-panel:first-of-type .accordion-header.mobile-only {
-    background-color: var(--rfs-core-red);
-    color: var(--text-color-light);
-  }
-
-  .tab-panel:first-of-type .accordion-content {
-    display: block;
-  }
-
-  .tab-panel:first-of-type .accordion-icon {
-    transform: rotate(180deg);
-  }
-}
-
-/* Dark Mode for Tabs and Accordion */
-@media (prefers-color-scheme: dark) {
-  .tab-navigation {
-    border-bottom-color: var(--clear-hairline);
-  }
-
-  .tab-btn {
-    color: var(--clear-text-secondary);
-  }
-
-  .tab-btn.active {
-    color: var(--rfs-core-red);
-  }
-
-  @media (max-width: 768px) {
-    /* Fixed: --rfs-neutral-dark and --text-color-dark both resolve to the
-       same light grey in dark mode, which made these bars render as
-       invisible light-on-light text. Use the dark-mode-aware Clear Skies
-       tokens instead so background and text always contrast. */
-    .accordion-header.mobile-only {
-      background-color: var(--clear-card-fill);
-      color: var(--clear-body-text);
-    }
-
-    .accordion-header.mobile-only:hover {
-      background-color: var(--clear-hairline);
-    }
-
-    .accordion-header.mobile-only.active {
-      background-color: var(--rfs-core-red);
-      color: var(--text-color-light);
-    }
-
-    .tab-panel {
-      background-color: var(--pico-card-background-color);
-      border-color: var(--clear-hairline);
-    }
+@media (prefers-reduced-motion: reduce) {
+  .story-rail__segments button .fill {
+    transition: none !important;
   }
 }
 
@@ -1686,11 +1989,191 @@ main {
   font-size: 0.9em;
 }
 
-/* Grid Container Styles */
-.grid-container {
+/* Map + incident list side by side — sized for the normal case (1
+   incident most likely, up to ~5 in a genuinely busy period; more is
+   unusual and scrolls within its own column rather than distorting the
+   page). Stacks on narrow screens like the rest of .tab-layout. */
+.fire-info-body {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--space-lg);
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-xl);
+  margin-top: var(--space-lg);
+}
+
+@media (max-width: 900px) {
+  .fire-info-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Map grows to match whichever column ends up taller (typically the
+   incident list on a busy day) instead of sitting at its own fixed height
+   with dead space beside a taller stack of cards. The incident list itself
+   stays sized to its own content either way — it shouldn't stretch to fill
+   extra height on a quiet day with just one incident. */
+.fire-info-map-col {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.fire-info-incidents-col {
+  align-self: start;
+}
+
+.fire-info-incidents-col__heading {
+  margin: 0 0 var(--space-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clear-body-text);
+}
+
+/* A vertical stack, not a multi-column auto-fill grid — with typically 1
+   and rarely more than 5 incidents, a single readable column reads far
+   better than cards stretching to fill a wide row or wrapping oddly at 2
+   columns. Caps out with a scroll rather than growing indefinitely for the
+   genuinely unusual case of a major, multi-incident event. */
+.incident-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-height: 1100px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+/* Incident cards (populateFireInfoTable, main.js) — colour-coded to match
+   the Australian Warning System: Advice is yellow, Watch and Act is
+   orange/amber, Emergency Warning is red (same values as
+   .map-detail-badge's marker colours). Blue is reserved for "other" —
+   incidents outside the three AWS levels — since blue isn't part of the
+   AWS palette itself. */
+.incident-card {
+  margin: 0;
+  padding: var(--space-lg);
+  border: 1px solid var(--clear-hairline);
+  border-left: 5px solid var(--ui-blue);
+  border-radius: 10px;
+  background: var(--clear-card-fill);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.incident-card[data-level="advice"] {
+  border-left-color: #fbe032;
+}
+
+.incident-card[data-level="watch-and-act"] {
+  border-left-color: var(--ui-amber);
+}
+
+.incident-card[data-level="emergency-warning"] {
+  border-left-color: var(--rfs-core-red);
+}
+
+.incident-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.incident-card__icon {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  margin-top: 2px;
+}
+
+.incident-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.incident-card__badge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.2em 0.7em;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--ui-blue);
+}
+
+.incident-card[data-level="advice"] .incident-card__badge {
+  background: #fbe032;
+  color: var(--rfs-black);
+}
+
+.incident-card[data-level="watch-and-act"] .incident-card__badge {
+  background: var(--ui-amber);
+  color: #4d3600;
+}
+
+.incident-card[data-level="emergency-warning"] .incident-card__badge {
+  background: var(--rfs-core-red);
+}
+
+.incident-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clear-body-text);
+  line-height: 1.3;
+}
+
+.incident-card__location {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--clear-body-text);
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.incident-card__location i {
+  color: var(--clear-text-secondary);
+}
+
+.incident-card__meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin: 0;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--clear-hairline);
+}
+
+.incident-card__meta dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--clear-text-secondary);
+  margin: 0;
+}
+
+.incident-card__meta dd {
+  font-size: 0.85rem;
+  color: var(--clear-body-text);
+  margin: 2px 0 0;
+}
+
+.incident-card__footer {
+  font-size: 0.78rem;
+  color: var(--clear-text-secondary);
+  padding-top: var(--space-xs);
+}
+
+@media (max-width: 480px) {
+  .incident-card__meta {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* Social Icon Styles */
@@ -1712,6 +2195,9 @@ main {
   border: 1px solid var(--rfs-light-grey);
   background-color: var(--rfs-neutral-light);
   min-height: 280px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .map-toolbar {
@@ -1729,7 +2215,7 @@ main {
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 0.5rem;
   background-color: rgba(255, 255, 255, 0.95);
-  color: var(--text-color-dark);
+  color: var(--rfs-dark-grey);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -1743,7 +2229,8 @@ main {
 .map-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 0;
-  height: 300px;
+  flex: 1;
+  min-height: 280px;
   transition: grid-template-columns 0.25s ease;
 }
 
@@ -1753,7 +2240,7 @@ main {
 
 .map-detail-panel {
   border-left: 1px solid var(--rfs-light-grey);
-  background: linear-gradient(180deg, #ffffff, #f6f6f6);
+  background: linear-gradient(180deg, var(--clear-card-fill), var(--clear-neutral-cell-bg));
   padding: var(--space-sm);
   overflow-y: auto;
   overflow-x: hidden;
@@ -2068,8 +2555,20 @@ body.map-fullscreen-active {
 .data-label {
   display: block; /* Make label take full width */
   font-size: 0.8rem; /* Smaller font for label */
-  color: #555;
+  color: var(--clear-text-secondary);
   margin-bottom: 0.25rem; /* Small space between label and value */
+}
+
+/* Honest degraded state for the incident text list (roadmap §2.1) — same
+   amber caution language as the strip's degraded cells, never styled to look
+   like the calm "no incidents" state above. */
+.data-label--degraded {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--clear-incident-fg);
+  background-color: var(--clear-incident-bg);
+  padding: 1rem;
+  border-radius: 8px;
 }
 
 #pageFoot {
@@ -2078,4 +2577,84 @@ body.map-fullscreen-active {
   border-left: none;
   border-right: none;
   border-bottom: none;
+}
+
+/* ── Reduced motion (WCAG 2.2 AA 2.3.3 / roadmap Workstream 6) ───────────────
+   The site is deliberately animated — hero cross-fade, card hover-lift,
+   tab/accordion transitions, focus/hover scale effects — none of that is
+   being removed for everyone. This block only takes effect for visitors who
+   have told their OS/browser they want reduced motion
+   (prefers-reduced-motion: reduce), and it shortens animations/transitions
+   to effectively nothing rather than deleting them outright, so elements
+   still reach their end state (open/active/etc.) without an animated
+   journey to get there. Layout, colour, and content are unaffected. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Hover/focus "lift" and scale effects (buttons, cards, tab underline)
+     are motion, not just timing — freeze the transform itself rather than
+     just speeding up the transition to it. */
+  button:hover,
+  .custom-button:hover,
+  button:active,
+  .custom-button:active,
+  .tab-panel article:hover,
+  .live-status-strip article:hover {
+    transform: none;
+  }
+}
+
+/* ── New external feeds (WEBSITE_ROADMAP Workstream 7) ──────────────────── */
+
+/* BOM Fire Weather Warning banner — only rendered visible (hidden attribute
+   removed) when public/js/fire-weather-warning.js confirms a live "Southern
+   Ranges" warning. Uses the same amber/red caution language as the rest of
+   the emergency surfaces, never the calm palette. */
+.fire-weather-warning-banner {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+  background-color: var(--clear-toban-active-bg);
+  border: 2px solid var(--rfs-core-red);
+  border-radius: var(--pico-border-radius);
+  padding: var(--space-lg);
+  margin: var(--space-lg) auto;
+  max-width: 1200px;
+  color: var(--clear-body-text);
+}
+
+.fire-weather-warning-banner i {
+  color: var(--rfs-core-red);
+  font-size: 1.5rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.fire-weather-warning-banner__title {
+  font-weight: 800;
+  margin: 0 0 0.25rem;
+}
+
+.fire-weather-warning-banner__text {
+  margin: 0 0 0.25rem;
+  white-space: pre-line;
+}
+
+.fire-weather-warning-banner__source {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--clear-text-muted);
+}
+
+/* Wind/temp/humidity sub-label under the Fire Danger cell. */
+.strip-cell__sub--wind {
+  margin-top: 0.15rem;
+  font-style: italic;
 }

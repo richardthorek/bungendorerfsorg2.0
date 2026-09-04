@@ -9,6 +9,7 @@ module.exports = {
     "!public/js/**/*.spec.js",
   ],
   coveragePathIgnorePatterns: ["/node_modules/", "/coverage/"],
+  modulePathIgnorePatterns: ["<rootDir>/.claude/worktrees/"],
   setupFilesAfterEnv: ["@testing-library/jest-dom"],
   globals: {
     L: {},

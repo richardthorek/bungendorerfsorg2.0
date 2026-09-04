@@ -76,7 +76,7 @@ npm run dev          # server only
 npm test             # Jest
 npm run test:watch
 npm run test:coverage
-npm run lint         # ESLint over public/js, server.js, replace-token.js
+npm run lint         # ESLint over public/js, public/sw.js, server.js, replace-token.js
 npm run lint:fix
 npm run format       # Prettier write
 npm run format:check
@@ -118,7 +118,8 @@ reads `api/local.settings.json` (copy from `api/local.settings.example.json`) �
 that file is the authoritative, complete list. Never commit either.
 
 Groups: Mapbox (`MAPBOX_ACCESS_TOKEN`, `ALLOWED_ORIGINS`) · live fire data
-(`AZURE_INCIDENTS_WEBHOOK_URL`, `AZURE_FIRE_DANGER_WEBHOOK_URL`) · ACS email —
+(`AZURE_INCIDENTS_WEBHOOK_URL`, `AZURE_FIRE_DANGER_WEBHOOK_URL`) · new external
+feeds (`TFNSW_API_KEY` — pending, see below) · ACS email —
 contact form **and** sign-in codes (`ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS`,
 `CONTACT_NOTIFY_TO`, `CONTACT_NOTIFY_CONFIRM`) · members' auth (`AUTH_JWT_SECRET`,
 `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`) ·
@@ -141,13 +142,16 @@ brigade phone (`DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`,
 ### Backend — two deployment targets, one codebase
 
 1. **Production (Azure Static Web Apps):** functions in `api/` (`mapbox-token`,
-   `fire-danger`, `fire-incidents`, `contact`, `auth-*`, `members`, `duty`,
+   `fire-danger`, `fire-incidents`, `fire-weather-warning`, `wind-observations`,
+   `traffic-hazards`, `contact`, `auth-*`, `members`, `duty`,
    `content`, `enquiries`, `social-chat`, `social-prompt`, `clarity`) are the
    proxy layer / security boundary. Upstream services: Azure Logic Apps webhooks
-   for fire data; Azure Communication Services Email for the contact form **and**
-   members'-area sign-in codes; `brfsstorage` Table Storage for the members' area;
-   Azure OpenAI for the Social Studio copy assistant; the Microsoft Clarity export
-   API for the Analytics tab. Full reference: [`api/README.md`](../api/README.md).
+   for fire data; public BOM feeds and (pending an API key) TfNSW Live
+   Traffic Hazards for the Workstream 7 feeds; Azure Communication Services
+   Email for the contact form **and** members'-area sign-in codes; `brfsstorage`
+   Table Storage for the members' area; Azure OpenAI for the Social Studio copy
+   assistant; the Microsoft Clarity export API for the Analytics tab. Full
+   reference: [`api/README.md`](../api/README.md).
 2. **Local dev:** `server.js` (Express) serves `public/` and re-implements the same
    proxy endpoints by reading from `.env`. Keep the two surfaces semantically
    identical — when an `api/<fn>/index.js` changes its contract, mirror the change
