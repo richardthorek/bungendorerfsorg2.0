@@ -17,6 +17,7 @@
 
 const crypto = require("crypto");
 const { TableClient } = require("@azure/data-tables");
+const { trackHandledError } = require("./telemetry");
 
 const TABLES = {
   members: "members",
@@ -60,8 +61,7 @@ async function db(env) {
       Object.entries(TABLES).map(([key, name]) =>
         t[key].createTable().catch((err) => {
           if (err && err.statusCode !== 409) {
-            // eslint-disable-next-line no-console
-            console.error(`createTable(${name}) failed: ${err.message}`);
+            trackHandledError(`createTable(${name}) failed`, err, { table: name }, env);
           }
         })
       )
@@ -277,8 +277,7 @@ async function audit(event, { email = "", ip = "", detail = "" } = {}, env) {
     });
   } catch (err) {
     // Never let audit failure break a request
-    // eslint-disable-next-line no-console
-    console.error(`audit(${event}) failed: ${err.message}`);
+    trackHandledError(`audit(${event}) failed`, err, { event }, env);
   }
 }
 
@@ -531,9 +530,7 @@ async function getClarityState(env) {
     getEntity(client, "clarity", "meta"),
   ]);
   return {
-    latest: latest
-      ? { summary: parseSummary(latest), fetchedAt: latest.fetchedAt || "" }
-      : null,
+    latest: latest ? { summary: parseSummary(latest), fetchedAt: latest.fetchedAt || "" } : null,
     meta: meta
       ? {
           dayKey: meta.dayKey || "",
@@ -588,7 +585,11 @@ async function listClarityDaily(limit, env) {
     queryOptions: { filter: "PartitionKey eq 'clarity' and RowKey gt 'day:' and RowKey lt 'day;'" },
   });
   for await (const e of iter) {
-    out.push({ date: e.date || e.rowKey.slice(4), summary: parseSummary(e), fetchedAt: e.fetchedAt || "" });
+    out.push({
+      date: e.date || e.rowKey.slice(4),
+      summary: parseSummary(e),
+      fetchedAt: e.fetchedAt || "",
+    });
   }
   out.sort((a, b) => b.date.localeCompare(a.date));
   return out.slice(0, limit || 60);

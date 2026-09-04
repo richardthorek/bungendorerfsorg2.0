@@ -77,6 +77,7 @@ is left is manual teardown / config only the owner can do:
 | Test infrastructure (Jest + Testing-Library)                                          | Done   | [`docs/TESTING.md`](docs/TESTING.md), `__tests__/`                                                |
 | CI (lint + test + audit)                                                              | Done   | `.github/workflows/ci.yml`                                                                        |
 | Calendar migration off Microsoft Graph to static content files                        | Done   | `public/Content/communityEvents.json`, `trainingSchedule.json`; see README § Editing site content |
+| Error pipeline: App Insights exception / CI failure on `main` -> GitHub issue -> Claude auto-diagnosis -> draft PR (never auto-merges) | Code-complete, not yet deployed — needs `infra/modules/error-relay.bicep` deployed by hand (owner action, secrets required) and `CLAUDE_CODE_OAUTH_TOKEN` repo secret added | `infra/README.md` § "Error relay", `.github/workflows/{auto-diagnose,auto-diagnose-retry,create-issue-on-failure}.yml`; adapted from `richardthorek/Station-Manager`'s `docs/wiki/developer/error-pipeline-blueprint.md` |
 
 ---
 

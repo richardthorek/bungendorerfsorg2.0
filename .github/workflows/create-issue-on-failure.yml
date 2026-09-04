@@ -1,0 +1,161 @@
+# ===============================================================================
+# File a GitHub issue when CI fails on `main`
+# ===============================================================================
+#
+# Purpose:
+#   Origin B of the error pipeline (see .github/workflows/auto-diagnose.yml
+#   and docs/wiki/developer/error-pipeline-blueprint.md in
+#   richardthorek/Station-Manager for the portable spec) — a CI failure on
+#   `main` files an `auto-filed` issue the same way a production exception
+#   does, so both converge on the same diagnose-and-draft-PR pipeline.
+#
+# Scoped to `main` only. A feature-branch CI failure is the pusher's own to
+# fix before merging — filing an issue (and an automated fix loop) for that
+# would be noise, not signal, in a small single-maintainer repo like this
+# one. If that changes, Station-Manager's create-issue-on-failure.yml has a
+# feature-branch dedup path (branch+commit rather than branch-only) to crib
+# from.
+#
+# Dedup: while an open `ci-failure` issue for `main` already exists, a repeat
+# failure just gets a comment, not a new issue (mirrors the error-relay Logic
+# App's dedup on an open `[auto:<problemId>]` issue). Coarser than a
+# problemId-style match — a human/PR-in-flight is expected to resolve the
+# first failure before a second, genuinely different one needs its own
+# investigation.
+#
+# Note: issue creation here uses the default GITHUB_TOKEN, and GitHub does
+# not let GITHUB_TOKEN-authored events trigger other workflows (loop
+# prevention) — so the `issues: opened` event from `issues.create` below does
+# NOT reach auto-diagnose.yml's `on: issues: [opened, reopened]` trigger on
+# its own (unlike the App-Insights path, which is filed by an external Logic
+# App with its own credentials and so isn't suppressed). This workflow
+# explicitly dispatches auto-diagnose.yml via the API right after creating
+# the issue instead.
+# ===============================================================================
+
+name: Create Issue on CI Failure
+
+on:
+  workflow_run:
+    workflows: ["CI - Lint, Test, and Security"]
+    types:
+      - completed
+
+permissions:
+  issues: write
+  actions: write
+  contents: read
+
+jobs:
+  create-issue:
+    name: File issue on main CI failure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_branch == 'main' }}
+    steps:
+      - name: Create or comment on issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const workflowRun = context.payload.workflow_run;
+            const runUrl = workflowRun.html_url;
+            const commit = workflowRun.head_sha.substring(0, 7);
+            const commitUrl = `${context.payload.repository.html_url}/commit/${workflowRun.head_sha}`;
+            const actor = workflowRun.actor.login;
+            const timestamp = new Date(workflowRun.updated_at).toLocaleString();
+
+            const jobs = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: workflowRun.id,
+            });
+            const failedJobs = jobs.data.jobs.filter(job => job.conclusion === 'failure');
+            const failedJobsSection = failedJobs.length
+              ? failedJobs.map(job => `- **${job.name}**: [View logs](${job.html_url})`).join('\n')
+              : '_No specific job failures recorded_';
+
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'ci-failure',
+              per_page: 10,
+            });
+            const openMainIssue = existingIssues.data.find(issue => issue.title.includes('CI failed on main ('));
+
+            if (openMainIssue) {
+              const commentBody = `⚠️ **CI failed again on \`main\`** — commit [\`${commit}\`](${commitUrl}), while this issue is still open.
+
+            | Property | Value |
+            |----------|-------|
+            | **Commit** | [\`${commit}\`](${commitUrl}) |
+            | **Triggered by** | @${actor} |
+            | **Time** | ${timestamp} |
+            | **Workflow Run** | [View Run](${runUrl}) |
+
+            ### Failed Jobs
+
+            ${failedJobsSection}
+
+            If this is a different underlying problem than the one already being investigated above, it's worth opening as its own issue — this dedup only checks that an open \`ci-failure\` issue exists for \`main\`, not that the root cause matches.`;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: openMainIssue.number,
+                body: commentBody,
+              });
+              console.log(`Commented on existing open main issue: #${openMainIssue.number}`);
+              return;
+            }
+
+            const issueBody = `## 🚨 CI Failure on \`main\`
+
+            CI has failed on \`main\`. This issue is picked up automatically by \`auto-diagnose.yml\`
+            (the same pipeline that already handles App Insights-filed production errors) — Claude
+            will investigate the failed job logs and, if it can produce a confident fix, push it to
+            the shared \`auto-fix/queue\` branch and open (or update) a single consolidated draft PR
+            for human review. It never auto-merges. If it can't produce a confident fix, it labels
+            this issue \`needs-human-review\` and assigns @${context.repo.owner} instead of guessing.
+
+            ### Failure Details
+
+            | Property | Value |
+            |----------|-------|
+            | **Commit** | [\`${commit}\`](${commitUrl}) |
+            | **Triggered by** | @${actor} |
+            | **Time** | ${timestamp} |
+            | **Workflow Run** | [View Run](${runUrl}) |
+
+            ### Failed Jobs
+
+            ${failedJobsSection}
+
+            ---
+
+            _This issue was automatically created by create-issue-on-failure.yml._
+            _Workflow Run ID: ${workflowRun.id}_`;
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `CI failed on main (${commit})`,
+              body: issueBody,
+              labels: ['ci-failure', 'bug', 'automated', 'auto-filed'],
+            });
+            console.log(`Created issue #${issue.data.number}: ${issue.data.html_url}`);
+
+            // GITHUB_TOKEN-authored events don't trigger other workflows —
+            // dispatch auto-diagnose.yml explicitly instead of relying on
+            // the `opened` event to reach it.
+            try {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'auto-diagnose.yml',
+                ref: 'main',
+                inputs: { issue_number: String(issue.data.number) },
+              });
+              console.log(`Dispatched auto-diagnose.yml for issue #${issue.data.number}`);
+            } catch (err) {
+              console.log(`Failed to dispatch auto-diagnose.yml for issue #${issue.data.number}: ${err.message}`);
+            }

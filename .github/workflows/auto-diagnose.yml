@@ -1,0 +1,297 @@
+# ===============================================================================
+# Auto-diagnose issues auto-filed by either the App Insights production-error
+# pipeline or a CI failure on `main`
+# ===============================================================================
+#
+# Triggers on new/reopened issues carrying the `auto-filed` label. Two
+# independent origins apply that label, told apart by a second label:
+#   - App Insights production errors: filed by the bungendorerfs-error-relay
+#     Logic App (infra/modules/error-relay.bicep) — carries real exception
+#     detail (type, message, operation name, stack, custom properties), no
+#     `ci-failure` label.
+#   - CI failures on `main`: filed by create-issue-on-failure.yml — carries a
+#     workflow run ID/URL and failed-job list instead, labeled `ci-failure`
+#     alongside `auto-filed`.
+# Either way Claude investigates the codebase and either pushes a fix or
+# explains why it isn't attempting one.
+#
+# Deliberately never auto-merges — always a draft PR for human review. One
+# shared branch (auto-fix/queue) and one consolidated PR across both origins,
+# not one branch/PR per issue — a flaky bug (or CI failure) firing repeatedly
+# must not spawn dozens of PRs.
+#
+# Fails CLEAN, not silent and not with a cryptic error, when
+# CLAUDE_CODE_OAUTH_TOKEN isn't configured yet: skips with a visible warning
+# annotation and a successful (not red) run.
+#
+# When Claude can't produce a confident fix, it labels the issue
+# `needs-human-review` and assigns it back to the repo owner instead of just
+# leaving a comment — so an unfixed auto-filed issue is visibly "assessed,
+# needs you" rather than indistinguishable from one nobody's looked at yet.
+#
+# Optional APP_INSIGHTS_APP_ID / APP_INSIGHTS_API_KEY repo secrets (a
+# read-only App Insights API key, the same kind the error-relay Logic App
+# uses) let Claude query the Application Insights Query API itself for
+# broader context before giving up. Both are optional; the workflow runs
+# fine without them, just with less to go on.
+#
+# Also accepts workflow_dispatch with an `issue_number` input — used by
+# auto-diagnose-retry.yml to re-run this workflow for one specific issue once
+# a Claude usage rate limit that failed an earlier run has reset, and by
+# create-issue-on-failure.yml, which dispatches it directly right after
+# filing a `main`-CI-failure issue: that issue is created with the default
+# GITHUB_TOKEN, and GitHub doesn't let GITHUB_TOKEN-authored events trigger
+# other workflows (loop prevention), so the `opened` event alone never
+# reaches the `on: issues` trigger below for that origin — only the
+# App-Insights origin (filed by an external Logic App with its own
+# credentials) reaches it that way.
+#
+# Adapted from richardthorek/Station-Manager's
+# docs/wiki/developer/error-pipeline-blueprint.md ("Solo" mode) — see that
+# doc for the portable spec this pattern comes from.
+# ===============================================================================
+
+name: Auto-diagnose production issues
+
+on:
+  issues:
+    types: [opened, reopened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to (re-)diagnose"
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+  id-token: write
+
+concurrency:
+  group: auto-diagnose-queue
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    name: Diagnose and propose a fix
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.issue.labels.*.name, 'auto-filed')
+    steps:
+      - name: Resolve issue number and title
+        id: issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NUM="${{ github.event.inputs.issue_number || github.event.issue.number }}"
+          TITLE=$(gh issue view "$NUM" --repo "${{ github.repository }}" --json title --jq .title)
+          echo "number=$NUM" >> "$GITHUB_OUTPUT"
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Claude credentials are configured
+        id: check-creds
+        run: |
+          if [ -z "${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip — no credentials configured
+        if: steps.check-creds.outputs.configured == 'false'
+        run: |
+          echo "::warning::CLAUDE_CODE_OAUTH_TOKEN repo secret is not set — skipping auto-diagnosis for issue #${{ steps.issue.outputs.number }}. Run 'claude setup-token' locally and add the result as a repository secret (Settings -> Secrets and variables -> Actions) to enable this workflow. This is a deliberate no-op, not a failure."
+
+      - name: Checkout
+        if: steps.check-creds.outputs.configured == 'true'
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Diagnose and fix
+        if: steps.check-creds.outputs.configured == 'true'
+        uses: anthropics/claude-code-action@v1
+        env:
+          APP_INSIGHTS_APP_ID: ${{ secrets.APP_INSIGHTS_APP_ID }}
+          APP_INSIGHTS_API_KEY: ${{ secrets.APP_INSIGHTS_API_KEY }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: true
+          prompt: |
+            Issue #${{ steps.issue.outputs.number }} in this repo ("${{ steps.issue.outputs.title }}")
+            was auto-filed by one of two pipelines — check its labels with
+            `gh issue view ${{ steps.issue.outputs.number }} --json labels,body`:
+
+            - Labeled `ci-failure`: filed by create-issue-on-failure.yml after
+              CI failed on `main`. The issue body carries the workflow run ID
+              and a list of failed job names/log links, not an exception —
+              see "CI-origin diagnosis" below.
+            - Not labeled `ci-failure` (just `auto-filed`): filed by the App
+              Insights production error-monitoring pipeline (App Insights ->
+              Azure alert -> Logic App -> this issue). The issue body carries
+              the actual exception type, message, operation name, stack
+              trace, and any custom properties — see "App-Insights-origin
+              diagnosis" below.
+
+            Your job:
+
+            1. Read CLAUDE.md and .github/copilot-instructions.md for this
+               repo's conventions before touching anything.
+            2. Diagnose the root cause, using whichever approach matches this
+               issue's origin (determined in step 1 above):
+
+               **CI-origin diagnosis** (labeled `ci-failure`):
+               - Get the actual failure detail — do not guess from the issue
+                 title alone. The issue body's "Workflow Run ID" line gives
+                 you the run: `gh run view <run-id> --log-failed` (falls back
+                 to `gh api repos/${{ github.repository }}/actions/runs/<run-id>/jobs`
+                 plus `gh run view --job <id> --log-failed` per failed job if
+                 that's cleaner).
+               - Decide whether the failure is caused by code on `main`, or
+                 is external/non-deterministic and not something a code
+                 change here can fix — signs of the latter: network egress
+                 errors, npm/registry 5xx or timeout, a cloud dependency
+                 unavailable, a GitHub Actions runner/infra failure, or a
+                 flaky test unrelated to the most recent commits on `main`
+                 (`git log -5 --oneline`; compare against what actually
+                 changed). If EXTERNAL: do not force a fix — skip straight to
+                 the "cannot produce a confident fix" path below, but say
+                 explicitly in your comment that this looks environmental,
+                 not a `main` codebase bug.
+               - Otherwise, read the actual source the failure points to, not
+                 just the log message.
+
+               **App-Insights-origin diagnosis** (not labeled `ci-failure`):
+               - Use the exception detail in the issue plus your own
+                 investigation of the actual code — read the real source,
+                 don't guess from the stack trace alone. If the stack trace
+                 points into a dependency rather than this repo's code, look
+                 at how this repo calls that dependency.
+               - Before giving up for lack of detail, check whether
+                 `APP_INSIGHTS_APP_ID`/`APP_INSIGHTS_API_KEY` are set in the
+                 environment (`[ -n "$APP_INSIGHTS_APP_ID" ]`). If so, query
+                 the Application Insights Query API yourself for more context
+                 than the issue body carries — e.g.:
+                 `curl -s -H "x-api-key: $APP_INSIGHTS_API_KEY" --get \
+                 "https://api.applicationinsights.io/v1/apps/$APP_INSIGHTS_APP_ID/query" \
+                 --data-urlencode "query=exceptions | where timestamp > ago(24h) | where problemId == '<problemId from the issue title>' | order by timestamp desc | take 20"`
+                 Widen the KQL as needed: look for other occurrences of the
+                 same `problemId` with a populated `operation_Name`/
+                 `customDimensions`, or join against `requests`/`traces`
+                 around the same `timestamp`/`operation_Id` to recover the
+                 actual route and request path. If the secrets aren't set,
+                 skip this and note in your comment (step below) that App
+                 Insights query access isn't configured, so the maintainer
+                 knows this is available to enable.
+            3. Decide whether you can produce a confident, well-tested fix.
+               - If you CANNOT (the issue lacks enough detail, the root cause
+                 is ambiguous, it needs a product/architecture decision, it
+                 looks external/environmental (CI-origin) or like a duplicate
+                 of something already fixed and not yet deployed
+                 (App-Insights-origin)): do NOT force a fix. Instead:
+                 a. Comment on the issue (`gh issue comment ${{ steps.issue.outputs.number }}
+                    --body "..."`) with your diagnosis, what you found, and
+                    why you're not attempting an automated fix.
+                 b. Label it so it's visibly triaged rather than untouched:
+                    `gh label create needs-human-review --color 5319E7 --description "Auto-diagnosed but needs a human decision" --force`
+                    (idempotent — creates it if missing, no-ops if it already
+                    exists), then `gh issue edit ${{ steps.issue.outputs.number }}
+                    --add-label needs-human-review`.
+                 c. Assign it back to the repo owner so it shows up as their
+                    action item: `gh issue edit ${{ steps.issue.outputs.number }}
+                    --add-assignee ${{ github.repository_owner }}`.
+                 Stop there — do not create or modify a branch.
+               - If you CAN: continue to step 4.
+            4. Check whether a branch named `auto-fix/queue` already exists on
+               the remote (`git ls-remote --heads origin auto-fix/queue`) with
+               an open PR (`gh pr list --head auto-fix/queue --state open`).
+               - If yes: check it out, merge the latest `main` into it
+                 (resolve any trivial conflicts; if conflicts are
+                 non-trivial, comment on the issue explaining you couldn't
+                 safely queue this fix and stop).
+               - If no: create `auto-fix/queue` fresh from the latest `main`.
+            5. Implement the fix. Follow this repo's conventions exactly
+               (small focused diff, no unrelated refactors, plain ES6+, no
+               new build tooling). Add or update a regression test for the
+               specific failure. Run the relevant local checks before
+               committing — at minimum `npm run lint` and the specific test
+               file(s) for what you changed (`npx jest <path>`). Never push
+               red.
+            6. Commit with a message referencing this issue (`Fixes #${{ steps.issue.outputs.number }}`
+               in the commit body). Before pushing, re-check `gh pr list
+               --head auto-fix/queue --state open` — a human could have
+               merged or closed it while you were working. If it's now
+               merged or closed, don't push to that branch name; instead
+               create a fresh `auto-fix/queue` branch from the latest `main`
+               and re-apply your commit on top of that. Push `auto-fix/queue`
+               to origin.
+            7. If no open PR from `auto-fix/queue` exists yet, open one as a
+               DRAFT (`gh pr create --draft --base main --head auto-fix/queue
+               --title "Automated fixes: production errors & CI failures"
+               --body "..."`) — NEVER mark it ready for review or merge it
+               yourself, regardless of how confident you are. A human always
+               reviews and merges. If a PR already exists (from either a
+               prior App-Insights-origin or CI-origin fix — this one
+               PR/branch is shared by both), edit its body (`gh pr edit`) to
+               append this issue to the running list, rather than replacing
+               the description.
+            8. In the PR body (new or appended), reference this issue with
+               "Fixes #${{ steps.issue.outputs.number }}" (GitHub's
+               auto-close syntax — merging the PR closes the issue; that's
+               intentional here, since merging to `main` auto-deploys).
+               Comment on the issue itself linking to the PR.
+
+            Be conservative: an incorrect automated fix to a production
+            sign-in system a volunteer fire brigade depends on is worse than
+            no fix. When genuinely uncertain, explain your reasoning in an
+            issue comment instead of guessing.
+          claude_args: |
+            --model sonnet
+            --effort medium
+            --allowedTools Bash,Edit,Write,Read,Glob,Grep
+
+      # A hard failure of the Action step itself (Claude usage rate limit,
+      # crash, timeout) is distinct from it finishing and deciding it can't
+      # produce a fix — that "can't fix" path already labels + assigns the
+      # issue (see the prompt above), but it never runs if the step errored
+      # first. Without this fallback the issue silently gets no automated
+      # attention at all.
+      #
+      # If the failure was specifically a recognized Claude usage rate limit,
+      # the Action writes its `resetsAt` (a Unix epoch timestamp) into its
+      # own execution-log JSON at a fixed path. Rather than sleeping in this
+      # job until reset (GitHub bills wall-clock job time, not CPU time, so a
+      # multi-hour sleep burns real runner minutes and risks the 6-hour
+      # hosted-runner job cap), that timestamp is embedded as a hidden HTML
+      # comment in the issue comment below. auto-diagnose-retry.yml polls
+      # cheaply on a cron and re-dispatches this workflow for the issue once
+      # that time has passed.
+      - name: Escalate on hard workflow failure
+        if: failure() && steps.check-creds.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create needs-human-review --color 5319E7 --description "Auto-diagnosed but needs a human decision" --force
+
+          RETRY_AFTER=""
+          OUTPUT_FILE="/home/runner/work/_temp/claude-execution-output.json"
+          if [ -f "$OUTPUT_FILE" ]; then
+            RETRY_AFTER=$(jq -r '[.. | objects | select(has("resetsAt")) | .resetsAt] | last // empty' "$OUTPUT_FILE" 2>/dev/null || true)
+          fi
+
+          if [ -n "$RETRY_AFTER" ] && [ "$RETRY_AFTER" != "null" ]; then
+            gh label create auto-diagnose-retry-pending --color FBCA04 --description "Hit a Claude usage rate limit; auto-diagnose-retry.yml will retry once it resets" --force
+            gh issue edit "$ISSUE_NUMBER" --add-label needs-human-review --add-label auto-diagnose-retry-pending --add-assignee "$REPO_OWNER"
+            RETRY_HUMAN=$(date -u -d "@$RETRY_AFTER" '+%Y-%m-%d %H:%M UTC' 2>/dev/null || echo "unknown")
+            BODY=$(printf '%b' "Automated diagnosis hit a Claude usage rate limit before it could investigate this issue — no fix was attempted. Assigning to @${REPO_OWNER} in the meantime, but this will retry automatically once the usage window resets (~${RETRY_HUMAN}) via auto-diagnose-retry.yml's hourly check — no action needed unless it hasn't retried within a few hours of that time.\n\n<!-- auto-diagnose-retry-after: ${RETRY_AFTER} -->\n\nSee the failed workflow run for details: ${RUN_URL}")
+            gh issue comment "$ISSUE_NUMBER" --body "$BODY"
+          else
+            gh issue edit "$ISSUE_NUMBER" --add-label needs-human-review --add-assignee "$REPO_OWNER"
+            BODY=$(printf '%b' "Automated diagnosis hit a workflow-level failure (a crash or timeout, not a recognized usage rate limit) before it could investigate this issue — no fix was attempted and no automatic retry is scheduled. Assigning to @${REPO_OWNER} for a manual look.\n\nSee the failed workflow run for details: ${RUN_URL}")
+            gh issue comment "$ISSUE_NUMBER" --body "$BODY"
+          fi

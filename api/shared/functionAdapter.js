@@ -4,6 +4,7 @@
  */
 
 const { clearCookie } = require("./auth");
+const { trackHandledError } = require("./telemetry");
 
 function respond(context, result) {
   const headers = { "Content-Type": "application/json", ...(result.headers || {}) };
@@ -19,7 +20,9 @@ function functionFor(handler) {
     try {
       respond(context, await handler(req, process.env));
     } catch (err) {
-      context.log.error(`${context.executionContext.functionName} failed:`, err);
+      const functionName = context.executionContext.functionName;
+      context.log.error(`${functionName} failed:`, err);
+      trackHandledError(`${functionName} failed`, err, { functionName }, process.env);
       respond(context, { status: 500, body: { error: "Something went wrong. Try again." } });
     }
   };

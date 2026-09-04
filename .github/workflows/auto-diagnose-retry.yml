@@ -1,0 +1,74 @@
+# ===============================================================================
+# Retry auto-diagnosis for issues that hit a Claude usage rate limit
+# ===============================================================================
+#
+# auto-diagnose.yml's "Escalate on hard workflow failure" step labels an issue
+# `auto-diagnose-retry-pending` and embeds a hidden
+# `<!-- auto-diagnose-retry-after: <unix-epoch> -->` marker in its comment
+# when the Claude Code Action step failed on a recognized usage rate limit
+# (429 / out_of_credits), rather than genuinely finishing and deciding it
+# can't produce a fix.
+#
+# Sleeping inside that same job until the reset would burn hours of billed
+# runner minutes (GitHub bills wall-clock job time, not CPU time) and risks
+# the 6-hour hosted-runner job cap. Instead this workflow runs on a cheap,
+# frequent, short-lived cron: it lists open issues carrying that label, reads
+# back each one's retry-after marker, and — once that time has passed —
+# re-dispatches auto-diagnose.yml for just that issue via workflow_dispatch
+# and removes the label so it isn't picked up again.
+#
+# Adapted from richardthorek/Station-Manager's
+# docs/wiki/developer/error-pipeline-blueprint.md — this file is repo-agnostic
+# as-is, no local adaptation needed.
+# ===============================================================================
+
+name: Retry rate-limited auto-diagnosis
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  actions: write
+  issues: write
+
+concurrency:
+  group: auto-diagnose-retry-queue
+  cancel-in-progress: false
+
+jobs:
+  retry:
+    name: Re-dispatch auto-diagnose for reset rate limits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan and re-dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOW=$(date +%s)
+          ISSUES=$(gh issue list --repo "${{ github.repository }}" --label auto-diagnose-retry-pending --state open --json number --jq '.[].number')
+
+          if [ -z "$ISSUES" ]; then
+            echo "No rate-limited issues pending retry."
+            exit 0
+          fi
+
+          for NUM in $ISSUES; do
+            MARKER=$(gh issue view "$NUM" --repo "${{ github.repository }}" --json comments --jq '[.comments[].body | capture("auto-diagnose-retry-after: (?<t>[0-9]+)")? | .t] | last // empty' 2>/dev/null || true)
+
+            if [ -z "$MARKER" ]; then
+              echo "Issue #$NUM: no retry marker found in comments — leaving needs-human-review in place, skipping."
+              continue
+            fi
+
+            if [ "$NOW" -lt "$MARKER" ]; then
+              echo "Issue #$NUM: rate limit window hasn't reset yet ($(date -u -d "@$MARKER" 2>/dev/null || echo "$MARKER"))."
+              continue
+            fi
+
+            echo "Issue #$NUM: reset window has passed — re-dispatching auto-diagnose.yml."
+            gh workflow run auto-diagnose.yml --repo "${{ github.repository }}" -f issue_number="$NUM"
+            gh issue edit "$NUM" --repo "${{ github.repository }}" --remove-label auto-diagnose-retry-pending
+          done

@@ -15,6 +15,7 @@
  */
 
 const { getClarityState, saveClaritySnapshot, touchClarityAttempt } = require("./store");
+const { trackHandledError } = require("./telemetry");
 
 const CLARITY_ENDPOINT = "https://www.clarity.ms/export-data/api/v1/project-live-insights";
 const REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6h
@@ -232,8 +233,7 @@ async function maybeRefreshClarity(env = process.env, { force = false } = {}) {
     await saveClaritySnapshot({ summary, raw, day: today }, env);
     return { refreshed: true, hasData: summary.hasData };
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(`maybeRefreshClarity failed: ${err.message}`);
+    trackHandledError("maybeRefreshClarity failed", err, {}, env);
     return { refreshed: false, reason: "error", error: err.message };
   }
 }

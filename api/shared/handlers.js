@@ -48,6 +48,7 @@ const {
   listClarityDaily,
 } = require("./store");
 const { validateContent } = require("./contentSchema");
+const { trackHandledError } = require("./telemetry");
 const { chatTurn, DEFAULT_SYSTEM_PROMPT } = require("./aiCopy");
 const { maybeRefreshClarity } = require("./clarityInsights");
 
@@ -408,8 +409,7 @@ async function notifyDutyChange(change, env) {
   try {
     await sendDutyChangeAlert(change, { env });
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(`duty change alert failed: ${err.message}`);
+    trackHandledError("duty change alert failed", err, {}, env);
   }
 }
 
@@ -697,8 +697,7 @@ async function handleSocialChat(req, env = process.env) {
   try {
     out = await chatTurn({ systemPrompt, transcript: parsed.transcript }, env);
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(`social chat failed: ${err.message}`);
+    trackHandledError("social chat failed", err, { email: s.member.email }, env);
     return { status: 502, body: { error: "Could not reach the assistant. Try again shortly." } };
   }
 
@@ -797,12 +796,9 @@ async function handleClarityInsights(req, env = process.env) {
       history: history.map((h) => ({
         date: h.date,
         sessions: h.summary && h.summary.totals ? h.summary.totals.sessions : 0,
-        pagesPerSession:
-          h.summary && h.summary.totals ? h.summary.totals.pagesPerSession : 0,
-        avgScrollDepth:
-          h.summary && h.summary.totals ? h.summary.totals.avgScrollDepth : 0,
-        avgEngagementTime:
-          h.summary && h.summary.totals ? h.summary.totals.avgEngagementTime : 0,
+        pagesPerSession: h.summary && h.summary.totals ? h.summary.totals.pagesPerSession : 0,
+        avgScrollDepth: h.summary && h.summary.totals ? h.summary.totals.avgScrollDepth : 0,
+        avgEngagementTime: h.summary && h.summary.totals ? h.summary.totals.avgEngagementTime : 0,
       })),
       refresh,
     },
