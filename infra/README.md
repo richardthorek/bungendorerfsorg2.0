@@ -124,12 +124,50 @@ something drifted; stop and check before it doubles up the pipeline.
 **Repo secrets to add** (Settings -> Secrets and variables -> Actions) for
 the GitHub Actions half:
 
-| Secret | Required? | Purpose |
-| --- | --- | --- |
-| `CLAUDE_CODE_OAUTH_TOKEN` | Yes, or `auto-diagnose.yml` skips green with a warning | Generate with `claude setup-token` locally |
-| `APP_INSIGHTS_APP_ID` | Optional | Lets the diagnosis step query telemetry itself for wider context. Same value as `APP_ID` above |
-| `APP_INSIGHTS_API_KEY` | Optional | Same read-only key generated above (can reuse it) |
+| Secret                    | Required?                                              | Purpose                                                                                        |
+| ------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `CLAUDE_CODE_OAUTH_TOKEN` | Yes, or `auto-diagnose.yml` skips green with a warning | Generate with `claude setup-token` locally                                                     |
+| `APP_INSIGHTS_APP_ID`     | Optional                                               | Lets the diagnosis step query telemetry itself for wider context. Same value as `APP_ID` above |
+| `APP_INSIGHTS_API_KEY`    | Optional                                               | Same read-only key generated above (can reuse it)                                              |
 
 After both halves are deployed, trigger one deliberate error end-to-end and
 confirm the chain: exception -> alert (~5 min) -> GitHub issue -> `auto-diagnose.yml`
 run -> comment or draft PR.
+
+## Scheduled Clarity pull
+
+`infra/modules/clarity-cron.bicep` provisions a Logic App with a Recurrence
+trigger (every 6h / 4x a day by default) that calls `POST /api/clarity/cron`,
+so the members'-area Analytics tab's snapshot refreshes on a timer instead of
+depending on someone signing in (the prior opportunistic refresh, piggybacked
+on `/api/auth/me`, still runs too — this cron is now the primary source, not
+a replacement). `api/shared/handlers.js`'s `handleClarityCron` rejects every
+call with 401 while `CLARITY_CRON_SECRET` is unset on the Static Web App, so
+both halves below are required together.
+
+```bash
+CRON_SECRET=$(openssl rand -base64 32 | tr -d '=+/' | head -c 40)
+
+az deployment group create \
+  --resource-group BungendoreRFS \
+  --template-file infra/modules/clarity-cron.bicep \
+  --parameters cronSecret="$CRON_SECRET"
+
+az staticwebapp appsettings set \
+  --name bungendorerfs-static --resource-group BungendoreRFS \
+  --setting-names "CLARITY_CRON_SECRET=$CRON_SECRET"
+```
+
+Verify with one manual call (should return `{"refreshed": true, ...}` and
+HTTP 200):
+
+```bash
+curl -s -X POST -H "X-Cron-Secret: $CRON_SECRET" \
+  https://bungendorerfs.org/api/clarity/cron -w "\nHTTP status: %{http_code}\n"
+```
+
+4x/day leaves comfortable headroom under Clarity's `MAX_FETCHES_PER_DAY`
+budget (`api/shared/clarityInsights.js`) for the opportunistic path and
+manual refreshes from the admin panel's Refresh button (kept as an on-demand
+override, not removed — the cron doesn't make it redundant, just less
+necessary day to day).

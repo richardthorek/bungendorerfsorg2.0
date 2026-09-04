@@ -276,10 +276,10 @@ and mirrored in `server.js`.
 | `GET /api/enquiries`                            | Members only. All contact-form submissions, newest first, with status + notes.                                                                                                                |
 | `PATCH /api/enquiries/{id}` `{status?, note?}`  | Members only, `X-BRFS-Auth: 1`. `status` ∈ new / in-progress / resolved; a note is appended with the member's name + time; first move off `new` records `handledBy`.                          |
 | `DELETE /api/enquiries/{id}`                    | Admin only, `X-BRFS-Auth: 1`. For spam.                                                                                                                                                       |
-| `POST /api/social/chat` `{messages, …}`         | Members only, `X-BRFS-Auth: 1`. One Social Studio turn — see [Social Studio](#social-studio--azure-openai-copy-assistant).                                                                     |
-| `GET/PUT /api/social/prompt`                    | `GET` members / `PUT` admin, `X-BRFS-Auth: 1`. The editable voice/rules prompt (`content` table, `settings` partition).                                                                        |
-| `GET /api/clarity/insights`                     | Members only. Stored Clarity snapshot + daily history — see [Analytics](#analytics--microsoft-clarity).                                                                                        |
-| `POST /api/clarity/cron`                        | Machine only, `X-Cron-Secret`. Scheduled Clarity pull — see [Analytics](#analytics--microsoft-clarity).                                                                                        |
+| `POST /api/social/chat` `{messages, …}`         | Members only, `X-BRFS-Auth: 1`. One Social Studio turn — see [Social Studio](#social-studio--azure-openai-copy-assistant).                                                                    |
+| `GET/PUT /api/social/prompt`                    | `GET` members / `PUT` admin, `X-BRFS-Auth: 1`. The editable voice/rules prompt (`content` table, `settings` partition).                                                                       |
+| `GET /api/clarity/insights`                     | Members only. Stored Clarity snapshot + daily history — see [Analytics](#analytics--microsoft-clarity).                                                                                       |
+| `POST /api/clarity/cron`                        | Machine only, `X-Cron-Secret`. Scheduled Clarity pull — see [Analytics](#analytics--microsoft-clarity).                                                                                       |
 
 **Storage:** Azure Storage tables in `brfsstorage` (`BRFS_STORAGE_CONNECTION`),
 created on first use — `members`, `authcodes`, `ratelimits`, `auditlog`, `duty`,
@@ -384,7 +384,7 @@ Graph API integration.
 
 The public site loads the Microsoft Clarity analytics tag
 (`public/index.html`, project `yaxo089b41`). The members'-area **Analytics** tab
-reads Clarity's **Data Export API** — deliberately *not* on `admin.html`, so
+reads Clarity's **Data Export API** — deliberately _not_ on `admin.html`, so
 member PII is never captured in session replays.
 
 **Endpoint:** `GET /api/clarity/insights` (members only). Returns the stored
@@ -401,7 +401,7 @@ friction signals) plus a daily-rollup history and a `configured` flag.
 - is driven by a **scheduled cron hit** (below) for the regular cadence, plus
   **opportunistically** off members'-area traffic as a top-up: `maybeRefreshClarity()`
   is fire-and-forgotten from `handleAuthMe` (every members'-area page load) and from
-  the Analytics panel; the refresh slot is claimed in storage *before* the
+  the Analytics panel; the refresh slot is claimed in storage _before_ the
   network call so concurrent loads don't stampede;
 - normalises Clarity's per-metric response into a stable summary and persists it
   in the `analytics` table: a `latest` row + one `day:<yyyy-mm-dd>` rollup row
@@ -413,25 +413,21 @@ token). Optional — the tab shows a "not connected" state when unset.
 **Scheduled pull:** `POST /api/clarity/cron` is a machine-only endpoint (not
 member-authenticated) that forces a `maybeRefreshClarity()` call, guarded by a
 shared secret — the caller must send `X-Cron-Secret` matching the
-`CLARITY_CRON_SECRET` app setting, or the endpoint returns 401. It's unset by
-default, so the route is a no-op until deliberately wired up. It exists so the
-`analytics` table gets a regular snapshot independent of whether any member
-happens to log in that day — opportunistic-only refresh means a quiet week in
-the portal is a quiet week in the trend data, even though Clarity itself keeps
-recording visitors the whole time.
+`CLARITY_CRON_SECRET` app setting, or the endpoint returns 401. It exists so
+the `analytics` table gets a regular snapshot independent of whether any
+member happens to log in that day — opportunistic-only refresh means a quiet
+week in the portal is a quiet week in the trend data, even though Clarity
+itself keeps recording visitors the whole time.
 
-Wire it up with an Azure Logic App: **Recurrence** trigger, frequency Day /
-interval 1, `schedule.hours` set to `[7, 9, 11, 13, 15, 17, 19, 21]` (8 fires
-across the day, no overnight/4am runs — visitor and member activity is
-negligible then and the portal's own opportunistic refresh covers any gap),
-time zone `AUS Eastern Standard Time` so the hours stay local through DST →
-**HTTP** action, `POST` to `https://<site>/api/clarity/cron`, header
-`X-Cron-Secret: <the same value as CLARITY_CRON_SECRET>`. Store the secret the
-same way the other Logic App credentials are handled — Azure App Settings in
-prod, `.env`/`local.settings.json` locally, never in source. 8 scheduled pulls
-+ headroom for opportunistic/manual refreshes keeps the total comfortably
-under Clarity's 10/project/day cap even if a member's Analytics-tab refresh
-lands in the same window as a cron fire.
+Wired up via `infra/modules/clarity-cron.bicep` — an Azure Logic App with a
+**Recurrence** trigger (every 6h / 4x a day, UTC) → **HTTP** action, `POST` to
+`/api/clarity/cron` with `X-Cron-Secret` matching `CLARITY_CRON_SECRET`. See
+`infra/README.md` § "Scheduled Clarity pull" for the deploy command. 4
+scheduled pulls + headroom for opportunistic/manual refreshes keeps the total
+comfortably under Clarity's 10/project/day cap even if a member's
+Analytics-tab refresh lands in the same window as a cron fire. The admin
+panel's manual Refresh button stays as an on-demand override on top of this,
+not a replacement for it.
 
 ---
 
@@ -466,16 +462,16 @@ The **complete** list, with dev values and inline comments, is
 `api/`) and [`../.env.example`](../.env.example) (for `server.js`). Summary by
 feature:
 
-| Feature | Variables |
-| --- | --- |
-| Live fire data (Logic Apps) | `AZURE_INCIDENTS_WEBHOOK_URL`, `AZURE_FIRE_DANGER_WEBHOOK_URL` |
-| Map | `MAPBOX_ACCESS_TOKEN`, `ALLOWED_ORIGINS` (optional) |
-| ACS email (contact + sign-in codes) | `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS`, `CONTACT_NOTIFY_TO`, `CONTACT_NOTIFY_CONFIRM` |
-| Members' auth | `AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES` |
-| Brigade phone | `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`, `DUTY_ALERT_TO` |
-| Social Studio AI | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` |
-| Analytics | `CLARITY_API_TOKEN`, `CLARITY_CRON_SECRET` (scheduled pull, optional) |
-| App Insights (API function telemetry) | `APPLICATIONINSIGHTS_CONNECTION_STRING` (optional locally; see `infra/README.md`) |
+| Feature                               | Variables                                                                                              |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Live fire data (Logic Apps)           | `AZURE_INCIDENTS_WEBHOOK_URL`, `AZURE_FIRE_DANGER_WEBHOOK_URL`                                         |
+| Map                                   | `MAPBOX_ACCESS_TOKEN`, `ALLOWED_ORIGINS` (optional)                                                    |
+| ACS email (contact + sign-in codes)   | `ACS_CONNECTION_STRING`, `ACS_SENDER_ADDRESS`, `CONTACT_NOTIFY_TO`, `CONTACT_NOTIFY_CONFIRM`           |
+| Members' auth                         | `AUTH_JWT_SECRET`, `BRFS_STORAGE_CONNECTION`, `AUTH_ALLOWED_EMAIL_DOMAIN`, `AUTH_SESSION_MINUTES`      |
+| Brigade phone                         | `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`, `DUTY_ALERT_TO`                           |
+| Social Studio AI                      | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` |
+| Analytics                             | `CLARITY_API_TOKEN`, `CLARITY_CRON_SECRET` (scheduled pull, optional)                                  |
+| App Insights (API function telemetry) | `APPLICATIONINSIGHTS_CONNECTION_STRING` (optional locally; see `infra/README.md`)                      |
 
 Obsolete (removed): `AZURE_CONTACT_WEBHOOK_URL` (contact → ACS),
 `AZURE_CALENDAR_WEBHOOK_URL` (calendar feed removed).
@@ -614,17 +610,17 @@ All proxy endpoints return standardized error responses:
 If a credential is compromised, regenerate it at the source and update the Static
 Web App Application settings (and your local `.env` / `api/local.settings.json`):
 
-| Credential | Where to rotate |
-| --- | --- |
-| `AZURE_*_WEBHOOK_URL` | Azure Portal → Logic App → workflow → Access keys → regenerate SAS |
-| `MAPBOX_ACCESS_TOKEN` | Mapbox account → Tokens → new token with domain restriction, revoke old |
-| `ACS_CONNECTION_STRING` | ACS resource (`stationkit-comm`) → Keys → regenerate |
-| `AUTH_JWT_SECRET` | Generate a new ≥32-char random string (invalidates all live sessions) |
-| `BRFS_STORAGE_CONNECTION` | Storage account (`brfsstorage`) → Access keys → rotate |
-| `DUTY_LOOKUP_KEY` / `DUTY_CLAIM_PIN` | Pick new values; update the Twilio flow's URL / PIN too |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI resource (`brfs-openai`) → Keys → regenerate |
-| `CLARITY_API_TOKEN` | Clarity → Settings → Data Export → revoke + generate new |
-| `CLARITY_CRON_SECRET` | Generate a new random string; update it in the Logic App's HTTP action too |
+| Credential                           | Where to rotate                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------- |
+| `AZURE_*_WEBHOOK_URL`                | Azure Portal → Logic App → workflow → Access keys → regenerate SAS         |
+| `MAPBOX_ACCESS_TOKEN`                | Mapbox account → Tokens → new token with domain restriction, revoke old    |
+| `ACS_CONNECTION_STRING`              | ACS resource (`stationkit-comm`) → Keys → regenerate                       |
+| `AUTH_JWT_SECRET`                    | Generate a new ≥32-char random string (invalidates all live sessions)      |
+| `BRFS_STORAGE_CONNECTION`            | Storage account (`brfsstorage`) → Access keys → rotate                     |
+| `DUTY_LOOKUP_KEY` / `DUTY_CLAIM_PIN` | Pick new values; update the Twilio flow's URL / PIN too                    |
+| `AZURE_OPENAI_API_KEY`               | Azure OpenAI resource (`brfs-openai`) → Keys → regenerate                  |
+| `CLARITY_API_TOKEN`                  | Clarity → Settings → Data Export → revoke + generate new                   |
+| `CLARITY_CRON_SECRET`                | Generate a new random string; update it in the Logic App's HTTP action too |
 
 ---
 
