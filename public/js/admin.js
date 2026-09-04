@@ -109,27 +109,48 @@
 
   /* ---------------------------------------------------------------- helpers */
 
+  const API_TIMEOUT_MS = 20000;
+
   function api(path, options) {
     options = options || {};
+    const controller = new AbortController();
+    const timer = setTimeout(function () {
+      controller.abort();
+    }, API_TIMEOUT_MS);
     return fetch(path, {
       method: options.method || "GET",
       headers: options.body ? CSRF : { "X-BRFS-Auth": "1" },
       body: options.body ? JSON.stringify(options.body) : undefined,
       credentials: "same-origin",
-    }).then(function (res) {
-      if (res.status === 401 && state.me) {
-        // session ended mid-use
-        return showSignin("Your session ended. Please sign in again.");
-      }
-      return res
-        .json()
-        .catch(function () {
-          return {};
-        })
-        .then(function (data) {
-          return { ok: res.ok, status: res.status, data: data };
-        });
-    });
+      signal: controller.signal,
+    })
+      .then(function (res) {
+        clearTimeout(timer);
+        if (res.status === 401 && state.me) {
+          // session ended mid-use
+          return showSignin("Your session ended. Please sign in again.");
+        }
+        return res
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (data) {
+            return { ok: res.ok, status: res.status, data: data };
+          });
+      })
+      .catch(function (err) {
+        // Network failure, dropped connection, or our own timeout — surface it
+        // the same way as a server error rather than leaving callers hanging
+        // on a promise that never resolves (this is what left the sign-in
+        // screen stuck with no feedback).
+        clearTimeout(timer);
+        const message =
+          err && err.name === "AbortError"
+            ? "That's taking too long. Check your connection and try again."
+            : "Network problem. Check your connection and try again.";
+        return { ok: false, status: 0, data: { error: message } };
+      });
   }
 
   function setMsg(node, text, kind) {
@@ -182,24 +203,36 @@
   el.requestForm.addEventListener("submit", function (e) {
     e.preventDefault();
     const email = el.email.value.trim().toLowerCase();
-    setMsg(el.signinMsg, "");
-    busy(el.requestBtn, true);
+
+    // Move to the code screen right away instead of waiting on the round trip.
+    // The server always answers with the same generic shape whether or not
+    // this email belongs to a member (so it can't be used to enumerate the
+    // allow-list) — there's nothing in a successful response the UI needs
+    // before showing the code field. The request keeps going in the
+    // background and updates the status line once it settles.
+    el.verifyEmailLabel.textContent = email;
+    el.requestForm.hidden = true;
+    el.verifyForm.hidden = false;
+    el.code.value = "";
+    setMsg(el.signinMsg, "Sending your code…", "pending");
+    el.code.focus();
+
     api("/api/auth/request", { method: "POST", body: { email: email } }).then(function (r) {
-      busy(el.requestBtn, false);
       if (!r) return;
-      if (r.status === 429) {
-        setMsg(el.signinMsg, r.data.error || "Too many requests. Try again shortly.", "err");
-        return;
-      }
       if (!r.ok) {
-        setMsg(el.signinMsg, r.data.error || "Could not send a code.", "err");
+        // Nothing to wait for on this screen if the request failed outright —
+        // send them back to try again rather than leaving a dead code field.
+        el.verifyForm.hidden = true;
+        el.requestForm.hidden = false;
+        setMsg(
+          el.signinMsg,
+          r.data.error ||
+            (r.status === 429 ? "Too many requests. Try again shortly." : "Could not send a code."),
+          "err"
+        );
         return;
       }
-      el.verifyEmailLabel.textContent = email;
-      el.requestForm.hidden = true;
-      el.verifyForm.hidden = false;
       setMsg(el.signinMsg, "If " + email + " is a brigade member, a code is on its way.", "ok");
-      el.code.focus();
     });
   });
 
@@ -1158,7 +1191,7 @@
     trigger.type = "button";
     trigger.className = "icon-picker__trigger";
     trigger.innerHTML =
-      "<i class=\"fas " + card.icon + "\" aria-hidden=\"true\"></i><span>Change icon</span>";
+      '<i class="fas ' + card.icon + '" aria-hidden="true"></i><span>Change icon</span>';
     const grid = document.createElement("div");
     grid.className = "icon-picker__grid";
     grid.hidden = true;
@@ -1166,7 +1199,7 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "icon-picker__opt" + (icon === card.icon ? " is-selected" : "");
-      btn.innerHTML = "<i class=\"fas " + icon + "\" aria-hidden=\"true\"></i>";
+      btn.innerHTML = '<i class="fas ' + icon + '" aria-hidden="true"></i>';
       btn.title = icon.replace("fa-", "");
       btn.addEventListener("click", function () {
         card.icon = icon;
@@ -1220,7 +1253,7 @@
     upBtn.type = "button";
     upBtn.className = "icon-btn";
     upBtn.setAttribute("aria-label", "Move card up");
-    upBtn.innerHTML = "<i class=\"fas fa-arrow-up\" aria-hidden=\"true\"></i>";
+    upBtn.innerHTML = '<i class="fas fa-arrow-up" aria-hidden="true"></i>';
     upBtn.addEventListener("click", function () {
       if (index === 0) return;
       const tmp = cardState.cards[index - 1];
@@ -1234,7 +1267,7 @@
     downBtn.type = "button";
     downBtn.className = "icon-btn";
     downBtn.setAttribute("aria-label", "Move card down");
-    downBtn.innerHTML = "<i class=\"fas fa-arrow-down\" aria-hidden=\"true\"></i>";
+    downBtn.innerHTML = '<i class="fas fa-arrow-down" aria-hidden="true"></i>';
     downBtn.addEventListener("click", function () {
       if (index === cardState.cards.length - 1) return;
       const tmp = cardState.cards[index + 1];

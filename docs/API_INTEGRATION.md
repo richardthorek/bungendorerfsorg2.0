@@ -449,6 +449,7 @@ feature:
 | Brigade phone | `DUTY_LOOKUP_KEY`, `DUTY_CLAIM_PIN`, `DUTY_FALLBACK_NUMBER`, `DUTY_ALERT_TO` |
 | Social Studio AI | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION` |
 | Analytics | `CLARITY_API_TOKEN` |
+| App Insights (API function telemetry) | `APPLICATIONINSIGHTS_CONNECTION_STRING` (optional locally; see `infra/README.md`) |
 
 Obsolete (removed): `AZURE_CONTACT_WEBHOOK_URL` (contact → ACS),
 `AZURE_CALENDAR_WEBHOOK_URL` (calendar feed removed).
@@ -657,13 +658,35 @@ The Express server logs:
 - User-visible errors shown in UI
 - Validation errors displayed in forms
 
+### Azure Application Insights
+
+`infra/main.bicep` provisions an Application Insights resource
+(`<staticWebAppName>-insights`, backed by a `<staticWebAppName>-logs` Log
+Analytics workspace) alongside the Static Web App shell. It isn't wired up
+automatically — like every other setting, connecting it is a one-time,
+out-of-band step (see `infra/README.md`):
+
+```bash
+CONN=$(az deployment group show -g BungendoreRFS -n main \
+  --query properties.outputs.appInsightsConnectionString.value -o tsv)
+az staticwebapp appsettings set \
+  --name bungendorerfs-static --resource-group BungendoreRFS \
+  --setting-names "APPLICATIONINSIGHTS_CONNECTION_STRING=$CONN"
+```
+
+Once set, the SWA's managed Functions runtime auto-instruments with it — no
+code changes needed in `api/`. Query it with `az monitor app-insights query`
+(or, if that extension won't install, `az rest` against
+`https://api.applicationinsights.io/v1/apps/<AppId>/query` using an
+`az account get-access-token --resource https://api.applicationinsights.io`
+token).
+
 ### Recommended Monitoring
 
 For production:
 
-1. Set up Azure Application Insights
-2. Monitor Logic Apps execution history
-3. Set up alerts for:
+1. Monitor Logic Apps execution history
+2. Set up alerts for:
    - Failed API calls
    - High error rates
    - Unusual traffic patterns

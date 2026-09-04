@@ -185,6 +185,33 @@ label {
   background: var(--err-bg);
   color: var(--err);
 }
+.msg.is-pending {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border-left-color: var(--accent, var(--ink-faint));
+}
+.msg.is-pending::before {
+  content: "";
+  flex: none;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0.6;
+  animation: msg-spin 0.7s linear infinite;
+}
+@keyframes msg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .msg.is-pending::before {
+    animation: none;
+  }
+}
 
 /* -------------------------------------------------- sign-in */
 

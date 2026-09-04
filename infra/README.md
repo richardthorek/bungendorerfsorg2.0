@@ -1,7 +1,10 @@
 # Infrastructure as Code (IaC)
 
-`main.bicep` provisions the **Static Web App shell only** — name, region, SKU,
-staging-environment policy, `allowConfigFileUpdates`.
+`main.bicep` provisions the **Static Web App shell**, plus an **Application
+Insights** resource (`<staticWebAppName>-insights`, backed by a
+`<staticWebAppName>-logs` Log Analytics workspace) for the SWA's managed
+API functions. Name, region, SKU, staging-environment policy,
+`allowConfigFileUpdates` are all shell-level.
 
 ## Application settings are NOT in the Bicep
 
@@ -39,6 +42,28 @@ az deployment group create \
   --template-file infra/main.bicep \
   --parameters @infra/parameters.json
 ```
+
+## Wire up Application Insights
+
+The bicep deploy provisions the App Insights resource but does **not** connect
+it — that's an app setting, and app settings are managed out-of-band for the
+same full-replace reason as everything else above. After deploying (or
+re-deploying) the shell:
+
+```bash
+CONN=$(az deployment group show -g BungendoreRFS -n main \
+  --query properties.outputs.appInsightsConnectionString.value -o tsv)
+az staticwebapp appsettings set \
+  --name bungendorerfs-static --resource-group BungendoreRFS \
+  --setting-names "APPLICATIONINSIGHTS_CONNECTION_STRING=$CONN"
+```
+
+The managed Functions runtime picks this up automatically — no code changes
+needed in `api/`. See
+[`../docs/API_INTEGRATION.md`](../docs/API_INTEGRATION.md#azure-application-insights)
+for how to query it from the CLI (the `application-insights` extension fails
+to install in some environments — `az rest` against the REST API is the
+fallback used there).
 
 ## App + API code deployment
 
