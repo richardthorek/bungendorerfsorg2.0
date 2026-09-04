@@ -25,6 +25,7 @@
     "AZURE_OPENAI_DEPLOYMENT": "your-gpt5-deployment-name",
     "AZURE_OPENAI_API_VERSION": "2024-10-21",
     "CLARITY_API_TOKEN": "xxx",
-    "CLARITY_CRON_SECRET": "change-me-to-a-long-random-string"
+    "CLARITY_CRON_SECRET": "change-me-to-a-long-random-string",
+    "APPLICATIONINSIGHTS_CONNECTION_STRING": ""
   }
 }
