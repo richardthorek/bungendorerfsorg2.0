@@ -82,6 +82,8 @@
     clarityMeta: document.getElementById("clarityMeta"),
     clarityStats: document.getElementById("clarityStats"),
     clarityPages: document.getElementById("clarityPages"),
+    clarityEngaged: document.getElementById("clarityEngaged"),
+    clarityChannels: document.getElementById("clarityChannels"),
     claritySignals: document.getElementById("claritySignals"),
     clarityHistory: document.getElementById("clarityHistory"),
     alertBannerMessage: document.getElementById("alertBannerMessage"),
@@ -2594,6 +2596,34 @@
         tr.appendChild(clarityCell((p.scrollDepth || 0) + "%", "num"));
         tr.appendChild(clarityCell(fmtDuration(p.engagementTime), "num"));
         el.clarityPages.appendChild(tr);
+      });
+    }
+
+    const engaged = snap.topEngaged || [];
+    el.clarityEngaged.replaceChildren();
+    if (!engaged.length) {
+      el.clarityEngaged.appendChild(clarityEmptyRow(4, "Not enough traffic yet to rank pages."));
+    } else {
+      engaged.forEach(function (p) {
+        const tr = document.createElement("tr");
+        tr.appendChild(clarityCell(p.url || "(unknown)", "clarity-url"));
+        tr.appendChild(clarityCell((p.scrollDepth || 0) + "%", "num"));
+        tr.appendChild(clarityCell(fmtDuration(p.engagementTime), "num"));
+        tr.appendChild(clarityCell(String(p.sessions || 0), "num"));
+        el.clarityEngaged.appendChild(tr);
+      });
+    }
+
+    const channels = snap.channels || [];
+    el.clarityChannels.replaceChildren();
+    if (!channels.length) {
+      el.clarityChannels.appendChild(clarityEmptyRow(2, "No referrer data in this window."));
+    } else {
+      channels.forEach(function (c) {
+        const tr = document.createElement("tr");
+        tr.appendChild(clarityCell(c.channel || "Unknown"));
+        tr.appendChild(clarityCell(String(c.sessions || 0), "num"));
+        el.clarityChannels.appendChild(tr);
       });
     }
 

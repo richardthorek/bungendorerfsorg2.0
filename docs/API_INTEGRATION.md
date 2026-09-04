@@ -388,9 +388,17 @@ reads Clarity's **Data Export API** — deliberately _not_ on `admin.html`, so
 member PII is never captured in session replays.
 
 **Endpoint:** `GET /api/clarity/insights` (members only). Returns the stored
-snapshot (`sessions`, `pages/session`, scroll depth, engagement, top pages,
-friction signals) plus a daily-rollup history and a `configured` flag.
-`?refresh=1` forces a pull within the daily budget.
+snapshot (`sessions`, `pages/session`, scroll depth, engagement, top pages
+sorted by traffic, `topEngaged` — the same pages re-ranked by scroll depth and
+time on page, `channels` — sessions by referrer channel, friction signals)
+plus a daily-rollup history and a `configured` flag. `?refresh=1` forces a
+pull within the daily budget.
+
+The underlying Clarity call requests two breakdown dimensions in one request
+— `dimension1=URL&dimension2=Channel` — so referrer origin comes for free
+inside the existing budget rather than costing a second daily call. Clarity's
+heatmaps (click/scroll/area) are dashboard-only and not exposed by the Data
+Export API at all — there's no way to pull click-position data server-side.
 
 **The constraint:** Clarity's export API only serves the last 1–3 days and allows
 **10 calls / project / day**. So `api/shared/clarityInsights.js`:

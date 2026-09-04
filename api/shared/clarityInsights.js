@@ -56,6 +56,15 @@ function rowUrl(row) {
   return "";
 }
 
+/** The referrer-channel label on a row (Direct, Organic Search, Referral, …), if any. */
+function rowChannel(row) {
+  if (!row || typeof row !== "object") return "";
+  for (const k of Object.keys(row)) {
+    if (/^channel$/i.test(k)) return String(row[k] || "") || "Unknown";
+  }
+  return "";
+}
+
 function metricRows(raw, name) {
   if (!Array.isArray(raw)) return [];
   const entry = raw.find(
@@ -67,8 +76,9 @@ function metricRows(raw, name) {
 
 /**
  * Turn Clarity's `[{ metricName, information: [...] }]` payload (requested with
- * dimension1=URL) into a stable summary. Defensive about field names — Clarity
- * has changed them before and an empty window omits metrics entirely.
+ * dimension1=URL, dimension2=Channel) into a stable summary. Defensive about
+ * field names — Clarity has changed them before and an empty window omits
+ * metrics entirely.
  */
 function normalizeClarityInsights(raw) {
   const traffic = metricRows(raw, "Traffic");
@@ -80,6 +90,7 @@ function normalizeClarityInsights(raw) {
   let distinctUsers = 0;
   let pagesPerSessionWeighted = 0;
   const pageMap = new Map();
+  const channelMap = new Map();
 
   for (const row of traffic) {
     const s = pick(row, ["totalSessionCount", "sessionCount", "sessionsCount", "sessions"]);
@@ -94,14 +105,26 @@ function normalizeClarityInsights(raw) {
     botSessions += bots;
     distinctUsers += users;
     pagesPerSessionWeighted += pps * s;
+    const pageViews = pick(row, ["pageViews", "totalPageViews", "pageViewCount"]) || s;
     const url = rowUrl(row);
     if (url) {
       const cur = pageMap.get(url) || { url, sessions: 0, pageViews: 0 };
       cur.sessions += s;
-      cur.pageViews += pick(row, ["pageViews", "totalPageViews", "pageViewCount"]) || s;
+      cur.pageViews += pageViews;
       pageMap.set(url, cur);
     }
+    const channel = rowChannel(row);
+    if (channel) {
+      const cur = channelMap.get(channel) || { channel, sessions: 0, pageViews: 0 };
+      cur.sessions += s;
+      cur.pageViews += pageViews;
+      channelMap.set(channel, cur);
+    }
   }
+
+  const channels = [...channelMap.values()]
+    .map((c) => ({ channel: c.channel, sessions: Math.round(c.sessions) }))
+    .sort((a, b) => b.sessions - a.sessions);
 
   const avg = (rows, keys) => {
     let wsum = 0;
@@ -114,26 +137,39 @@ function normalizeClarityInsights(raw) {
     return w ? wsum / w : 0;
   };
 
-  const scrollByUrl = new Map();
-  for (const row of scroll) {
-    const u = rowUrl(row);
-    if (u) {
-      scrollByUrl.set(
-        u,
-        pick(row, ["averageScrollDepth", "scrollDepth", "avgScrollDepth", "value"])
-      );
+  // Rows may be split further by a second dimension (e.g. Channel), so a URL
+  // can appear more than once here — weight by that row's own session count
+  // rather than overwriting, or a low-traffic channel row would clobber the
+  // page's real average.
+  const weightedByUrl = (rows, keys) => {
+    const acc = new Map();
+    for (const row of rows) {
+      const u = rowUrl(row);
+      if (!u) continue;
+      const weight = pick(row, ["totalSessionCount", "sessionCount", "sessions"]) || 1;
+      const value = pick(row, keys);
+      const cur = acc.get(u) || { wsum: 0, w: 0 };
+      cur.wsum += value * weight;
+      cur.w += weight;
+      acc.set(u, cur);
     }
-  }
-  const engagementByUrl = new Map();
-  for (const row of engagement) {
-    const u = rowUrl(row);
-    if (u) {
-      engagementByUrl.set(
-        u,
-        pick(row, ["averageEngagementTime", "engagementTime", "activeTime", "totalTime", "value"])
-      );
-    }
-  }
+    const out = new Map();
+    for (const [u, { wsum, w }] of acc) out.set(u, w ? wsum / w : 0);
+    return out;
+  };
+  const scrollByUrl = weightedByUrl(scroll, [
+    "averageScrollDepth",
+    "scrollDepth",
+    "avgScrollDepth",
+    "value",
+  ]);
+  const engagementByUrl = weightedByUrl(engagement, [
+    "averageEngagementTime",
+    "engagementTime",
+    "activeTime",
+    "totalTime",
+    "value",
+  ]);
 
   const pages = [...pageMap.values()]
     .map((p) => ({
@@ -145,6 +181,15 @@ function normalizeClarityInsights(raw) {
     }))
     .sort((a, b) => b.sessions - a.sessions || b.pageViews - a.pageViews)
     .slice(0, TOP_PAGES);
+
+  // Same pages, re-ranked by what's holding attention rather than raw traffic
+  // — needs a minimum session count so a single-visit outlier can't top it.
+  const MIN_SESSIONS_FOR_ENGAGEMENT_RANK = 3;
+  const topEngaged = pages
+    .filter((p) => p.sessions >= MIN_SESSIONS_FOR_ENGAGEMENT_RANK)
+    .slice()
+    .sort((a, b) => b.scrollDepth - a.scrollDepth || b.engagementTime - a.engagementTime)
+    .slice(0, 5);
 
   const signals = {
     deadClicks: sumMetric(raw, "DeadClickCount"),
@@ -176,6 +221,8 @@ function normalizeClarityInsights(raw) {
       ),
     },
     pages,
+    topEngaged,
+    channels,
     signals,
     hasData: sessions > 0 || pages.length > 0,
   };
@@ -198,7 +245,7 @@ function sumMetric(raw, name) {
 async function callClarity(env, { numOfDays = NUM_OF_DAYS } = {}) {
   const token = env.CLARITY_API_TOKEN;
   if (!token) throw new Error("CLARITY_API_TOKEN is not configured");
-  const url = `${CLARITY_ENDPOINT}?numOfDays=${encodeURIComponent(numOfDays)}&dimension1=URL`;
+  const url = `${CLARITY_ENDPOINT}?numOfDays=${encodeURIComponent(numOfDays)}&dimension1=URL&dimension2=Channel`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
   });

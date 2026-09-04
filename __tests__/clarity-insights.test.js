@@ -34,6 +34,7 @@ const {
   maybeRefreshClarity,
   MAX_FETCHES_PER_DAY,
   REFRESH_INTERVAL_MS,
+  _callClarity,
 } = require("../api/shared/clarityInsights");
 
 function resetAll() {
@@ -134,9 +135,118 @@ describe("normalizeClarityInsights", () => {
     expect(() => normalizeClarityInsights(null)).not.toThrow();
     expect(normalizeClarityInsights(null).hasData).toBe(false);
   });
+
+  it("aggregates sessions by referrer channel", () => {
+    const withChannel = [
+      {
+        metricName: "Traffic",
+        information: [
+          { totalSessionCount: "10", Url: "https://bungendorerfs.org/", Channel: "Direct" },
+          {
+            totalSessionCount: "6",
+            Url: "https://bungendorerfs.org/",
+            Channel: "Organic Search",
+          },
+          {
+            totalSessionCount: "4",
+            Url: "https://bungendorerfs.org/#membership",
+            Channel: "Direct",
+          },
+        ],
+      },
+    ];
+    const out = normalizeClarityInsights(withChannel);
+    expect(out.channels).toEqual([
+      { channel: "Direct", sessions: 14 },
+      { channel: "Organic Search", sessions: 6 },
+    ]);
+    // channel is a second breakdown of the same rows, so page totals still sum correctly
+    expect(out.pages.find((p) => p.url === "https://bungendorerfs.org/").sessions).toBe(16);
+  });
+
+  it("weights per-page scroll/engagement across multiple channel rows for the same URL", () => {
+    const withChannel = [
+      {
+        metricName: "Traffic",
+        information: [
+          { totalSessionCount: "90", Url: "https://bungendorerfs.org/", Channel: "Direct" },
+          { totalSessionCount: "10", Url: "https://bungendorerfs.org/", Channel: "Referral" },
+        ],
+      },
+      {
+        metricName: "ScrollDepth",
+        information: [
+          {
+            averageScrollDepth: 80,
+            totalSessionCount: "90",
+            Url: "https://bungendorerfs.org/",
+            Channel: "Direct",
+          },
+          {
+            averageScrollDepth: 10,
+            totalSessionCount: "10",
+            Url: "https://bungendorerfs.org/",
+            Channel: "Referral",
+          },
+        ],
+      },
+    ];
+    const out = normalizeClarityInsights(withChannel);
+    // weighted: (80*90 + 10*10) / 100 = 73, not the naive average of 45 or last-write of 10
+    expect(out.pages[0].scrollDepth).toBe(73);
+  });
+
+  it("ranks topEngaged by scroll/engagement and excludes low-traffic outliers", () => {
+    const raw = [
+      {
+        metricName: "Traffic",
+        information: [
+          { totalSessionCount: "50", Url: "https://bungendorerfs.org/popular" },
+          { totalSessionCount: "40", Url: "https://bungendorerfs.org/sticky" },
+          { totalSessionCount: "1", Url: "https://bungendorerfs.org/one-visit-100pct" },
+        ],
+      },
+      {
+        metricName: "ScrollDepth",
+        information: [
+          {
+            averageScrollDepth: 30,
+            totalSessionCount: "50",
+            Url: "https://bungendorerfs.org/popular",
+          },
+          {
+            averageScrollDepth: 95,
+            totalSessionCount: "40",
+            Url: "https://bungendorerfs.org/sticky",
+          },
+          {
+            averageScrollDepth: 100,
+            totalSessionCount: "1",
+            Url: "https://bungendorerfs.org/one-visit-100pct",
+          },
+        ],
+      },
+    ];
+    const out = normalizeClarityInsights(raw);
+    expect(out.topEngaged.map((p) => p.url)).toEqual([
+      "https://bungendorerfs.org/sticky",
+      "https://bungendorerfs.org/popular",
+    ]);
+  });
 });
 
 /* ------------------------------------------------------------- refresh gate */
+
+describe("_callClarity", () => {
+  it("requests URL and Channel as the two breakdown dimensions", async () => {
+    global.fetch = jest.fn(async () => ({ ok: true, json: async () => [] }));
+    await _callClarity({ CLARITY_API_TOKEN: "tok" });
+    const calledUrl = global.fetch.mock.calls[0][0];
+    expect(calledUrl).toContain("dimension1=URL");
+    expect(calledUrl).toContain("dimension2=Channel");
+    delete global.fetch;
+  });
+});
 
 describe("maybeRefreshClarity", () => {
   const env = { CLARITY_API_TOKEN: "tok" };

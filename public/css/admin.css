@@ -1313,6 +1313,11 @@ label {
   color: var(--ink-faint);
   font-size: 0.8rem;
 }
+.clarity-h3__note {
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+  margin: -0.5rem 0 0.75rem;
+}
 
 .clarity-table {
   width: 100%;
