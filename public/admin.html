@@ -87,6 +87,10 @@
           <button class="nav__item" data-view="alertBanner" type="button">
             Alert banner<span class="nav__note">homepage message</span>
           </button>
+          <button class="nav__item" data-view="bfdpDates" type="button">
+            Bushfire Danger Period<span class="nav__note">permit season dates</span
+            ><span class="nav__badge" id="bfdpBadge" hidden></span>
+          </button>
           <button class="nav__item" data-view="enquiries" type="button">
             Enquiries<span class="nav__note">contact form</span
             ><span class="nav__badge" id="enqBadge" hidden></span>
@@ -223,6 +227,45 @@
                 </button>
               </div>
               <p id="alertBannerMsg" class="msg" role="status" aria-live="polite" hidden></p>
+            </div>
+          </section>
+
+          <!-- Bushfire Danger Period -->
+          <section id="view-bfdpDates" class="view" hidden>
+            <h2>Bushfire Danger Period</h2>
+            <p class="view__lead">
+              These dates drive the public site&rsquo;s Controlled Burn status (fire permits
+              required / possibly suspended). The statewide default is 1 October &ndash; 31 March,
+              but the RFS Commissioner can vary it for this district &mdash; check
+              <a
+                href="https://www.rfs.nsw.gov.au/fire-information/BFDP"
+                target="_blank"
+                rel="noopener"
+                >the RFS&rsquo;s published table</a
+              >
+              before confirming.
+            </p>
+
+            <p id="bfdpWarning" class="alert-banner-editor__notice" role="note" hidden></p>
+
+            <div class="editor">
+              <div class="editor__field">
+                <label for="bfdpStart">Start date</label>
+                <input id="bfdpStart" type="date" class="editor__input" />
+              </div>
+              <div class="editor__field">
+                <label for="bfdpEnd">End date</label>
+                <input id="bfdpEnd" type="date" class="editor__input" />
+              </div>
+
+              <p id="bfdpMeta" class="editor__meta"></p>
+
+              <div class="editor__foot">
+                <button type="button" class="btn btn--primary" id="bfdpSave">
+                  Save &amp; confirm dates
+                </button>
+              </div>
+              <p id="bfdpMsg" class="msg" role="status" aria-live="polite" hidden></p>
             </div>
           </section>
 

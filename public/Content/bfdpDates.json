@@ -1,5 +1,7 @@
-{
-  "_comment": "Bungendore sits in the NSW RFS 'Southern Ranges' district. The Bush Fire Danger Period (BFDP) start/end dates below are the statewide statutory default (1 Oct - 31 Mar). The RFS Commissioner can vary these per district in a given year (earlier start, later end, etc). When that happens, check the authoritative table at https://www.rfs.nsw.gov.au/fire-information/BFDP and update 'start'/'end' below by hand - no code change needed. This file is read by isBushfireDangerPeriod() in main.js, which falls back to the same statutory default if this file is missing or fails to load.",
-  "start": "2026-10-01",
-  "end": "2027-03-31"
-}
+[
+  {
+    "_comment": "Seed data only — scripts/seed-content.js copies this into the `content` table on first run. After that, edit the Bushfire Danger Period dates from the members' area (/admin), not this file. Bungendore sits in the NSW RFS 'Southern Ranges' district; the dates below are the statewide statutory default (1 Oct - 31 Mar). The RFS Commissioner can vary these per district in a given year — check the authoritative table at https://www.rfs.nsw.gov.au/fire-information/BFDP before confirming.",
+    "start": "2026-10-01",
+    "end": "2027-03-31"
+  }
+]

@@ -527,7 +527,7 @@ async function findMemberByPhone(e164, env) {
 // Content keys whose GET is public (no session required). PUT/POST always
 // stays session-gated below — only add a key here once its content is meant
 // for every visitor, not just signed-in members.
-const PUBLIC_CONTENT_KEYS = ["events", "training", "alertBanner", "awarenessCards"];
+const PUBLIC_CONTENT_KEYS = ["events", "training", "alertBanner", "awarenessCards", "bfdpDates"];
 
 /** Public — returns the plain array (same shape the static JSON files had). */
 async function handleContentGet(key, env = process.env) {
@@ -559,11 +559,18 @@ async function handleContentSet(key, req, env = process.env) {
   if (!result.ok) return { status: 400, body: { error: result.error } };
 
   // The alert banner's postedAt is never trusted from the client — stamp it
-  // here, server-side, at the moment of save (roadmap Bet 3).
+  // here, server-side, at the moment of save (roadmap Bet 3). bfdpDates'
+  // confirmedAt is the same idea: it's when someone last actually checked
+  // these dates against the RFS's published table, so the admin panel's
+  // "validate before it applies" warning can show how stale that check is.
   let items = result.items;
   if (key === "alertBanner" && items.length) {
     const postedAt = new Date().toISOString();
     items = [{ ...items[0], postedAt }];
+  }
+  if (key === "bfdpDates" && items.length) {
+    const confirmedAt = new Date().toISOString();
+    items = [{ ...items[0], confirmedAt }];
   }
 
   const saved = await setContent(key, items, s.member.email, env);

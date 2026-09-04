@@ -128,13 +128,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // publishes the authoritative, currently-in-force dates as a live table
   // at https://www.rfs.nsw.gov.au/fire-information/BFDP. That page has no
   // public data feed, so instead of guessing or scraping it, the actual
-  // dates for our district live in Content/bfdpDates.json — a small file a
-  // brigade member updates by hand (checking that RFS page) whenever the
-  // Commissioner varies them. bfdpPeriod is populated from it below; if the
-  // file is missing or hasn't loaded yet, this falls back to the statewide
-  // statutory default (1 Oct – 31 Mar) so the strip cell still shows a
-  // reasonable state immediately on page load.
-  let bfdpPeriod = null; // { start: Date, end: Date }, set once bfdpDates.json loads (see below)
+  // dates for our district are set from the members' area (/admin —
+  // "Bushfire Danger Period") and read here from GET /api/content/bfdpDates.
+  // bfdpPeriod is populated from it below; if the fetch fails or nothing has
+  // been configured yet, this falls back to the statewide statutory default
+  // (1 Oct – 31 Mar) so the strip cell still shows a reasonable state
+  // immediately on page load.
+  let bfdpPeriod = null; // { start: Date, end: Date }, set once /api/content/bfdpDates loads (see below)
 
   function isBushfireDangerPeriod() {
     const now = new Date();
@@ -246,13 +246,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Check if necessary strip elements exist
     Promise.all([
       fetch("/Content/AFDRSMessages.json").then((response) => response.json()),
-      fetch("/Content/bfdpDates.json")
+      fetch(`${getApiBaseUrl()}/api/content/bfdpDates`)
         .then((response) => response.json())
         .catch(() => null), // isBushfireDangerPeriod() falls back to the statutory default
     ])
       .then(([fireDangerRatings, bfdpDates]) => {
-        if (bfdpDates) {
-          bfdpPeriod = { start: new Date(bfdpDates.start), end: new Date(bfdpDates.end) };
+        const current = Array.isArray(bfdpDates) && bfdpDates.length ? bfdpDates[0] : null;
+        if (current && current.start && current.end) {
+          bfdpPeriod = { start: new Date(current.start), end: new Date(current.end) };
         }
         fetch(`${getApiBaseUrl()}/api/fire-danger`)
           .then((response) => {

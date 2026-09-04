@@ -91,6 +91,13 @@
     alertBannerSave: document.getElementById("alertBannerSave"),
     alertBannerClear: document.getElementById("alertBannerClear"),
     alertBannerMsg: document.getElementById("alertBannerMsg"),
+    bfdpBadge: document.getElementById("bfdpBadge"),
+    bfdpWarning: document.getElementById("bfdpWarning"),
+    bfdpStart: document.getElementById("bfdpStart"),
+    bfdpEnd: document.getElementById("bfdpEnd"),
+    bfdpMeta: document.getElementById("bfdpMeta"),
+    bfdpSave: document.getElementById("bfdpSave"),
+    bfdpMsg: document.getElementById("bfdpMsg"),
     cardList: document.getElementById("cardList"),
     cardAdd: document.getElementById("cardAdd"),
     cardSave: document.getElementById("cardSave"),
@@ -289,11 +296,13 @@
     });
     switchView(currentViewFromHash() || "duty");
     if (currentViewFromHash() !== "enquiries") loadEnquiries(); // for the nav badge
+    if (currentViewFromHash() !== "bfdpDates") loadBfdpDates(); // for the nav badge
   }
 
   const VIEWS = [
     "duty",
     "alertBanner",
+    "bfdpDates",
     "enquiries",
     "events",
     "awarenessCards",
@@ -320,6 +329,7 @@
     if (name === "members") loadMembers();
     if (name === "duty") loadDuty();
     if (name === "alertBanner") loadAlertBanner();
+    if (name === "bfdpDates") loadBfdpDates();
     if (name === "events") loadAllContent();
     if (name === "awarenessCards") loadAwarenessCards();
     if (name === "enquiries") loadEnquiries();
@@ -1529,6 +1539,112 @@
 
   el.alertBannerClear.addEventListener("click", function (e) {
     saveAlertBanner([], e.currentTarget, "Banner cleared.");
+  });
+
+  /* ------------------------------------------------------- bushfire danger period */
+
+  const BFDP_WARNING_WINDOW_DAYS = 30;
+
+  function daysBetween(a, b) {
+    return Math.round((b - a) / 86400000);
+  }
+
+  // Returns a warning string when the configured dates need a look — either
+  // nothing is set, the period has already lapsed (next season not yet
+  // configured), or the start/end is coming up soon enough that it's worth
+  // re-checking against the RFS's published table before it takes effect.
+  // Empty string means no warning is needed right now.
+  function computeBfdpWarning(current) {
+    if (!current || !current.start || !current.end) {
+      return "No Bushfire Danger Period is configured — the site is falling back to the statewide default (1 Oct – 31 Mar). Set the dates below.";
+    }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const start = new Date(current.start + "T00:00:00");
+    const end = new Date(current.end + "T00:00:00");
+
+    if (now > end) {
+      return (
+        "The configured Bushfire Danger Period ended on " +
+        current.end +
+        " — set next season's dates."
+      );
+    }
+    if (now < start && daysBetween(now, start) <= BFDP_WARNING_WINDOW_DAYS) {
+      return (
+        "The Bushfire Danger Period starts in " +
+        daysBetween(now, start) +
+        " day(s) (" +
+        current.start +
+        "). Confirm these dates against the RFS's published table before it applies."
+      );
+    }
+    if (now <= end && daysBetween(now, end) <= BFDP_WARNING_WINDOW_DAYS) {
+      return (
+        "The Bushfire Danger Period ends in " +
+        daysBetween(now, end) +
+        " day(s) (" +
+        current.end +
+        "). Confirm or set next season's dates ahead of time."
+      );
+    }
+    return "";
+  }
+
+  function renderBfdpDates(items) {
+    const current = Array.isArray(items) && items.length ? items[0] : null;
+    el.bfdpStart.value = current ? current.start : "";
+    el.bfdpEnd.value = current ? current.end : "";
+    el.bfdpMeta.textContent = current
+      ? "Last confirmed" + (current.confirmedAt ? " " + fmtPostedAt(current.confirmedAt) : "")
+      : "Not set.";
+
+    const warning = computeBfdpWarning(current);
+    if (warning) {
+      el.bfdpWarning.textContent = warning;
+      el.bfdpWarning.hidden = false;
+      el.bfdpBadge.textContent = "!";
+      el.bfdpBadge.hidden = false;
+    } else {
+      el.bfdpWarning.hidden = true;
+      el.bfdpBadge.hidden = true;
+    }
+  }
+
+  function loadBfdpDates() {
+    api("/api/content/bfdpDates").then(function (r) {
+      if (!r || !r.ok) return;
+      renderBfdpDates(Array.isArray(r.data) ? r.data : []);
+    });
+  }
+
+  el.bfdpSave.addEventListener("click", function (e) {
+    const start = el.bfdpStart.value;
+    const end = el.bfdpEnd.value;
+    if (!start || !end) {
+      setMsg(el.bfdpMsg, "Set both a start and an end date.", "err");
+      return;
+    }
+    if (start >= end) {
+      setMsg(el.bfdpMsg, "The start date must be before the end date.", "err");
+      return;
+    }
+    setMsg(el.bfdpMsg, "");
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    api("/api/content/bfdpDates", {
+      method: "PUT",
+      body: { items: [{ start: start, end: end }] },
+    }).then(function (r) {
+      btn.disabled = false;
+      if (!r) return;
+      if (!r.ok) {
+        setMsg(el.bfdpMsg, (r.data && r.data.error) || "Could not save.", "err");
+        return;
+      }
+      setMsg(el.bfdpMsg, "Saved and confirmed.", "ok");
+      renderBfdpDates(r.data.items);
+    });
   });
 
   /* ------------------------------------------------------------ social studio */

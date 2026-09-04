@@ -135,6 +135,38 @@ function validateAlertBanner(input) {
 
 const EVENT_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+/**
+ * The Bush Fire Danger Period (BFDP) start/end for this district — same
+ * 0-or-1-item items-array shape as the alert banner, for the same reason
+ * (fits the existing getContent/setContent(key, items) storage contract).
+ * An empty array means "unconfigured" — isBushfireDangerPeriod() in
+ * public/js/main.js falls back to the statewide statutory default (1 Oct –
+ * 31 Mar) in that case. `confirmedAt` is stamped server-side on every save,
+ * never accepted from the client, so the admin panel's "validate before it
+ * applies" warning can show how long it's been since anyone actually
+ * checked these dates against the RFS's published table.
+ */
+function validateBfdpDates(input) {
+  if (!Array.isArray(input)) {
+    return { ok: false, error: "Expected a list with the current BFDP dates." };
+  }
+  if (input.length > 1) {
+    return { ok: false, error: "Only one Bushfire Danger Period can be set — clear it first." };
+  }
+  if (input.length === 0) return { ok: true, items: [] };
+
+  const raw = input[0];
+  const start = str(raw && raw.start, 10);
+  const end = str(raw && raw.end, 10);
+  if (!EVENT_DATE.test(start)) return { ok: false, error: "Start date must be YYYY-MM-DD." };
+  if (!EVENT_DATE.test(end)) return { ok: false, error: "End date must be YYYY-MM-DD." };
+  if (new Date(start) >= new Date(end)) {
+    return { ok: false, error: "The start date must be before the end date." };
+  }
+
+  return { ok: true, items: [{ start, end }] };
+}
+
 // Card `body` is markdown rendered client-side through the same marked +
 // DOMPurify pipeline as every other piece of content on the site — plain
 // text length limits here are just abuse/storage protection, not sanitising.
@@ -227,6 +259,7 @@ function validateContent(key, input) {
   if (key === "training") return validateTraining(input);
   if (key === "alertBanner") return validateAlertBanner(input);
   if (key === "awarenessCards") return validateAwarenessCards(input);
+  if (key === "bfdpDates") return validateBfdpDates(input);
   return { ok: false, error: "Unknown content type." };
 }
 
@@ -240,4 +273,5 @@ module.exports = {
   validateTraining,
   validateAlertBanner,
   validateAwarenessCards,
+  validateBfdpDates,
 };

@@ -798,6 +798,37 @@ describe("content schema", () => {
     ]);
     expect(r.items[0].postedAt).toBeUndefined();
   });
+
+  test("bfdpDates: empty array is accepted (unconfigured), one item with valid dates is accepted", () => {
+    expect(validateContent("bfdpDates", []).items).toEqual([]);
+
+    const r = validateContent("bfdpDates", [{ start: "2026-10-01", end: "2027-03-31" }]);
+    expect(r.ok).toBe(true);
+    expect(r.items).toEqual([{ start: "2026-10-01", end: "2027-03-31" }]);
+  });
+
+  test("bfdpDates: rejects more than one item, bad date format, and start >= end", () => {
+    expect(
+      validateContent("bfdpDates", [
+        { start: "2026-10-01", end: "2027-03-31" },
+        { start: "2027-10-01", end: "2028-03-31" },
+      ]).ok
+    ).toBe(false);
+    expect(validateContent("bfdpDates", [{ start: "1 Oct", end: "2027-03-31" }]).ok).toBe(false);
+    expect(validateContent("bfdpDates", [{ start: "2026-10-01", end: "2026-10-01" }]).ok).toBe(
+      false
+    );
+    expect(validateContent("bfdpDates", [{ start: "2027-03-31", end: "2026-10-01" }]).ok).toBe(
+      false
+    );
+  });
+
+  test("bfdpDates: never trusts a client-supplied confirmedAt", () => {
+    const r = validateContent("bfdpDates", [
+      { start: "2026-10-01", end: "2027-03-31", confirmedAt: "2000-01-01T00:00:00.000Z" },
+    ]);
+    expect(r.items[0].confirmedAt).toBeUndefined();
+  });
 });
 
 describe("content handlers", () => {
@@ -921,6 +952,65 @@ describe("alert banner content handler (roadmap Bet 3)", () => {
     const bad = await handlers.handleContentSet("alertBanner", {
       headers: { cookie: cookieHeader, ...CSRF },
       body: { items: [{ message: "" }] },
+    });
+    expect(bad.status).toBe(400);
+  });
+});
+
+describe("bushfire danger period content handler", () => {
+  const CSRF = { "x-brfs-auth": "1" };
+
+  test("GET is public with no session and defaults to an empty (unconfigured) array", async () => {
+    const got = await handlers.handleContentGet("bfdpDates");
+    expect(got).toMatchObject({ status: 200, body: [] });
+  });
+
+  test("PUT stamps confirmedAt server-side and ignores any client-supplied value", async () => {
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const before = Date.now();
+
+    const res = await handlers.handleContentSet("bfdpDates", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: {
+        items: [
+          {
+            start: "2026-10-01",
+            end: "2027-03-31",
+            confirmedAt: "2000-01-01T00:00:00.000Z", // must be ignored
+          },
+        ],
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.items).toHaveLength(1);
+    const [saved] = res.body.items;
+    expect(saved.start).toBe("2026-10-01");
+    expect(saved.end).toBe("2027-03-31");
+    expect(saved.confirmedAt).not.toBe("2000-01-01T00:00:00.000Z");
+    expect(new Date(saved.confirmedAt).getTime()).toBeGreaterThanOrEqual(before);
+
+    const got = await handlers.handleContentGet("bfdpDates");
+    expect(got.body).toEqual(res.body.items);
+  });
+
+  test("PUT is refused without a session or the CSRF header, and rejects invalid input", async () => {
+    const anon = await handlers.handleContentSet("bfdpDates", {
+      headers: {},
+      body: { items: [{ start: "2026-10-01", end: "2027-03-31" }] },
+    });
+    expect(anon.status).toBe(401);
+
+    const { cookieHeader } = await signIn("m@rfs.nsw.gov.au");
+    const noCsrf = await handlers.handleContentSet("bfdpDates", {
+      headers: { cookie: cookieHeader },
+      body: { items: [{ start: "2026-10-01", end: "2027-03-31" }] },
+    });
+    expect(noCsrf.status).toBe(403);
+
+    const bad = await handlers.handleContentSet("bfdpDates", {
+      headers: { cookie: cookieHeader, ...CSRF },
+      body: { items: [{ start: "2027-03-31", end: "2026-10-01" }] },
     });
     expect(bad.status).toBe(400);
   });

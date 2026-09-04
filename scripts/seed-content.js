@@ -17,6 +17,7 @@ const { setContent, getContent } = require("../api/shared/store");
 const SOURCES = {
   events: "communityEvents.json",
   training: "trainingSchedule.json",
+  bfdpDates: "bfdpDates.json",
 };
 
 async function main() {
