@@ -399,9 +399,9 @@
     const tr = document.createElement("tr");
     const isSelf = state.me && m.email === state.me.email;
 
-    tr.appendChild(cell(m.email));
+    tr.appendChild(cell(m.email, "Email"));
 
-    const nameCell = cell(m.displayName || "—");
+    const nameCell = cell(m.displayName || "—", "Name");
     if (isSelf) {
       const you = document.createElement("span");
       you.className = "you-tag";
@@ -410,16 +410,17 @@
     }
     tr.appendChild(nameCell);
 
-    tr.appendChild(cell(m.phone || "—"));
+    tr.appendChild(cell(m.phone || "—", "Mobile"));
 
     const roleCell = document.createElement("td");
+    roleCell.appendChild(cellLabel("Role"));
     const pill = document.createElement("span");
     pill.className = "role-pill" + (m.role === "admin" ? " is-admin" : "");
     pill.textContent = m.role;
     roleCell.appendChild(pill);
     tr.appendChild(roleCell);
 
-    tr.appendChild(cell(m.lastLoginAt ? relTime(m.lastLoginAt) : "never"));
+    tr.appendChild(cell(m.lastLoginAt ? relTime(m.lastLoginAt) : "never", "Last sign-in"));
 
     const actionCell = document.createElement("td");
     actionCell.className = "members-table__actions";
@@ -450,9 +451,10 @@
     const tr = document.createElement("tr");
     tr.className = "members-table__edit-row";
 
-    tr.appendChild(cell(m.email));
+    tr.appendChild(cell(m.email, "Email"));
 
     const nameTd = document.createElement("td");
+    nameTd.appendChild(cellLabel("Name"));
     const nameInput = document.createElement("input");
     nameInput.type = "text";
     nameInput.value = m.displayName || "";
@@ -461,6 +463,7 @@
     tr.appendChild(nameTd);
 
     const phoneTd = document.createElement("td");
+    phoneTd.appendChild(cellLabel("Mobile"));
     const phoneInput = document.createElement("input");
     phoneInput.type = "tel";
     phoneInput.value = m.phone || "";
@@ -469,6 +472,7 @@
     tr.appendChild(phoneTd);
 
     const roleTd = document.createElement("td");
+    roleTd.appendChild(cellLabel("Role"));
     const roleSelect = document.createElement("select");
     roleSelect.setAttribute("aria-label", "Role");
     ["member", "admin"].forEach(function (r) {
@@ -481,7 +485,7 @@
     roleTd.appendChild(roleSelect);
     tr.appendChild(roleTd);
 
-    tr.appendChild(cell(m.lastLoginAt ? relTime(m.lastLoginAt) : "never"));
+    tr.appendChild(cell(m.lastLoginAt ? relTime(m.lastLoginAt) : "never", "Last sign-in"));
 
     const actionCell = document.createElement("td");
     actionCell.className = "members-table__actions";
@@ -527,10 +531,19 @@
     return tr;
   }
 
-  function cell(text) {
+  function cell(text, label) {
     const td = document.createElement("td");
-    td.textContent = text;
+    if (label) td.appendChild(cellLabel(label));
+    td.appendChild(document.createTextNode(text));
     return td;
+  }
+
+  /** Visible label shown only in the mobile card layout (hidden on the desktop table). */
+  function cellLabel(text) {
+    const span = document.createElement("span");
+    span.className = "members-table__label";
+    span.textContent = text;
+    return span;
   }
 
   function removeMember(m, btn) {

@@ -641,6 +641,9 @@ label {
   color: var(--ink-faint);
   padding: 1.4rem;
 }
+.members-table__label {
+  display: none;
+}
 .role-pill {
   font-size: 0.72rem;
   font-weight: 600;
@@ -985,6 +988,62 @@ label {
   }
   .add-row__fields {
     grid-template-columns: 1fr;
+  }
+
+  /* Members table becomes a stack of cards — six columns don't fit a phone
+     screen even with horizontal scroll, and a min-width table inside this
+     grid has repeatedly forced the whole page wider on iOS Safari. */
+  #view-members .table-wrap {
+    overflow-x: visible;
+    border: none;
+    border-radius: 0;
+  }
+  .members-table {
+    min-width: 0;
+    width: 100%;
+  }
+  .members-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .members-table,
+  .members-table tbody,
+  .members-table tr,
+  .members-table td {
+    display: block;
+    width: 100%;
+  }
+  .members-table tbody tr {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 0.65rem;
+  }
+  .members-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+  .members-table td {
+    border-bottom: none;
+    padding: 0.3rem 0;
+  }
+  .members-table td.members-table__actions {
+    display: flex;
+    padding-top: 0.5rem;
+  }
+  .members-table__label {
+    display: block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    margin-bottom: 0.1rem;
   }
 }
 
