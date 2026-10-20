@@ -76,7 +76,7 @@ app.get("/mapbox-token", (req, res) => {
   if (!origin && req.headers.referer) {
     try {
       origin = new URL(req.headers.referer).origin;
-    } catch (e) {
+    } catch {
       // Invalid referer URL, ignore
     }
   }
