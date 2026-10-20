@@ -11,12 +11,14 @@ module.exports = async function (context, _req) {
   const result = await getFireIncidents(process.env, { logger: context.log });
 
   if (!result.ok) {
+    // Upstream detail stays in the server log; the public body gets a fixed string.
+    context.log.error("fire-incidents unavailable:", result.error);
     context.res = {
       status: result.status || 500,
       headers: {
         "Content-Type": "application/json",
       },
-      body: { error: result.error || "Failed to fetch incidents" },
+      body: { error: "Incident data is temporarily unavailable." },
     };
     return;
   }

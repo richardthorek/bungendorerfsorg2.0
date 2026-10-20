@@ -9,14 +9,16 @@
 const { handleContactSubmission } = require("./submit");
 const { getClientIp } = require("../shared/auth");
 const { validateContactFormData } = require("../shared/contactValidation");
+const { corsHeadersFor } = require("../shared/corsOrigin");
 
 module.exports = async function (context, req) {
-  // Handle CORS preflight
+  // Handle CORS preflight. The form is same-origin in practice, so only our own
+  // origins get an Allow-Origin header; other sites cannot submit enquiries.
   if (req.method === "OPTIONS") {
     context.res = {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": "*",
+        ...corsHeadersFor(req.headers && req.headers.origin),
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       },
@@ -26,7 +28,7 @@ module.exports = async function (context, req) {
 
   const jsonHeaders = {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
+    ...corsHeadersFor(req.headers && req.headers.origin),
   };
 
   try {

@@ -242,134 +242,159 @@ document.addEventListener("DOMContentLoaded", () => {
   const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
   const fireDangerMessage = document.getElementById("fireDangerMessage");
 
+  // The rating and Total Fire Ban change during the day; a tab left open must
+  // not show the morning's reading. Content moves on a slower cadence than the
+  // incident feeds, so 15 minutes is enough.
+  const FIRE_DANGER_REFRESH_MS = 15 * 60 * 1000;
+  let fireDangerRatings = null; // AFDRSMessages.json is static, so it is fetched once per page view
+  let lastFireDangerRefreshAt = 0;
+
+  function applyFireDangerXml(xml, ratings) {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xml, "application/xml");
+    const districts = xmlDoc.getElementsByTagName("District");
+
+    const southernRangesDistrict = Array.from(districts).find(
+      (district) => district.getElementsByTagName("Name")[0].textContent === "Southern Ranges"
+    );
+
+    if (!southernRangesDistrict) {
+      console.error("Southern Ranges district not found in the XML data.");
+      fireDangerRatingCell.textContent = "No Rating";
+      fireDangerRatingCell.setAttribute("data-level", "NO RATING");
+      fireDangerMessage.textContent = "Rating information currently unavailable.";
+      updateControlledBurnCell("", "");
+      return;
+    }
+
+    const dangerNode = southernRangesDistrict.getElementsByTagName("DangerLevelToday")[0];
+    let dangerLevelToday = dangerNode ? dangerNode.textContent : "";
+    dangerLevelToday = dangerLevelToday.replace(/-/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
+
+    const fireBanNode = southernRangesDistrict.getElementsByTagName("FireBanToday")[0];
+    const fireBanToday = fireBanNode ? fireBanNode.textContent.trim() : "";
+    updateControlledBurnCell(fireBanToday, dangerLevelToday);
+
+    const ratingInfo = ratings.FireDangerRatings.find(
+      (rating) =>
+        String(rating.Rating || "")
+          .replace(/-/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toUpperCase() === dangerLevelToday
+    );
+
+    if (!ratingInfo || !dangerLevelToday) {
+      console.error(`No rating information found for danger level: ${dangerLevelToday}`);
+      fireDangerRatingCell.textContent = "No Rating";
+      fireDangerRatingCell.setAttribute("data-level", "NO RATING");
+      fireDangerMessage.textContent = "Rating information currently unavailable.";
+      return;
+    }
+
+    fireDangerRatingCell.textContent = dangerLevelToday;
+    fireDangerRatingCell.setAttribute("data-level", dangerLevelToday);
+    fireDangerRatingCell.removeAttribute("style"); // CSS data-level rules handle all colour; no inline override
+    fireDangerMessage.textContent = ratingInfo.FireBehaviour;
+
+    if (fireDangerTableContainer) {
+      fireDangerTableContainer.innerHTML = ""; // Clear out old table if it exists
+    }
+
+    // Update emergency dashboard with fire danger data only — incident
+    // count is emergency-data.js's exclusive responsibility (see
+    // updateEmergencyDashboard's doc comment); asserting a guessed
+    // count here would race with, and can clobber, the real one.
+    if (typeof window.updateEmergencyDashboard === "function") {
+      window.updateEmergencyDashboard({
+        dangerLevel: dangerLevelToday,
+        message: ratingInfo.FireBehaviour || ratingInfo.KeyMessage,
+      });
+    }
+  }
+
+  function showFireDangerUnavailable() {
+    fireDangerRatingCell.textContent = "No Rating";
+    fireDangerRatingCell.setAttribute("data-level", "NO RATING");
+    fireDangerMessage.textContent = "Could not load rating message.";
+    updateControlledBurnCell("", "");
+
+    if (typeof window.updateEmergencyDashboard === "function") {
+      window.updateEmergencyDashboard({
+        dangerLevel: "NO RATING",
+        message: "Rating information currently unavailable.",
+      });
+    }
+  }
+
+  async function refreshFireDanger() {
+    lastFireDangerRefreshAt = Date.now();
+
+    if (!fireDangerRatings) {
+      try {
+        const ratingsResponse = await fetch("/Content/AFDRSMessages.json");
+        fireDangerRatings = await ratingsResponse.json();
+      } catch (error) {
+        console.error("Error fetching the JSON data:", error);
+        fireDangerRatingCell.textContent = "Error";
+        fireDangerMessage.textContent = "Could not load rating message.";
+        updateControlledBurnCell("", "");
+        return;
+      }
+    }
+
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/api/fire-danger`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch fire danger data");
+      }
+      // /api/fire-danger is in sw.js's CACHEABLE_API_PATHS list, so a
+      // network failure can be silently served from the service worker's own
+      // cache. Treat that as a failure rather than render a possibly-stale
+      // rating as live.
+      if (response.headers && response.headers.get("X-SW-Served-From") === "cache") {
+        throw new Error("Failed to fetch fire danger data");
+      }
+      // Same reasoning for api/shared/fireDataProxy.js's server-side cache: a
+      // 200 can carry data up to 30 minutes old (X-Data-Freshness: stale).
+      if (response.headers && response.headers.get("X-Data-Freshness") === "stale") {
+        throw new Error("Failed to fetch fire danger data");
+      }
+      applyFireDangerXml(await response.text(), fireDangerRatings);
+    } catch (error) {
+      console.error("Error fetching the XML data:", error);
+      showFireDangerUnavailable();
+    }
+  }
+
   if (fireDangerRatingCell && fireDangerMessage) {
-    // Check if necessary strip elements exist
-    Promise.all([
-      fetch("/Content/AFDRSMessages.json").then((response) => response.json()),
-      fetch(`${getApiBaseUrl()}/api/content/bfdpDates`)
-        .then((response) => response.json())
-        .catch(() => null), // isBushfireDangerPeriod() falls back to the statutory default
-    ])
-      .then(([fireDangerRatings, bfdpDates]) => {
+    // Statutory dates only refine the controlled-burn cell, so they load in
+    // parallel and never gate the rating itself.
+    fetch(`${getApiBaseUrl()}/api/content/bfdpDates`)
+      .then((response) => response.json())
+      .then((bfdpDates) => {
         const current = Array.isArray(bfdpDates) && bfdpDates.length ? bfdpDates[0] : null;
         if (current && current.start && current.end) {
           bfdpPeriod = { start: new Date(current.start), end: new Date(current.end) };
         }
-        fetch(`${getApiBaseUrl()}/api/fire-danger`)
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Failed to fetch fire danger data");
-            }
-            // /api/fire-danger is in sw.js's CACHEABLE_API_PATHS list, so a
-            // network failure can be silently served from the service
-            // worker's own cache — this fetch() still "succeeds" from here,
-            // with nothing distinguishing it from a genuinely live read.
-            // There's no last-known-good UI built for this cell (unlike
-            // emergency-data.js's incident/warning data), so the honest
-            // choice is to treat it the same as any other fetch failure
-            // rather than silently render a possibly-stale rating as live.
-            if (response.headers && response.headers.get("X-SW-Served-From") === "cache") {
-              throw new Error("Failed to fetch fire danger data");
-            }
-            // Same reasoning for api/shared/fireDataProxy.js's own server-side
-            // stale-while-revalidate cache: a successful 200 can still carry
-            // data up to 30 minutes old (X-Data-Freshness: stale) when the
-            // Logic App itself was unreachable. Treat it as a fetch failure
-            // rather than render a possibly-stale rating as a live one.
-            if (response.headers && response.headers.get("X-Data-Freshness") === "stale") {
-              throw new Error("Failed to fetch fire danger data");
-            }
-            return response.text();
-          })
-          .then((data) => {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(data, "application/xml");
-            const districts = xmlDoc.getElementsByTagName("District");
-
-            const southernRangesDistrict = Array.from(districts).find(
-              (district) =>
-                district.getElementsByTagName("Name")[0].textContent === "Southern Ranges"
-            );
-
-            if (southernRangesDistrict) {
-              const dangerNode = southernRangesDistrict.getElementsByTagName("DangerLevelToday")[0];
-              let dangerLevelToday = dangerNode ? dangerNode.textContent : "";
-              dangerLevelToday = dangerLevelToday
-                .replace(/-/g, " ")
-                .replace(/\s+/g, " ")
-                .trim()
-                .toUpperCase();
-
-              const fireBanNode = southernRangesDistrict.getElementsByTagName("FireBanToday")[0];
-              const fireBanToday = fireBanNode ? fireBanNode.textContent.trim() : "";
-              updateControlledBurnCell(fireBanToday, dangerLevelToday);
-
-              const ratingInfo = fireDangerRatings.FireDangerRatings.find(
-                (rating) =>
-                  String(rating.Rating || "")
-                    .replace(/-/g, " ")
-                    .replace(/\s+/g, " ")
-                    .trim()
-                    .toUpperCase() === dangerLevelToday
-              );
-
-              if (!ratingInfo || !dangerLevelToday) {
-                console.error(`No rating information found for danger level: ${dangerLevelToday}`);
-                fireDangerRatingCell.textContent = "No Rating";
-                fireDangerRatingCell.setAttribute("data-level", "NO RATING");
-                fireDangerMessage.textContent = "Rating information currently unavailable.";
-                return;
-              }
-
-              fireDangerRatingCell.textContent = dangerLevelToday;
-              fireDangerRatingCell.setAttribute("data-level", dangerLevelToday);
-              fireDangerRatingCell.removeAttribute("style"); // CSS data-level rules handle all colour; no inline override
-              fireDangerMessage.textContent = ratingInfo.FireBehaviour;
-
-              if (fireDangerTableContainer) {
-                fireDangerTableContainer.innerHTML = ""; // Clear out old table if it exists
-              }
-
-              // Update emergency dashboard with fire danger data only — incident
-              // count is emergency-data.js's exclusive responsibility (see
-              // updateEmergencyDashboard's doc comment); asserting a guessed
-              // count here would race with, and can clobber, the real one.
-              if (typeof window.updateEmergencyDashboard === "function") {
-                window.updateEmergencyDashboard({
-                  dangerLevel: dangerLevelToday,
-                  message: ratingInfo.FireBehaviour || ratingInfo.KeyMessage,
-                });
-              }
-            } else {
-              console.error("Southern Ranges district not found in the XML data.");
-              fireDangerRatingCell.textContent = "No Rating";
-              fireDangerRatingCell.setAttribute("data-level", "NO RATING");
-              fireDangerMessage.textContent = "Rating information currently unavailable.";
-              updateControlledBurnCell("", "");
-            }
-          })
-          .catch((error) => {
-            console.error("Error fetching the XML data:", error);
-            if (fireDangerRatingCell) {
-              fireDangerRatingCell.textContent = "No Rating";
-              fireDangerRatingCell.setAttribute("data-level", "NO RATING");
-            }
-            if (fireDangerMessage) fireDangerMessage.textContent = "Could not load rating message.";
-            updateControlledBurnCell("", "");
-
-            if (typeof window.updateEmergencyDashboard === "function") {
-              window.updateEmergencyDashboard({
-                dangerLevel: "NO RATING",
-                message: "Rating information currently unavailable.",
-              });
-            }
-          });
       })
-      .catch((error) => {
-        console.error("Error fetching the JSON data:", error);
-        if (fireDangerRatingCell) fireDangerRatingCell.textContent = "Error";
-        if (fireDangerMessage) fireDangerMessage.textContent = "Could not load rating message.";
-        updateControlledBurnCell("", "");
-      });
+      .catch(() => null); // isBushfireDangerPeriod() falls back to the statutory default
+
+    refreshFireDanger();
+
+    setInterval(() => {
+      if (document.visibilityState === "visible") refreshFireDanger();
+    }, FIRE_DANGER_REFRESH_MS);
+
+    // Browsers throttle timers in hidden tabs, so catch up as soon as the tab
+    // is back in view rather than waiting for the next tick.
+    document.addEventListener("visibilitychange", () => {
+      if (
+        document.visibilityState === "visible" &&
+        Date.now() - lastFireDangerRefreshAt >= FIRE_DANGER_REFRESH_MS
+      ) {
+        refreshFireDanger();
+      }
+    });
   }
 });

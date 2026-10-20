@@ -1209,14 +1209,26 @@
     reader.readAsDataURL(file);
   }
 
+  // Built with DOM APIs, not innerHTML: card.icon is admin-editable data, and
+  // the rule is no string-built markup. Anything that isn't a plain fa-* class
+  // name falls back to a neutral icon.
+  function makeFaIcon(iconClass) {
+    const safe = /^fa-[a-z0-9-]+$/.test(iconClass) ? iconClass : "fa-circle";
+    const icon = document.createElement("i");
+    icon.className = "fas " + safe;
+    icon.setAttribute("aria-hidden", "true");
+    return icon;
+  }
+
   function buildIconPicker(card, iconPreviewEl) {
     const wrap = document.createElement("div");
     wrap.className = "icon-picker";
     const trigger = document.createElement("button");
     trigger.type = "button";
     trigger.className = "icon-picker__trigger";
-    trigger.innerHTML =
-      "<i class=\"fas " + card.icon + "\" aria-hidden=\"true\"></i><span>Change icon</span>";
+    const triggerLabel = document.createElement("span");
+    triggerLabel.textContent = "Change icon";
+    trigger.append(makeFaIcon(card.icon), triggerLabel);
     const grid = document.createElement("div");
     grid.className = "icon-picker__grid";
     grid.hidden = true;
@@ -1224,7 +1236,7 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "icon-picker__opt" + (icon === card.icon ? " is-selected" : "");
-      btn.innerHTML = "<i class=\"fas " + icon + "\" aria-hidden=\"true\"></i>";
+      btn.append(makeFaIcon(icon));
       btn.title = icon.replace("fa-", "");
       btn.addEventListener("click", function () {
         card.icon = icon;
@@ -1278,7 +1290,7 @@
     upBtn.type = "button";
     upBtn.className = "icon-btn";
     upBtn.setAttribute("aria-label", "Move card up");
-    upBtn.innerHTML = "<i class=\"fas fa-arrow-up\" aria-hidden=\"true\"></i>";
+    upBtn.append(makeFaIcon("fa-arrow-up"));
     upBtn.addEventListener("click", function () {
       if (index === 0) return;
       const tmp = cardState.cards[index - 1];
@@ -1292,7 +1304,7 @@
     downBtn.type = "button";
     downBtn.className = "icon-btn";
     downBtn.setAttribute("aria-label", "Move card down");
-    downBtn.innerHTML = "<i class=\"fas fa-arrow-down\" aria-hidden=\"true\"></i>";
+    downBtn.append(makeFaIcon("fa-arrow-down"));
     downBtn.addEventListener("click", function () {
       if (index === cardState.cards.length - 1) return;
       const tmp = cardState.cards[index + 1];

@@ -476,7 +476,8 @@ function initHeroMap(token, bounds, markerData, areaFeatureCollection, heroEl, h
     center: DEFAULT_MAP_CENTER,
     zoom: 10,
     interactive: false, /* decorative surface; full interaction is in the Fire Info map */
-    attributionControl: false,
+    // Mapbox terms require the attribution to stay visible on every map, even decorative ones
+    attributionControl: { compact: true },
   });
 
   window._heroMapInstance = heroMap;
