@@ -87,12 +87,14 @@ function loadLastKnownGood() {
  * optimistically); a fetch TypeError ("Failed to fetch") is the browser's own
  * generic network-layer failure text and is what a DNS/timeout/offline fetch
  * throws, as opposed to an HTTP error status from a server that did respond.
+ * Each browser words that TypeError differently: Chrome "Failed to fetch",
+ * Safari "Load failed", Firefox "NetworkError when attempting to fetch resource".
  */
+const NETWORK_ERROR_PATTERN = /failed to fetch|load failed|networkerror|network request failed/i;
+
 function isLikelyOffline(error) {
   if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
-  return (
-    Boolean(error) && error.name === "TypeError" && /failed to fetch/i.test(error.message || "")
-  );
+  return Boolean(error) && error.name === "TypeError" && NETWORK_ERROR_PATTERN.test(error.message || "");
 }
 
 function formatLastKnownGoodTime(savedAt) {
@@ -182,6 +184,11 @@ function highestWarningState(counts) {
 
 // ─── Rendering ─────────────────────────────────────────────────────────────────
 
+// Last values written into the strip's live regions. Every poll re-renders
+// this, and a live region re-announces whatever is written, even if unchanged.
+let lastIncidentSummaryMarkup = null;
+let lastIncidentSummaryLabel = null;
+
 function renderIncidentSummary(categoryCounts) {
   const total = totalFromCounts(categoryCounts);
   const incidentsCell = document.getElementById("incidentsStripCell");
@@ -190,7 +197,9 @@ function renderIncidentSummary(categoryCounts) {
   const incidentCountLabel = document.getElementById("incidentCountLabel");
 
   if (incidentsCell) incidentsCell.removeAttribute("data-state");
-  if (incidentTotalCount) incidentTotalCount.textContent = String(total);
+  if (incidentTotalCount && incidentTotalCount.textContent !== String(total)) {
+    incidentTotalCount.textContent = String(total);
+  }
 
   const rows = [
     ["Emergency Warning", "/Images/emergency-warning.png"],
@@ -214,14 +223,16 @@ function renderIncidentSummary(categoryCounts) {
     })
     .join("");
 
-  if (incidentCountCell) {
-    incidentCountCell.innerHTML =
-      total === 0 ? "" : DOMPurify.sanitize("<table>" + rows + "</table>");
+  const markup = total === 0 ? "" : DOMPurify.sanitize("<table>" + rows + "</table>");
+  if (incidentCountCell && markup !== lastIncidentSummaryMarkup) {
+    incidentCountCell.innerHTML = markup;
+    lastIncidentSummaryMarkup = markup;
   }
 
-  if (incidentCountLabel) {
-    incidentCountLabel.textContent =
-      total === 0 ? "No active incidents in our area" : "Current incidents in our area";
+  const label = total === 0 ? "No active incidents in our area" : "Current incidents in our area";
+  if (incidentCountLabel && label !== lastIncidentSummaryLabel) {
+    incidentCountLabel.textContent = label;
+    lastIncidentSummaryLabel = label;
   }
 }
 
@@ -282,6 +293,10 @@ function renderDegraded() {
   if (incidentTotalCount) incidentTotalCount.textContent = "?";
   if (incidentCountCell) incidentCountCell.innerHTML = "";
   if (incidentCountLabel) incidentCountLabel.textContent = DEGRADED_MESSAGE;
+  // These writes bypass renderIncidentSummary, so forget what it last wrote;
+  // otherwise its change-check would skip restoring the normal label.
+  lastIncidentSummaryMarkup = null;
+  lastIncidentSummaryLabel = null;
   if (stripWarningLevel) stripWarningLevel.textContent = "Unknown";
   if (stripWarningLevelSub) stripWarningLevelSub.textContent = DEGRADED_MESSAGE;
 
@@ -337,6 +352,7 @@ function renderOffline(cached) {
   if (warningCell) warningCell.setAttribute("data-state", "offline");
   if (incidentCountLabel) incidentCountLabel.textContent = offlineNote;
   if (stripWarningLevelSub) stripWarningLevelSub.textContent = offlineNote;
+  lastIncidentSummaryLabel = null; // overwritten above; see renderDegraded
 
   if (typeof populateFireInfoTable === "function") {
     populateFireInfoTable({

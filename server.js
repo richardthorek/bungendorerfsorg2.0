@@ -140,7 +140,9 @@ app.post("/api/contact", async (req, res) => {
 app.get("/api/fire-incidents", async (req, res) => {
   const result = await getFireIncidents(process.env, { logger: console });
   if (!result.ok) {
-    return res.status(result.status || 500).json({ error: result.error || "Failed to fetch incidents" });
+    // Mirrors api/fire-incidents: upstream detail is logged, never returned.
+    console.error("fire-incidents unavailable:", result.error);
+    return res.status(result.status || 500).json({ error: "Incident data is temporarily unavailable." });
   }
   res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");
   res.set("X-Data-Age-Seconds", String(result.ageSeconds));
@@ -152,7 +154,9 @@ app.get("/api/fire-incidents", async (req, res) => {
 app.get("/api/fire-danger", async (req, res) => {
   const result = await getFireDanger(process.env, { logger: console });
   if (!result.ok) {
-    return res.status(result.status || 500).json({ error: result.error || "Failed to fetch fire danger" });
+    // Mirrors api/fire-danger: upstream detail is logged, never returned.
+    console.error("fire-danger unavailable:", result.error);
+    return res.status(result.status || 500).json({ error: "Fire danger data is temporarily unavailable." });
   }
   res.set("Content-Type", result.contentType || "application/xml");
   res.set("X-Data-Freshness", result.stale ? "stale" : "fresh");

@@ -8,13 +8,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bungendore Volunteer Rural Fire Brigade</title>
     <!-- Link to Pico CSS for styling (single canonical import) -->
-    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css" />
+    <!-- Pinned with SRI: an unpinned @latest would restyle the whole site on any upstream release -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@picocss/pico@2.1.1/css/pico.min.css"
+      integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU"
+      crossorigin="anonymous"
+    />
     <!-- Link to custom CSS file -->
     <link rel="stylesheet" href="css/main.css" />
     <!-- Font Awesome (single canonical import – v6) -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g"
+      crossorigin="anonymous"
     />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -136,7 +144,7 @@
       <!-- Hero section with main heading -->
       <div class="hero" id="heroSection">
         <!-- Incident-active state: live map fills the hero background -->
-        <div id="heroMap" class="hero-map" aria-label="Live incident map" aria-hidden="true"></div>
+        <div id="heroMap" class="hero-map" aria-hidden="true"></div>
         <!-- Content panel: repositioned in incident state to deconflict from map markers -->
         <hgroup class="heading-background">
           <div id="heroLogo" class="logo"></div>

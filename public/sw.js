@@ -42,7 +42,7 @@
  * and activation of a new worker version is what actually cleans up).
  */
 
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const APP_SHELL_CACHE = "bungendore-rfs-shell-" + CACHE_VERSION;
 const API_CACHE = "bungendore-rfs-api-" + CACHE_VERSION;
 const CURRENT_CACHES = [APP_SHELL_CACHE, API_CACHE];

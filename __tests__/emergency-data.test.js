@@ -216,6 +216,16 @@ describe("emergency-data.js — offline last-known-good (Bet 2, roadmap §4)", (
     expect(window.isLikelyOffline(new Error("HTTP error! status: 500"))).toBe(false);
   });
 
+  test.each([
+    ["Safari", "Load failed"],
+    ["Firefox", "NetworkError when attempting to fetch resource."],
+    ["Chromium-based network-layer", "Network request failed"],
+  ])("isLikelyOffline recognises the %s network error text", (_browser, message) => {
+    Object.defineProperty(window.navigator, "onLine", { value: true, configurable: true });
+    const err = new TypeError(message);
+    expect(window.isLikelyOffline(err)).toBe(true);
+  });
+
   test("renders the honest offline state (not the generic degraded state) when offline with a cache", async () => {
     // Seed a last-known-good cache via a successful fetch first.
     global.fetch = jest.fn().mockResolvedValue({
