@@ -2658,3 +2658,28 @@ body.map-fullscreen-active {
   margin-top: 0.15rem;
   font-style: italic;
 }
+
+/* Touch targets: strip controls were ~16px tall, below the 24px WCAG minimum.
+   On touch screens they get a 44px hit area without changing the desktop look. */
+@media (pointer: coarse) {
+  .strip-cell__cta,
+  .strip-cell__cta-btn,
+  .strip-cell__details-toggle {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding-block: 0.6rem;
+  }
+}
+
+/* Phones: a calm-day hero is shorter, and an incident hero takes the full width
+   so the heading is not squeezed into a narrow column beside the badge. */
+@media (max-width: 500px) {
+  .hero:not(.hero--incident) {
+    height: 200px;
+  }
+
+  .hero.hero--incident hgroup.heading-background {
+    max-width: 100%;
+  }
+}

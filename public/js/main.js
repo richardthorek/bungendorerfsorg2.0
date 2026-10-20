@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
       statusEl.textContent = "Notify First";
       statusEl.setAttribute("data-state", "normal");
       subEl.textContent =
-        "No permit needed, but notify the RFS & your neighbours at least 24 hrs ahead.";
+        "No Total Fire Ban today. No permit needed, but notify the RFS & your neighbours at least 24 hrs ahead.";
     }
   }
 

@@ -1091,7 +1091,8 @@ label {
   display: block;
   width: 100%;
   height: auto;
-  touch-action: none;
+  /* Vertical swipes scroll the page on a phone; drags still move layers. */
+  touch-action: pan-y;
   border-radius: 6px;
   cursor: grab;
 }

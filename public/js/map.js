@@ -658,22 +658,43 @@ function showMapError(error) {
   const mapContainer = document.getElementById("map");
   if (!mapContainer) return;
 
-  const errorMessage = getUserFriendlyErrorMessage(error);
-  mapContainer.innerHTML = DOMPurify.sanitize(
-    "<div role=\"alert\" style=\"" +
+  // Built with DOM APIs: DOMPurify strips inline event handlers, so an
+  // onclick attribute on Retry would silently do nothing.
+  const panel = document.createElement("div");
+  panel.setAttribute("role", "alert");
+  panel.style.cssText =
     "display:flex;align-items:center;justify-content:center;height:100%;" +
     "background-color:var(--rfs-error-bg,#fee);" +
     "border:2px solid var(--rfs-error-border,#c33);" +
-    "color:var(--rfs-error-color,#c33);padding:2rem;text-align:center;\">" +
-    "<div>" +
-    "<i class=\"fas fa-exclamation-triangle\" style=\"font-size:2rem;margin-bottom:1rem;\"></i>" +
-    "<p style=\"font-weight:bold;margin-bottom:0.5rem;\">Unable to Load Map</p>" +
-    "<p>" + errorMessage + "</p>" +
-    "<button onclick=\"location.reload()\" style=\"margin-top:1rem;padding:0.5rem 1rem;" +
-    "cursor:pointer;border:1px solid var(--rfs-error-border,#c33);" +
-    "background-color:white;color:var(--rfs-error-color,#c33);border-radius:4px;\">Retry</button>" +
-    "</div></div>"
-  );
+    "color:var(--rfs-error-color,#c33);padding:2rem;text-align:center;";
+
+  const inner = document.createElement("div");
+  const icon = document.createElement("i");
+  icon.className = "fas fa-exclamation-triangle";
+  icon.setAttribute("aria-hidden", "true");
+  icon.style.cssText = "font-size:2rem;margin-bottom:1rem;";
+
+  const title = document.createElement("p");
+  title.style.cssText = "font-weight:bold;margin-bottom:0.5rem;";
+  title.textContent = "Unable to Load Map";
+
+  const detail = document.createElement("p");
+  detail.textContent = getUserFriendlyErrorMessage(error);
+
+  const retry = document.createElement("button");
+  retry.type = "button";
+  retry.textContent = "Retry";
+  retry.style.cssText =
+    "margin-top:1rem;padding:0.5rem 1rem;cursor:pointer;" +
+    "border:1px solid var(--rfs-error-border,#c33);" +
+    "background-color:white;color:var(--rfs-error-color,#c33);border-radius:4px;";
+  retry.addEventListener("click", function () {
+    location.reload();
+  });
+
+  inner.append(icon, title, detail, retry);
+  panel.appendChild(inner);
+  mapContainer.replaceChildren(panel);
 }
 
 // ─── Lighting preset (time-of-day + site theme) ───────────────────────────────

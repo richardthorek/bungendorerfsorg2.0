@@ -22,8 +22,10 @@ function renderWindObservations(data) {
   const humidity =
     data && typeof data.relativeHumidityPct === "number" ? data.relativeHumidityPct : null;
 
+  // Only rewrite when the text changes: this sits in the live strip, and an
+  // identical rewrite is re-announced by screen readers on every poll.
   if (windSpeed === null && temp === null && humidity === null) {
-    el.textContent = WIND_DEGRADED_MESSAGE;
+    if (el.textContent !== WIND_DEGRADED_MESSAGE) el.textContent = WIND_DEGRADED_MESSAGE;
     el.removeAttribute("data-state");
     return;
   }
@@ -41,7 +43,8 @@ function renderWindObservations(data) {
   if (temp !== null) parts.push(temp + "°C");
   if (humidity !== null) parts.push(humidity + "% humidity");
 
-  el.textContent = parts.join(" · ") + " (Canberra Airport)";
+  const text = parts.join(" · ") + " (Canberra Airport)";
+  if (el.textContent !== text) el.textContent = text;
   el.setAttribute("data-state", "ok");
 }
 
@@ -60,7 +63,23 @@ function fetchWindObservations() {
     });
 }
 
+let windLastFetchAt = 0;
+
+function refreshWindObservations() {
+  windLastFetchAt = Date.now();
+  return fetchWindObservations();
+}
+
 document.addEventListener("DOMContentLoaded", function () {
-  fetchWindObservations();
-  window.setInterval(fetchWindObservations, WIND_OBSERVATIONS_REFRESH_MS);
+  refreshWindObservations();
+  window.setInterval(refreshWindObservations, WIND_OBSERVATIONS_REFRESH_MS);
+  // Catch up when the tab returns: phones suspend timers in the background.
+  document.addEventListener("visibilitychange", function () {
+    if (
+      document.visibilityState === "visible" &&
+      Date.now() - windLastFetchAt >= WIND_OBSERVATIONS_REFRESH_MS
+    ) {
+      refreshWindObservations();
+    }
+  });
 });
