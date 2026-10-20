@@ -419,6 +419,17 @@ function fetchIncidentGeoJSON() {
   });
 }
 
+// Compares each refresh with the last one (incident-changes.js). Incidents that
+// just changed carry a _change marker, and incidents that left the feed are
+// returned greyed out for a while. Counts still use the real incidents only.
+let incidentChangeTracker = null;
+
+function trackIncidentChanges(filteredFeatures) {
+  if (!window.IncidentChanges) return filteredFeatures;
+  if (!incidentChangeTracker) incidentChangeTracker = window.IncidentChanges.createTracker();
+  return incidentChangeTracker.update(filteredFeatures, Date.now());
+}
+
 function _fetchAndRender() {
   const promise = fetchIncidentGeoJSON()
     .then(function (data) {
@@ -426,8 +437,9 @@ function _fetchAndRender() {
       const filteredFeatures = filterFeaturesForEnvironment(features);
       const categoryCounts = computeCategoryCounts(filteredFeatures);
       const total = totalFromCounts(categoryCounts);
+      const displayFeatures = trackIncidentChanges(filteredFeatures);
 
-      populateFireInfoTable({ features: filteredFeatures });
+      populateFireInfoTable({ features: displayFeatures });
       renderIncidentSummary(categoryCounts);
       renderWarningLevel(categoryCounts);
       renderTimestamp(true);
@@ -435,7 +447,7 @@ function _fetchAndRender() {
       // The maps redraw from this, so they stay in step with the strip on every poll.
       document.dispatchEvent(
         new CustomEvent("bungendore:incident-data", {
-          detail: { filteredFeatures: filteredFeatures, total: total },
+          detail: { filteredFeatures: displayFeatures, total: total },
         })
       );
 
@@ -465,7 +477,7 @@ function _fetchAndRender() {
       }
 
       return {
-        filteredFeatures: filteredFeatures,
+        filteredFeatures: displayFeatures,
         categoryCounts: categoryCounts,
         total: total,
         raw: data,

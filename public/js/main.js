@@ -52,9 +52,17 @@ function populateFireInfoTable(data) {
 
     const iconUrl = getIconUrl(category);
     const level = getLevelSlug(category);
+    // Set by incident-changes.js when this incident just changed (or left the feed).
+    const change = feature._change;
+    const changeAttr = change ? ` data-change="${change.type}"` : "";
+    const changeLine = change
+      ? `<p class="incident-card__change">${
+        window.IncidentChanges ? window.IncidentChanges.describeChange(change) : ""
+      }</p>`
+      : "";
 
     tableHTML += `
-      <article class="incident-card" data-level="${level}">
+      <article class="incident-card" data-level="${level}"${changeAttr}>
         <header class="incident-card__header">
           <img src="${iconUrl}" alt="${alertlevel}" class="incident-card__icon">
           <div class="incident-card__heading">
@@ -62,6 +70,7 @@ function populateFireInfoTable(data) {
             <h4 class="incident-card__title">${title}</h4>
           </div>
         </header>
+        ${changeLine}
         <p class="incident-card__location">
           <i class="fas fa-map-marker-alt" aria-hidden="true"></i> ${location}
         </p>

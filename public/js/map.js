@@ -313,6 +313,7 @@ function addMarkersToHeroMap(heroMap, markerData) {
   markerData.forEach(function(data) {
     if (!data.coordinates) return;
     const markerEl = createMarkerElement(data.iconUrl, data.alertLevel, data.category);
+    if (data.change) markerEl.setAttribute("data-change", data.change);
     heroMarkers.push(
       new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
         .setLngLat(data.coordinates)
@@ -637,6 +638,8 @@ function renderIncidentsOnMap(map, filteredFeatures, total) {
     const coordinates = getFeatureCoordinates(feature);
     if (coordinates) {
       const markerEl = createMarkerElement(iconUrl, alertLevel, category);
+      const changeType = feature._change ? feature._change.type : "";
+      if (changeType) markerEl.setAttribute("data-change", changeType);
 
       (function(t, c, f) {
         markerEl.addEventListener("click", function() {
@@ -658,7 +661,7 @@ function renderIncidentsOnMap(map, filteredFeatures, total) {
       bounds.extend(coordinates);
 
       // Collect data so the hero map can render the same markers
-      markerDataList.push({ coordinates: coordinates, iconUrl: iconUrl, alertLevel: alertLevel, category: category });
+      markerDataList.push({ coordinates: coordinates, iconUrl: iconUrl, alertLevel: alertLevel, category: category, change: changeType });
     }
   });
 

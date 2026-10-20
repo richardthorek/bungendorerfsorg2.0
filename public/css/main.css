@@ -2659,6 +2659,65 @@ body.map-fullscreen-active {
   font-style: italic;
 }
 
+/* Incident change states (incident-changes.js). Each lasts 15 minutes from the
+   refresh that saw it, then the incident settles back to its normal look. */
+@keyframes incident-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(179, 38, 30, 0.55);
+  }
+}
+
+.incident-card[data-change="escalated"] {
+  border: 2px solid var(--rfs-core-red, #b3261e);
+  animation: incident-flash 1.2s ease-in-out 3;
+}
+
+.incident-card[data-change="downgraded"] {
+  border-style: dashed;
+}
+
+.incident-card[data-change="status"],
+.incident-card[data-change="size"] {
+  border-color: #9a5b00;
+}
+
+.incident-card[data-change="closed"] {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.incident-card__change {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.incident-card[data-change="escalated"] .incident-card__change {
+  color: var(--rfs-core-red, #b3261e);
+}
+
+/* Map markers use the same states. The grey-out is a filter, so it works on the
+   marker's own image without repainting it. */
+[data-change="closed"] {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+[data-change="escalated"] {
+  animation: incident-flash 1.2s ease-in-out 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .incident-card[data-change="escalated"],
+  [data-change="escalated"] {
+    animation: none;
+  }
+}
+
 /* Touch targets: strip controls were ~16px tall, below the 24px WCAG minimum.
    On touch screens they get a 44px hit area without changing the desktop look. */
 @media (pointer: coarse) {

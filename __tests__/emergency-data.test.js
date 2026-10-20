@@ -15,7 +15,7 @@ global.DOMPurify = {
 function loadSourceFiles() {
   const fs = require("fs");
   const path = require("path");
-  ["error-handler.js", "main.js", "emergency-data.js"].forEach((file) => {
+  ["error-handler.js", "incident-changes.js", "main.js", "emergency-data.js"].forEach((file) => {
     const code = fs.readFileSync(path.join(__dirname, "../public/js", file), "utf8");
     eval(code);
   });
