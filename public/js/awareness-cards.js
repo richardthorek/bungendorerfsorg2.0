@@ -99,6 +99,33 @@
       .filter(Boolean);
   }
 
+  // Community events with a date become dated "Coming up" cards until the day
+  // passes. Events without a date are not shown here: they have no sort point.
+  function eventsToFeaturedCards(eventItems) {
+    const today = luxon.DateTime.now().setZone("Australia/Sydney").startOf("day");
+    return (Array.isArray(eventItems) ? eventItems : [])
+      .map((item) => {
+        if (!item || !item.date) return null;
+        const day = luxon.DateTime.fromISO(item.date, { zone: "Australia/Sydney" });
+        if (!day.isValid || day < today) return null;
+        const dateLabel = day.toLocaleString(luxon.DateTime.DATE_MED_WITH_WEEKDAY);
+        return {
+          pillar: "events",
+          icon: "fa-calendar-day",
+          title: item.name,
+          body:
+            "Coming up: " +
+            dateLabel +
+            (item.timing ? ", " + item.timing : "") +
+            (item.description ? ". " + item.description : ""),
+          photo: "",
+          caution: false,
+          _sortDate: day,
+        };
+      })
+      .filter(Boolean);
+  }
+
   /* --------------------------------------------------------- rotation order */
   // Every 3rd slot is reserved for the next not-yet-shown featured (dated)
   // card, round robin — dated content is seen roughly 3x as often as any one
@@ -363,7 +390,8 @@
     Promise.all([
       fetchJson("/api/content/awarenessCards").catch(() => []),
       fetchJson("/api/content/training").catch(() => []),
-    ]).then(([cards, training]) => {
+      fetchJson("/api/content/events").catch(() => []),
+    ]).then(([cards, training, events]) => {
       const active = (Array.isArray(cards) ? cards : [])
         .filter((c) => c.active !== false)
         .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -384,6 +412,7 @@
 
       const featured = datedCards
         .concat(trainingToFeaturedCards(training))
+        .concat(eventsToFeaturedCards(events))
         .sort((a, b) => a._sortDate - b._sortDate);
 
       const order = buildPlayOrder(evergreen, featured);

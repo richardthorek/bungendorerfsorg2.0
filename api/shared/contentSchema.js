@@ -74,8 +74,15 @@ function validateEvents(input) {
   for (const raw of input) {
     const name = str(raw && raw.name, 120);
     if (!name) return { ok: false, error: "Every event needs a name." };
+    // Optional calendar date (YYYY-MM-DD). Dated events appear on the home page
+    // as "Coming up" cards until the day has passed; `timing` stays free text.
+    const date = str(raw && raw.date, 10);
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return { ok: false, error: `"${date}" isn't a valid date (use YYYY-MM-DD).` };
+    }
     items.push({
       name,
+      date,
       timing: str(raw && raw.timing, 80),
       description: str(raw && raw.description, 500),
     });

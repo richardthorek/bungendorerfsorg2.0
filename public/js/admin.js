@@ -842,12 +842,34 @@
       set.className = "btn btn--ghost duty-contacts__set";
       set.textContent = "Set";
       set.addEventListener("click", function () {
-        submitDuty({ number: c.number, label: c.label }, set);
+        confirmDutyChange(set, { number: c.number, label: c.label }, "Set");
       });
       li.appendChild(info);
       li.appendChild(set);
       el.dutyContacts.appendChild(li);
     });
+  }
+
+  // Brigade calls and texts are routed by this number, so one stray tap must not
+  // move them. The first tap asks and names the number; the second tap saves.
+  function confirmDutyChange(btn, body, idleLabel) {
+    const key = body.number + "|" + (body.label || "");
+    if (btn.dataset.armedKey === key) {
+      btn.dataset.armedKey = "";
+      btn.textContent = btn.dataset.idleLabel || idleLabel;
+      submitDuty(body, btn);
+      return;
+    }
+    btn.dataset.armedKey = key;
+    btn.dataset.idleLabel = btn.dataset.idleLabel || idleLabel;
+    btn.textContent = "Confirm";
+    setMsg(
+      el.dutyMsg,
+      "Forward brigade calls and texts to " +
+        (body.label ? body.label + ", " : "") +
+        body.number +
+        "? Tap Confirm to save."
+    );
   }
 
   function submitDuty(body, btn) {
@@ -877,9 +899,11 @@
       setMsg(el.dutyMsg, "Enter a phone number.", "err");
       return;
     }
-    submitDuty(
+    const submitBtn = el.dutyForm.querySelector("button");
+    confirmDutyChange(
+      submitBtn,
       { number: number, label: el.dutyName.value.trim() },
-      el.dutyForm.querySelector("button")
+      submitBtn.textContent
     );
   });
 
@@ -895,6 +919,7 @@
       msg: document.getElementById("eventMsg"),
       fields: [
         { key: "name", placeholder: "Event name", type: "text" },
+        { key: "date", placeholder: "Date (shows as Coming up until it passes)", type: "date" },
         { key: "timing", placeholder: "Timing, e.g. Saturday 14 March, 10am", type: "text" },
         { key: "description", placeholder: "Short description", type: "textarea" },
       ],
@@ -999,7 +1024,7 @@
       return wrap;
     }
     const input = document.createElement(field.type === "textarea" ? "textarea" : "input");
-    if (field.type !== "textarea") input.type = "text";
+    if (field.type !== "textarea") input.type = field.type === "date" ? "date" : "text";
     input.className = "editor__input";
     input.placeholder = field.placeholder || "";
     input.value = value || "";

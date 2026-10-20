@@ -22,6 +22,25 @@ document.addEventListener("DOMContentLoaded", () => {
     setExpanded(detail.hidden);
   });
 
+  // Every "go to fire information" link and the hero map land here. The
+  // section is hidden until there is an incident, so opening it first is what
+  // makes the scroll land on something.
+  function openFireInfo() {
+    setExpanded(true);
+    const target = document.getElementById("info");
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  window.openFireInfo = openFireInfo;
+
+  document.querySelectorAll("a[href=\"#info\"]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      openFireInfo();
+    });
+  });
+
+  if (window.location.hash === "#info") openFireInfo();
+
   document.addEventListener("bungendore:incident-count", (event) => {
     const count = event.detail && event.detail.count;
     if (typeof count !== "number") return;

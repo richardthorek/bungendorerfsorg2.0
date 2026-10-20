@@ -326,8 +326,8 @@ function addMarkersToHeroMap(heroMap, markerData) {
  * directly to the detailed incident information below the fold.
  */
 function scrollToFireInfo() {
-  const btn = document.querySelector("[data-tab=\"fire-info\"]");
-  if (btn) btn.click();
+  // Defined in fire-info-section.js; it expands the collapsed section first.
+  if (typeof window.openFireInfo === "function") window.openFireInfo();
 }
 
 /**
