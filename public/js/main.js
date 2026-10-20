@@ -284,6 +284,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Tomorrow's outlook, under today's message. Shown only when the feed carries
+  // the tomorrow fields; a missing field hides the line rather than guessing.
+  function renderFireDangerTomorrow(district) {
+    const fieldText = function (name) {
+      const node = district.getElementsByTagName(name)[0];
+      return node ? node.textContent.replace(/-/g, " ").replace(/\s+/g, " ").trim() : "";
+    };
+    const level = fieldText("DangerLevelTomorrow").toUpperCase();
+    const ban = fieldText("FireBanTomorrow");
+    let line = document.getElementById("fireDangerTomorrow");
+    if (!line) {
+      line = document.createElement("p");
+      line.id = "fireDangerTomorrow";
+      line.className = "strip-cell__sub";
+      fireDangerMessage.insertAdjacentElement("afterend", line);
+    }
+    if (!level) {
+      line.hidden = true;
+      line.textContent = "";
+      return;
+    }
+    line.hidden = false;
+    line.textContent =
+      "Tomorrow: " + level + (ban === "Yes" ? ", Total Fire Ban" : ", no Total Fire Ban");
+  }
+
   function applyFireDangerXml(xml, ratings) {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xml, "application/xml");
@@ -330,6 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fireDangerRatingCell.removeAttribute("style"); // CSS data-level rules handle all colour; no inline override
     setFireDangerDegraded(false);
     fireDangerMessage.textContent = ratingInfo.FireBehaviour;
+    renderFireDangerTomorrow(southernRangesDistrict);
 
     if (fireDangerTableContainer) {
       fireDangerTableContainer.innerHTML = ""; // Clear out old table if it exists

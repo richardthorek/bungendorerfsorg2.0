@@ -943,14 +943,12 @@ function loadMapbox() {
 }
 
 /**
- * Bootstrap: use IntersectionObserver to kick off the Mapbox load + map init
- * as soon as the map container (or the hero) enters the viewport.
- * Falls back to immediate load on browsers without IntersectionObserver.
+ * Mapbox GL (about 1 MB) loads only when something on the page needs it: there
+ * are incidents to draw, or someone opens Fire Information. A calm day loads no
+ * map at all, which matters most on congested mobile connections.
  */
 document.addEventListener("DOMContentLoaded", function() {
-  const mapContainer  = document.getElementById("fireInfoMapContainer");
-  const heroSection   = document.getElementById("heroSection");
-  let initiated       = false;
+  let initiated = false;
 
   function start() {
     if (initiated) return;
@@ -963,26 +961,17 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   }
 
-  if (!("IntersectionObserver" in window)) {
-    // Fallback for older browsers
-    start();
-    return;
-  }
+  // The hero map and Fire Information map are both started from here.
+  window.startMapbox = start;
 
-  // Use a generous root margin so the library starts loading before
-  // the map section is fully scrolled into view.
-  const observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        start();
-        observer.disconnect();
-      }
-    });
-  }, { rootMargin: "300px" });
+  document.addEventListener("bungendore:incident-data", function(event) {
+    if (event.detail && event.detail.total > 0) start();
+  });
 
-  if (mapContainer) observer.observe(mapContainer);
-  if (heroSection)  observer.observe(heroSection);
-
-  // Safety: if neither element found, load immediately
-  if (!mapContainer && !heroSection) start();
+  const toggle = document.getElementById("fireInfoToggle");
+  if (toggle) toggle.addEventListener("click", start);
+  document.querySelectorAll("a[href=\"#info\"]").forEach(function(link) {
+    link.addEventListener("click", start);
+  });
+  if (window.location.hash === "#info") start();
 });
