@@ -432,6 +432,12 @@ function _fetchAndRender() {
       renderWarningLevel(categoryCounts);
       renderTimestamp(true);
       saveLastKnownGood(categoryCounts, filteredFeatures);
+      // The maps redraw from this, so they stay in step with the strip on every poll.
+      document.dispatchEvent(
+        new CustomEvent("bungendore:incident-data", {
+          detail: { filteredFeatures: filteredFeatures, total: total },
+        })
+      );
 
       if (typeof window.updateEmergencyDashboard === "function") {
         const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
