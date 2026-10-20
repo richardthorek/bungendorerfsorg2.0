@@ -956,8 +956,10 @@ label {
   .editor__row {
     grid-template-columns: 1fr;
   }
+  /* One scrolling row, not four rows of wrapped pills before any content. */
   .nav {
-    flex-flow: row wrap;
+    flex-flow: row nowrap;
+    overflow-x: auto;
     gap: 0.4rem;
     padding: 0.8rem 1rem;
     border-right: none;
@@ -965,6 +967,7 @@ label {
   }
   .nav__item {
     flex: none;
+    white-space: nowrap;
     flex-direction: row;
     align-items: center;
     gap: 0.35rem;

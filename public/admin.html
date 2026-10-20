@@ -121,13 +121,13 @@
             <p class="view__lead">
               Everything submitted through the website contact form. Newest first.
             </p>
-            <div class="enq-filter" id="enqFilter" role="tablist">
-              <button type="button" class="enq-filter__btn is-active" data-filter="all">All</button>
-              <button type="button" class="enq-filter__btn" data-filter="new">New</button>
-              <button type="button" class="enq-filter__btn" data-filter="in-progress">
+            <div class="enq-filter" id="enqFilter" role="group" aria-label="Filter enquiries">
+              <button type="button" class="enq-filter__btn is-active" data-filter="all" aria-pressed="true">All</button>
+              <button type="button" class="enq-filter__btn" data-filter="new" aria-pressed="false">New</button>
+              <button type="button" class="enq-filter__btn" data-filter="in-progress" aria-pressed="false">
                 In progress
               </button>
-              <button type="button" class="enq-filter__btn" data-filter="resolved">Resolved</button>
+              <button type="button" class="enq-filter__btn" data-filter="resolved" aria-pressed="false">Resolved</button>
             </div>
             <p id="enqMsg" class="msg" role="status" aria-live="polite" hidden></p>
             <div id="enqList" class="enq-list"></div>
@@ -340,7 +340,7 @@
               <div
                 class="social__templates"
                 id="socialTemplates"
-                role="tablist"
+                role="group"
                 aria-label="Choose a template"
               ></div>
 

@@ -321,7 +321,10 @@
   function switchView(name) {
     if (name === "members" && (!state.me || state.me.role !== "admin")) name = "duty";
     el.navItems.forEach(function (b) {
-      b.classList.toggle("is-active", b.dataset.view === name);
+      const active = b.dataset.view === name;
+      b.classList.toggle("is-active", active);
+      if (active) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
     });
     VIEWS.forEach(function (v) {
       const section = document.getElementById("view-" + v);
@@ -342,6 +345,13 @@
   el.navItems.forEach(function (b) {
     b.addEventListener("click", function () {
       switchView(b.dataset.view);
+      // Move focus to the section's heading, so keyboard and screen-reader
+      // users land in the new content instead of back on the nav.
+      const heading = document.querySelector("#view-" + b.dataset.view + " h2");
+      if (heading) {
+        heading.setAttribute("tabindex", "-1");
+        heading.focus();
+      }
     });
   });
 
@@ -784,6 +794,7 @@
     state.enqFilter = btn.dataset.filter;
     Array.prototype.forEach.call(el.enqFilter.children, function (b) {
       b.classList.toggle("is-active", b === btn);
+      b.setAttribute("aria-pressed", String(b === btn));
     });
     renderEnquiries();
   });
@@ -2039,6 +2050,7 @@
     social.selectedId = null;
     Array.prototype.forEach.call(el.socialTemplates.children, function (b) {
       b.classList.toggle("is-active", b.dataset.id === t.id);
+      b.setAttribute("aria-pressed", String(b.dataset.id === t.id));
     });
     el.socialCanvas.width = t.width;
     el.socialCanvas.height = t.height;
