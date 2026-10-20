@@ -24,6 +24,11 @@ const HERO_MAP_MAX_ZOOM = 12;
  */
 function heroMapFitPadding() {
   const el = document.getElementById("heroMap");
+  // On narrow screens the title panel is full width (see main.css), so there is
+  // no column to clear and markers can use the whole map.
+  if (window.matchMedia("(max-width: 769px)").matches) {
+    return { top: HERO_MAP_PADDING_SIDE, bottom: HERO_MAP_PADDING_SIDE, left: HERO_MAP_PADDING_SIDE, right: HERO_MAP_PADDING_SIDE };
+  }
   // Fallback 200px ≈ 45% of a minimal 450px hero width; used only if the element
   // is unexpectedly absent from the DOM.
   const leftPad = el ? Math.round(el.clientWidth * 0.45) : 200;
