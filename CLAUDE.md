@@ -93,3 +93,7 @@ URLs. A `Co-Authored-By:` trailer is fine.
 - CSS architecture → `docs/CSS_OPTIMIZATION.md`
 - Testing → `docs/TESTING.md`
 - Security trail → `SECURITY_FIXES.md`
+
+## Suite knowledge base
+
+Before substantive changes, consider the guidance in the private repo `richardthorek/claude-knowledge`: `practices/ci-cd.md` (CI/CD), `practices/azure-choices.md` (hosting and data), `practices/token-efficiency.md` (model routing), `practices/design.md` (UI), and `setup/decisions.md`. Where this repo deliberately differs, keep the difference and say why in the PR description.
