@@ -248,8 +248,8 @@ jobs:
             no fix. When genuinely uncertain, explain your reasoning in an
             issue comment instead of guessing.
           claude_args: |
-            --model sonnet
-            --effort medium
+            --model haiku
+            --effort high
             --allowedTools Bash,Edit,Write,Read,Glob,Grep
 
       # A hard failure of the Action step itself (Claude usage rate limit,
