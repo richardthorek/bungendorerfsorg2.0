@@ -34,7 +34,24 @@ function renderAlertBanner(items) {
   // Sanitised even though this only ever comes from an authenticated admin
   // save — CLAUDE.md's DOMPurify rule has no exceptions.
   textEl.innerHTML = DOMPurify.sanitize(String(current.message));
+  const postedEl = document.getElementById("alertBannerPosted");
+  if (postedEl) postedEl.textContent = formatPostedAt(current.postedAt);
   wrap.hidden = false;
+}
+
+// "Posted 2:40pm" in Sydney time, so a banner's age is visible at a glance.
+function formatPostedAt(iso) {
+  const posted = iso ? new Date(iso) : null;
+  if (!posted || Number.isNaN(posted.getTime())) return "";
+  const time = posted
+    .toLocaleTimeString("en-AU", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "Australia/Sydney",
+    })
+    .replace(/\s/g, "")
+    .toLowerCase();
+  return "Posted " + time;
 }
 
 function fetchAlertBanner() {
@@ -47,7 +64,10 @@ function fetchAlertBanner() {
   });
 }
 
+let alertBannerLastLoadAt = 0;
+
 function loadAlertBanner() {
+  alertBannerLastLoadAt = Date.now();
   return fetchAlertBanner()
     .then(function (items) {
       renderAlertBanner(Array.isArray(items) ? items : []);
@@ -68,6 +88,17 @@ const ALERT_BANNER_REFRESH_MS = 3 * 60 * 1000;
 document.addEventListener("DOMContentLoaded", function () {
   loadAlertBanner();
   window.setInterval(loadAlertBanner, ALERT_BANNER_REFRESH_MS);
+
+  // Browsers throttle or suspend timers in hidden tabs, so catch up as soon as
+  // the page is back in view rather than waiting for the next tick.
+  document.addEventListener("visibilitychange", function () {
+    if (
+      document.visibilityState === "visible" &&
+      Date.now() - alertBannerLastLoadAt >= ALERT_BANNER_REFRESH_MS
+    ) {
+      loadAlertBanner();
+    }
+  });
 });
 
 window.loadAlertBanner = loadAlertBanner;

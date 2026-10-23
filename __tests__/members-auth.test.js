@@ -751,7 +751,14 @@ describe("content schema", () => {
       { name: "  Show  ", timing: "TBC", description: "d", extra: "dropped" },
     ]);
     expect(r.ok).toBe(true);
-    expect(r.items[0]).toEqual({ name: "Show", timing: "TBC", description: "d" });
+    expect(r.items[0]).toEqual({ name: "Show", date: "", timing: "TBC", description: "d" });
+  });
+
+  test("events accept an optional YYYY-MM-DD date and reject anything else", () => {
+    const ok = validateContent("events", [{ name: "Show", date: "2026-10-25" }]);
+    expect(ok.ok).toBe(true);
+    expect(ok.items[0].date).toBe("2026-10-25");
+    expect(validateContent("events", [{ name: "Show", date: "25/10/2026" }]).ok).toBe(false);
   });
 
   test("training rejects a bad recurrence", () => {
@@ -845,7 +852,7 @@ describe("content handlers", () => {
     });
 
     const got = await handlers.handleContentGet("events");
-    expect(got.body).toEqual([{ name: "Show", timing: "TBC", description: "" }]);
+    expect(got.body).toEqual([{ name: "Show", date: "", timing: "TBC", description: "" }]);
   });
 
   test("PUT needs a session, the CSRF header, and valid data", async () => {

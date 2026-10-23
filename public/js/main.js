@@ -52,9 +52,17 @@ function populateFireInfoTable(data) {
 
     const iconUrl = getIconUrl(category);
     const level = getLevelSlug(category);
+    // Set by incident-changes.js when this incident just changed (or left the feed).
+    const change = feature._change;
+    const changeAttr = change ? ` data-change="${change.type}"` : "";
+    const changeLine = change
+      ? `<p class="incident-card__change">${
+        window.IncidentChanges ? window.IncidentChanges.describeChange(change) : ""
+      }</p>`
+      : "";
 
     tableHTML += `
-      <article class="incident-card" data-level="${level}">
+      <article class="incident-card" data-level="${level}"${changeAttr}>
         <header class="incident-card__header">
           <img src="${iconUrl}" alt="${alertlevel}" class="incident-card__icon">
           <div class="incident-card__heading">
@@ -62,6 +70,7 @@ function populateFireInfoTable(data) {
             <h4 class="incident-card__title">${title}</h4>
           </div>
         </header>
+        ${changeLine}
         <p class="incident-card__location">
           <i class="fas fa-map-marker-alt" aria-hidden="true"></i> ${location}
         </p>
@@ -181,6 +190,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const linkEl = document.getElementById("stripBurnLink");
     if (!statusEl || !subEl) return;
 
+    // No ban status (failed fetch or missing field): never fall through to
+    // normal-day permit advice. Say the status is unknown and send people to RFS.
+    if (!fireBanToday) {
+      statusEl.textContent = "Status unknown";
+      statusEl.setAttribute("data-state", "degraded");
+      subEl.textContent = "Could not confirm today's fire ban. Check RFS before lighting any fire.";
+      setBurnIcon(false);
+      if (linkEl) {
+        linkEl.textContent = "Check RFS →";
+        linkEl.href = "https://www.rfs.nsw.gov.au/fire-information";
+      }
+      return;
+    }
+
     if (fireBanToday === "Yes") {
       statusEl.textContent = "No Burning";
       statusEl.setAttribute("data-state", "toban");
@@ -219,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
       statusEl.textContent = "Notify First";
       statusEl.setAttribute("data-state", "normal");
       subEl.textContent =
-        "No permit needed, but notify the RFS & your neighbours at least 24 hrs ahead.";
+        "No Total Fire Ban today. No permit needed, but notify the RFS & your neighbours at least 24 hrs ahead.";
     }
   }
 
@@ -249,6 +272,44 @@ document.addEventListener("DOMContentLoaded", () => {
   let fireDangerRatings = null; // AFDRSMessages.json is static, so it is fetched once per page view
   let lastFireDangerRefreshAt = 0;
 
+  // A failed or unknown rating must read as unknown, not as a neutral level.
+  // The strip cell's degraded style (amber) carries that state.
+  function setFireDangerDegraded(isDegraded) {
+    const cell = fireDangerRatingCell.closest(".strip-cell");
+    if (!cell) return;
+    if (isDegraded) {
+      cell.setAttribute("data-state", "degraded");
+    } else {
+      cell.removeAttribute("data-state");
+    }
+  }
+
+  // Tomorrow's outlook, under today's message. Shown only when the feed carries
+  // the tomorrow fields; a missing field hides the line rather than guessing.
+  function renderFireDangerTomorrow(district) {
+    const fieldText = function (name) {
+      const node = district.getElementsByTagName(name)[0];
+      return node ? node.textContent.replace(/-/g, " ").replace(/\s+/g, " ").trim() : "";
+    };
+    const level = fieldText("DangerLevelTomorrow").toUpperCase();
+    const ban = fieldText("FireBanTomorrow");
+    let line = document.getElementById("fireDangerTomorrow");
+    if (!line) {
+      line = document.createElement("p");
+      line.id = "fireDangerTomorrow";
+      line.className = "strip-cell__sub";
+      fireDangerMessage.insertAdjacentElement("afterend", line);
+    }
+    if (!level) {
+      line.hidden = true;
+      line.textContent = "";
+      return;
+    }
+    line.hidden = false;
+    line.textContent =
+      "Tomorrow: " + level + (ban === "Yes" ? ", Total Fire Ban" : ", no Total Fire Ban");
+  }
+
   function applyFireDangerXml(xml, ratings) {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xml, "application/xml");
@@ -260,10 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!southernRangesDistrict) {
       console.error("Southern Ranges district not found in the XML data.");
-      fireDangerRatingCell.textContent = "No Rating";
-      fireDangerRatingCell.setAttribute("data-level", "NO RATING");
-      fireDangerMessage.textContent = "Rating information currently unavailable.";
-      updateControlledBurnCell("", "");
+      showFireDangerUnavailable();
       return;
     }
 
@@ -286,8 +344,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!ratingInfo || !dangerLevelToday) {
       console.error(`No rating information found for danger level: ${dangerLevelToday}`);
-      fireDangerRatingCell.textContent = "No Rating";
+      fireDangerRatingCell.textContent = "Status unknown";
       fireDangerRatingCell.setAttribute("data-level", "NO RATING");
+      setFireDangerDegraded(true);
       fireDangerMessage.textContent = "Rating information currently unavailable.";
       return;
     }
@@ -295,7 +354,9 @@ document.addEventListener("DOMContentLoaded", () => {
     fireDangerRatingCell.textContent = dangerLevelToday;
     fireDangerRatingCell.setAttribute("data-level", dangerLevelToday);
     fireDangerRatingCell.removeAttribute("style"); // CSS data-level rules handle all colour; no inline override
+    setFireDangerDegraded(false);
     fireDangerMessage.textContent = ratingInfo.FireBehaviour;
+    renderFireDangerTomorrow(southernRangesDistrict);
 
     if (fireDangerTableContainer) {
       fireDangerTableContainer.innerHTML = ""; // Clear out old table if it exists
@@ -314,9 +375,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showFireDangerUnavailable() {
-    fireDangerRatingCell.textContent = "No Rating";
+    fireDangerRatingCell.textContent = "Status unknown";
     fireDangerRatingCell.setAttribute("data-level", "NO RATING");
-    fireDangerMessage.textContent = "Could not load rating message.";
+    setFireDangerDegraded(true);
+    fireDangerMessage.textContent = "Could not load today's rating. Check RFS before you plan anything.";
     updateControlledBurnCell("", "");
 
     if (typeof window.updateEmergencyDashboard === "function") {
@@ -336,9 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fireDangerRatings = await ratingsResponse.json();
       } catch (error) {
         console.error("Error fetching the JSON data:", error);
-        fireDangerRatingCell.textContent = "Error";
-        fireDangerMessage.textContent = "Could not load rating message.";
-        updateControlledBurnCell("", "");
+        showFireDangerUnavailable();
         return;
       }
     }

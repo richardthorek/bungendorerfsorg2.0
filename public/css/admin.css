@@ -956,8 +956,10 @@ label {
   .editor__row {
     grid-template-columns: 1fr;
   }
+  /* One scrolling row, not four rows of wrapped pills before any content. */
   .nav {
-    flex-flow: row wrap;
+    flex-flow: row nowrap;
+    overflow-x: auto;
     gap: 0.4rem;
     padding: 0.8rem 1rem;
     border-right: none;
@@ -965,6 +967,7 @@ label {
   }
   .nav__item {
     flex: none;
+    white-space: nowrap;
     flex-direction: row;
     align-items: center;
     gap: 0.35rem;
@@ -1091,7 +1094,8 @@ label {
   display: block;
   width: 100%;
   height: auto;
-  touch-action: none;
+  /* Vertical swipes scroll the page on a phone; drags still move layers. */
+  touch-action: pan-y;
   border-radius: 6px;
   cursor: grab;
 }
@@ -1280,6 +1284,14 @@ label {
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
+/* Field captions for read-only Social Studio outputs (were <label> with no control). */
+.social__label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
 .social__out {
   margin: 0;
   white-space: pre-wrap;

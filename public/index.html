@@ -179,6 +179,16 @@
         </div>
       </div>
 
+      <!-- Admin-published alert banner (roadmap Bet 3): a short, human-written
+           brigade update. It sits above the strip so it is the first thing read,
+           and role="status" lets screen readers announce it. Hidden entirely
+           when there is no active banner. Populated by public/js/alert-banner.js
+           from a public GET on /api/content/alertBanner. -->
+      <p id="alertBanner" class="alert-banner" role="status" hidden>
+        <span id="alertBannerText" class="alert-banner__text"></span>
+        <span id="alertBannerPosted" class="alert-banner__posted"></span>
+      </p>
+
       <!-- Live Status Strip (Phase 3): replaces header status bar, dashboard overlay, mobile panel, and fire-info summary card.
            aria-live="polite" (roadmap Workstream 1): screen-reader users must hear
            escalations (a rating change, a new incident, the warning level moving)
@@ -340,18 +350,8 @@
             rel="noopener"
             >Hazards Near Me</a
           >
-          or call <strong>000</strong> in an emergency.</span
+          or call <a href="tel:000"><strong>000</strong></a> in an emergency.</span
         >
-      </p>
-
-      <!-- Admin-published alert banner (roadmap Bet 3): a short, human-written
-           update from the brigade — additive to the strip above, not part of
-           the honest-failure-state system, so it's hidden entirely when
-           there's no active banner rather than showing an empty/error state.
-           Populated by public/js/alert-banner.js from a public GET on
-           /api/content/alertBanner. -->
-      <p id="alertBanner" class="alert-banner" hidden>
-        <span id="alertBannerText" class="alert-banner__text"></span>
       </p>
 
       <!-- Grid section with article cards -->
@@ -466,9 +466,9 @@
                     class="quick-links__row"
                     ><i class="fas fa-ban" aria-hidden="true"></i>Total Fire Ban Info</a
                   >
-                  <div class="quick-links__row quick-links__row--emphasis">
+                  <a class="quick-links__row quick-links__row--emphasis" href="tel:000">
                     <i class="fas fa-phone" aria-hidden="true"></i>Emergency &mdash; always call 000
-                  </div>
+                  </a>
                 </aside>
               </div>
             </article>
@@ -614,7 +614,7 @@
             NSW RFS Bush Fire Info Line:
             <a href="tel:1800679737">1800 679 737</a><br />
             ABC Radio Canberra: <strong>666 AM</strong><br />
-            Emergency: always call <strong>000</strong>
+            Emergency: always call <a href="tel:000"><strong>000</strong></a>
           </p>
         </section>
         <!-- Roadmap Workstream 5: lead with TIS National rather than attempting our own
@@ -728,6 +728,7 @@
   <!-- Load my own scripts -->
   <script src="js/error-handler.js" defer></script>
   <script src="js/emergency-dashboard.js" defer></script>
+  <script src="js/incident-changes.js" defer></script>
   <script src="js/main.js" defer></script>
   <script src="js/emergency-data.js" defer></script>
   <script src="js/fire-weather-warning.js" defer></script>

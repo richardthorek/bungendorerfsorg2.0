@@ -24,6 +24,11 @@ const HERO_MAP_MAX_ZOOM = 12;
  */
 function heroMapFitPadding() {
   const el = document.getElementById("heroMap");
+  // On narrow screens the title panel is full width (see main.css), so there is
+  // no column to clear and markers can use the whole map.
+  if (window.matchMedia("(max-width: 769px)").matches) {
+    return { top: HERO_MAP_PADDING_SIDE, bottom: HERO_MAP_PADDING_SIDE, left: HERO_MAP_PADDING_SIDE, right: HERO_MAP_PADDING_SIDE };
+  }
   // Fallback 200px ≈ 45% of a minimal 450px hero width; used only if the element
   // is unexpectedly absent from the DOM.
   const leftPad = el ? Math.round(el.clientWidth * 0.45) : 200;
@@ -308,16 +313,29 @@ function addMarkersToHeroMap(heroMap, markerData) {
   markerData.forEach(function(data) {
     if (!data.coordinates) return;
     const markerEl = createMarkerElement(data.iconUrl, data.alertLevel, data.category);
-    new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
-      .setLngLat(data.coordinates)
-      .addTo(heroMap);
+    if (data.change) markerEl.setAttribute("data-change", data.change);
+    heroMarkers.push(
+      new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
+        .setLngLat(data.coordinates)
+        .addTo(heroMap)
+    );
   });
 
   // Always show the station marker on the hero map
   const stationEl = createStationMarkerElement();
-  new mapboxgl.Marker({ element: stationEl, anchor: "bottom" })
-    .setLngLat([149.43974909148088, -35.26165168903826])
-    .addTo(heroMap);
+  heroMarkers.push(
+    new mapboxgl.Marker({ element: stationEl, anchor: "bottom" })
+      .setLngLat([149.43974909148088, -35.26165168903826])
+      .addTo(heroMap)
+  );
+}
+
+// Markers currently on the hero map, so a refresh can replace them rather than stack.
+let heroMarkers = [];
+
+function clearHeroMarkers() {
+  heroMarkers.forEach(function(marker) { marker.remove(); });
+  heroMarkers = [];
 }
 
 /**
@@ -326,8 +344,8 @@ function addMarkersToHeroMap(heroMap, markerData) {
  * directly to the detailed incident information below the fold.
  */
 function scrollToFireInfo() {
-  const btn = document.querySelector("[data-tab=\"fire-info\"]");
-  if (btn) btn.click();
+  // Defined in fire-info-section.js; it expands the collapsed section first.
+  if (typeof window.openFireInfo === "function") window.openFireInfo();
 }
 
 /**
@@ -439,6 +457,11 @@ function updateHeroState(total, bounds, markerData, areaFeatureCollection) {
       hero.classList.add("hero--incident");
       if (heroIncidentPanel) heroIncidentPanel.removeAttribute("hidden");
       const existingHeroMap = window._heroMapInstance;
+      if (existingHeroMap) {
+        // Replace, don't stack: each poll redraws the hero's markers and areas.
+        clearHeroMarkers();
+        addMarkersToHeroMap(existingHeroMap, markerData || []);
+      }
       if (existingHeroMap && bounds && !bounds.isEmpty()) {
         existingHeroMap.fitBounds(bounds, { padding: heroMapFitPadding(), maxZoom: HERO_MAP_MAX_ZOOM });
       }
@@ -449,6 +472,12 @@ function updateHeroState(total, bounds, markerData, areaFeatureCollection) {
   } else {
     hero.classList.remove("hero--incident");
     if (heroIncidentPanel) heroIncidentPanel.setAttribute("hidden", "");
+    // Incidents cleared: take the hero's markers and areas down too.
+    clearHeroMarkers();
+    const heroAreaSource = window._heroMapInstance && window._heroMapInstance.getSource("hero-incident-areas");
+    if (heroAreaSource) {
+      heroAreaSource.setData({ type: "FeatureCollection", features: [] });
+    }
   }
 }
 
@@ -550,6 +579,15 @@ function initHeroMap(token, bounds, markerData, areaFeatureCollection, heroEl, h
 function loadIncidentData(map) {
   if (typeof window.loadEmergencyData !== "function") return;
 
+  mainIncidentMap = map;
+  // Every poll in emergency-data.js announces its result; redraw from it so
+  // markers and areas follow the strip, not just the first load.
+  document.addEventListener("bungendore:incident-data", function(event) {
+    if (mainIncidentMap) {
+      renderIncidentsOnMap(mainIncidentMap, event.detail.filteredFeatures, event.detail.total);
+    }
+  });
+
   window.loadEmergencyData()
     .then(function(result) {
       renderIncidentsOnMap(map, result.filteredFeatures, result.total);
@@ -559,7 +597,17 @@ function loadIncidentData(map) {
     });
 }
 
+// Main-map state across refreshes: the markers on screen, the map itself, and
+// whether the view has been fitted to incidents yet. The view is fitted once,
+// so a refresh never snaps the map away from where someone is looking.
+let mainIncidentMap = null;
+let mainIncidentMarkers = [];
+let mainIncidentFitted = false;
+
 function renderIncidentsOnMap(map, filteredFeatures, total) {
+  mainIncidentMarkers.forEach(function(marker) { marker.remove(); });
+  mainIncidentMarkers = [];
+
   const bounds = new mapboxgl.LngLatBounds();
   const areaFeatures = [];
   const markerDataList = [];
@@ -590,6 +638,8 @@ function renderIncidentsOnMap(map, filteredFeatures, total) {
     const coordinates = getFeatureCoordinates(feature);
     if (coordinates) {
       const markerEl = createMarkerElement(iconUrl, alertLevel, category);
+      const changeType = feature._change ? feature._change.type : "";
+      if (changeType) markerEl.setAttribute("data-change", changeType);
 
       (function(t, c, f) {
         markerEl.addEventListener("click", function() {
@@ -602,20 +652,22 @@ function renderIncidentsOnMap(map, filteredFeatures, total) {
         });
       })(title, category, fields);
 
-      new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
-        .setLngLat(coordinates)
-        .addTo(map);
+      mainIncidentMarkers.push(
+        new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
+          .setLngLat(coordinates)
+          .addTo(map)
+      );
 
       bounds.extend(coordinates);
 
       // Collect data so the hero map can render the same markers
-      markerDataList.push({ coordinates: coordinates, iconUrl: iconUrl, alertLevel: alertLevel, category: category });
+      markerDataList.push({ coordinates: coordinates, iconUrl: iconUrl, alertLevel: alertLevel, category: category, change: changeType });
     }
   });
 
-  if (areaFeatures.length > 0) {
-    addIncidentAreaLayers(map, { type: "FeatureCollection", features: areaFeatures });
-  }
+  // Always pass the collection, even when empty, so areas that have cleared
+  // come off the map on the next poll.
+  addIncidentAreaLayers(map, { type: "FeatureCollection", features: areaFeatures });
 
   addStationMarker(map, bounds);
 
@@ -624,8 +676,9 @@ function renderIncidentsOnMap(map, filteredFeatures, total) {
     : null;
   updateHeroState(total, bounds, markerDataList, heroAreaCollection);
 
-  if (!bounds.isEmpty()) {
+  if (!mainIncidentFitted && !bounds.isEmpty()) {
     map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
+    mainIncidentFitted = true;
   }
 }
 
@@ -645,9 +698,12 @@ function addStationMarker(map, bounds) {
     }
   });
 
-  new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
-    .setLngLat(stationCoordinates)
-    .addTo(map);
+  // Tracked with the incident markers so each refresh replaces it, not stacks it.
+  mainIncidentMarkers.push(
+    new mapboxgl.Marker({ element: markerEl, anchor: "bottom" })
+      .setLngLat(stationCoordinates)
+      .addTo(map)
+  );
 
   bounds.extend(stationCoordinates);
 }
@@ -658,22 +714,43 @@ function showMapError(error) {
   const mapContainer = document.getElementById("map");
   if (!mapContainer) return;
 
-  const errorMessage = getUserFriendlyErrorMessage(error);
-  mapContainer.innerHTML = DOMPurify.sanitize(
-    "<div role=\"alert\" style=\"" +
+  // Built with DOM APIs: DOMPurify strips inline event handlers, so an
+  // onclick attribute on Retry would silently do nothing.
+  const panel = document.createElement("div");
+  panel.setAttribute("role", "alert");
+  panel.style.cssText =
     "display:flex;align-items:center;justify-content:center;height:100%;" +
     "background-color:var(--rfs-error-bg,#fee);" +
     "border:2px solid var(--rfs-error-border,#c33);" +
-    "color:var(--rfs-error-color,#c33);padding:2rem;text-align:center;\">" +
-    "<div>" +
-    "<i class=\"fas fa-exclamation-triangle\" style=\"font-size:2rem;margin-bottom:1rem;\"></i>" +
-    "<p style=\"font-weight:bold;margin-bottom:0.5rem;\">Unable to Load Map</p>" +
-    "<p>" + errorMessage + "</p>" +
-    "<button onclick=\"location.reload()\" style=\"margin-top:1rem;padding:0.5rem 1rem;" +
-    "cursor:pointer;border:1px solid var(--rfs-error-border,#c33);" +
-    "background-color:white;color:var(--rfs-error-color,#c33);border-radius:4px;\">Retry</button>" +
-    "</div></div>"
-  );
+    "color:var(--rfs-error-color,#c33);padding:2rem;text-align:center;";
+
+  const inner = document.createElement("div");
+  const icon = document.createElement("i");
+  icon.className = "fas fa-exclamation-triangle";
+  icon.setAttribute("aria-hidden", "true");
+  icon.style.cssText = "font-size:2rem;margin-bottom:1rem;";
+
+  const title = document.createElement("p");
+  title.style.cssText = "font-weight:bold;margin-bottom:0.5rem;";
+  title.textContent = "Unable to Load Map";
+
+  const detail = document.createElement("p");
+  detail.textContent = getUserFriendlyErrorMessage(error);
+
+  const retry = document.createElement("button");
+  retry.type = "button";
+  retry.textContent = "Retry";
+  retry.style.cssText =
+    "margin-top:1rem;padding:0.5rem 1rem;cursor:pointer;" +
+    "border:1px solid var(--rfs-error-border,#c33);" +
+    "background-color:white;color:var(--rfs-error-color,#c33);border-radius:4px;";
+  retry.addEventListener("click", function () {
+    location.reload();
+  });
+
+  inner.append(icon, title, detail, retry);
+  panel.appendChild(inner);
+  mapContainer.replaceChildren(panel);
 }
 
 // ─── Lighting preset (time-of-day + site theme) ───────────────────────────────
@@ -683,14 +760,19 @@ function createStandardMap(accessToken) {
   /* Store token so the hero map can be initialised once incidents are known */
   _heroMapToken = accessToken;
 
+  // On touch screens the map is flat and needs two fingers to pan, so a
+  // one-finger swipe scrolls the page instead of moving the map. The 3D tilt
+  // is costly on phones and is not needed to read the incident markers.
+  const isTouch = window.matchMedia("(pointer: coarse)").matches;
   const map = new mapboxgl.Map({
     container: "map",
     style: "mapbox://styles/mapbox/standard",
     center: DEFAULT_MAP_CENTER,
     zoom: 10,
-    pitch: 55,
-    bearing: -12,
-    antialias: true,
+    pitch: isTouch ? 0 : 55,
+    bearing: isTouch ? 0 : -12,
+    antialias: !isTouch,
+    cooperativeGestures: isTouch,
     attributionControl: true,
   });
 
@@ -861,14 +943,12 @@ function loadMapbox() {
 }
 
 /**
- * Bootstrap: use IntersectionObserver to kick off the Mapbox load + map init
- * as soon as the map container (or the hero) enters the viewport.
- * Falls back to immediate load on browsers without IntersectionObserver.
+ * Mapbox GL (about 1 MB) loads only when something on the page needs it: there
+ * are incidents to draw, or someone opens Fire Information. A calm day loads no
+ * map at all, which matters most on congested mobile connections.
  */
 document.addEventListener("DOMContentLoaded", function() {
-  const mapContainer  = document.getElementById("fireInfoMapContainer");
-  const heroSection   = document.getElementById("heroSection");
-  let initiated       = false;
+  let initiated = false;
 
   function start() {
     if (initiated) return;
@@ -881,26 +961,17 @@ document.addEventListener("DOMContentLoaded", function() {
       });
   }
 
-  if (!("IntersectionObserver" in window)) {
-    // Fallback for older browsers
-    start();
-    return;
-  }
+  // The hero map and Fire Information map are both started from here.
+  window.startMapbox = start;
 
-  // Use a generous root margin so the library starts loading before
-  // the map section is fully scrolled into view.
-  const observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        start();
-        observer.disconnect();
-      }
-    });
-  }, { rootMargin: "300px" });
+  document.addEventListener("bungendore:incident-data", function(event) {
+    if (event.detail && event.detail.total > 0) start();
+  });
 
-  if (mapContainer) observer.observe(mapContainer);
-  if (heroSection)  observer.observe(heroSection);
-
-  // Safety: if neither element found, load immediately
-  if (!mapContainer && !heroSection) start();
+  const toggle = document.getElementById("fireInfoToggle");
+  if (toggle) toggle.addEventListener("click", start);
+  document.querySelectorAll("a[href=\"#info\"]").forEach(function(link) {
+    link.addEventListener("click", start);
+  });
+  if (window.location.hash === "#info") start();
 });

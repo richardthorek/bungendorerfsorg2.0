@@ -321,7 +321,10 @@
   function switchView(name) {
     if (name === "members" && (!state.me || state.me.role !== "admin")) name = "duty";
     el.navItems.forEach(function (b) {
-      b.classList.toggle("is-active", b.dataset.view === name);
+      const active = b.dataset.view === name;
+      b.classList.toggle("is-active", active);
+      if (active) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
     });
     VIEWS.forEach(function (v) {
       const section = document.getElementById("view-" + v);
@@ -342,6 +345,13 @@
   el.navItems.forEach(function (b) {
     b.addEventListener("click", function () {
       switchView(b.dataset.view);
+      // Move focus to the section's heading, so keyboard and screen-reader
+      // users land in the new content instead of back on the nav.
+      const heading = document.querySelector("#view-" + b.dataset.view + " h2");
+      if (heading) {
+        heading.setAttribute("tabindex", "-1");
+        heading.focus();
+      }
     });
   });
 
@@ -784,6 +794,7 @@
     state.enqFilter = btn.dataset.filter;
     Array.prototype.forEach.call(el.enqFilter.children, function (b) {
       b.classList.toggle("is-active", b === btn);
+      b.setAttribute("aria-pressed", String(b === btn));
     });
     renderEnquiries();
   });
@@ -842,12 +853,34 @@
       set.className = "btn btn--ghost duty-contacts__set";
       set.textContent = "Set";
       set.addEventListener("click", function () {
-        submitDuty({ number: c.number, label: c.label }, set);
+        confirmDutyChange(set, { number: c.number, label: c.label }, "Set");
       });
       li.appendChild(info);
       li.appendChild(set);
       el.dutyContacts.appendChild(li);
     });
+  }
+
+  // Brigade calls and texts are routed by this number, so one stray tap must not
+  // move them. The first tap asks and names the number; the second tap saves.
+  function confirmDutyChange(btn, body, idleLabel) {
+    const key = body.number + "|" + (body.label || "");
+    if (btn.dataset.armedKey === key) {
+      btn.dataset.armedKey = "";
+      btn.textContent = btn.dataset.idleLabel || idleLabel;
+      submitDuty(body, btn);
+      return;
+    }
+    btn.dataset.armedKey = key;
+    btn.dataset.idleLabel = btn.dataset.idleLabel || idleLabel;
+    btn.textContent = "Confirm";
+    setMsg(
+      el.dutyMsg,
+      "Forward brigade calls and texts to " +
+        (body.label ? body.label + ", " : "") +
+        body.number +
+        "? Tap Confirm to save."
+    );
   }
 
   function submitDuty(body, btn) {
@@ -877,9 +910,11 @@
       setMsg(el.dutyMsg, "Enter a phone number.", "err");
       return;
     }
-    submitDuty(
+    const submitBtn = el.dutyForm.querySelector("button");
+    confirmDutyChange(
+      submitBtn,
       { number: number, label: el.dutyName.value.trim() },
-      el.dutyForm.querySelector("button")
+      submitBtn.textContent
     );
   });
 
@@ -895,6 +930,7 @@
       msg: document.getElementById("eventMsg"),
       fields: [
         { key: "name", placeholder: "Event name", type: "text" },
+        { key: "date", placeholder: "Date (shows as Coming up until it passes)", type: "date" },
         { key: "timing", placeholder: "Timing, e.g. Saturday 14 March, 10am", type: "text" },
         { key: "description", placeholder: "Short description", type: "textarea" },
       ],
@@ -999,7 +1035,7 @@
       return wrap;
     }
     const input = document.createElement(field.type === "textarea" ? "textarea" : "input");
-    if (field.type !== "textarea") input.type = "text";
+    if (field.type !== "textarea") input.type = field.type === "date" ? "date" : "text";
     input.className = "editor__input";
     input.placeholder = field.placeholder || "";
     input.value = value || "";
@@ -2014,6 +2050,7 @@
     social.selectedId = null;
     Array.prototype.forEach.call(el.socialTemplates.children, function (b) {
       b.classList.toggle("is-active", b.dataset.id === t.id);
+      b.setAttribute("aria-pressed", String(b.dataset.id === t.id));
     });
     el.socialCanvas.width = t.width;
     el.socialCanvas.height = t.height;

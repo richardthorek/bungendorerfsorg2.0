@@ -243,8 +243,14 @@ function renderWarningLevel(categoryCounts) {
   const state = highestWarningState(categoryCounts);
 
   if (warningCell) warningCell.setAttribute("data-state", state.state);
-  if (stripWarningLevel) stripWarningLevel.textContent = state.label;
-  if (stripWarningLevelSub) stripWarningLevelSub.textContent = state.sub;
+  // Rewrite only on change: the strip is a live region and every poll would
+  // otherwise be re-announced.
+  if (stripWarningLevel && stripWarningLevel.textContent !== state.label) {
+    stripWarningLevel.textContent = state.label;
+  }
+  if (stripWarningLevelSub && stripWarningLevelSub.textContent !== state.sub) {
+    stripWarningLevelSub.textContent = state.sub;
+  }
 }
 
 function renderTimestamp(success) {
@@ -413,6 +419,17 @@ function fetchIncidentGeoJSON() {
   });
 }
 
+// Compares each refresh with the last one (incident-changes.js). Incidents that
+// just changed carry a _change marker, and incidents that left the feed are
+// returned greyed out for a while. Counts still use the real incidents only.
+let incidentChangeTracker = null;
+
+function trackIncidentChanges(filteredFeatures) {
+  if (!window.IncidentChanges) return filteredFeatures;
+  if (!incidentChangeTracker) incidentChangeTracker = window.IncidentChanges.createTracker();
+  return incidentChangeTracker.update(filteredFeatures, Date.now());
+}
+
 function _fetchAndRender() {
   const promise = fetchIncidentGeoJSON()
     .then(function (data) {
@@ -420,12 +437,19 @@ function _fetchAndRender() {
       const filteredFeatures = filterFeaturesForEnvironment(features);
       const categoryCounts = computeCategoryCounts(filteredFeatures);
       const total = totalFromCounts(categoryCounts);
+      const displayFeatures = trackIncidentChanges(filteredFeatures);
 
-      populateFireInfoTable({ features: filteredFeatures });
+      populateFireInfoTable({ features: displayFeatures });
       renderIncidentSummary(categoryCounts);
       renderWarningLevel(categoryCounts);
       renderTimestamp(true);
       saveLastKnownGood(categoryCounts, filteredFeatures);
+      // The maps redraw from this, so they stay in step with the strip on every poll.
+      document.dispatchEvent(
+        new CustomEvent("bungendore:incident-data", {
+          detail: { filteredFeatures: displayFeatures, total: total },
+        })
+      );
 
       if (typeof window.updateEmergencyDashboard === "function") {
         const fireDangerRatingCell = document.getElementById("fireDangerRatingCell");
@@ -453,7 +477,7 @@ function _fetchAndRender() {
       }
 
       return {
-        filteredFeatures: filteredFeatures,
+        filteredFeatures: displayFeatures,
         categoryCounts: categoryCounts,
         total: total,
         raw: data,
@@ -508,11 +532,29 @@ function loadEmergencyData() {
 // the result, still gets the rejection via loadEmergencyData()).
 function noop() {}
 
+// Timers are suspended in hidden tabs (phones especially), so the incident
+// data also catches up when the page is back in view.
+let emergencyLastRefreshAt = 0;
+
+function refreshEmergencyData() {
+  emergencyLastRefreshAt = Date.now();
+  return _fetchAndRender();
+}
+
 document.addEventListener("DOMContentLoaded", function () {
+  emergencyLastRefreshAt = Date.now();
   loadEmergencyData().catch(noop);
   window.setInterval(function () {
-    _fetchAndRender().catch(noop);
+    refreshEmergencyData().catch(noop);
   }, EMERGENCY_REFRESH_MS);
+  document.addEventListener("visibilitychange", function () {
+    if (
+      document.visibilityState === "visible" &&
+      Date.now() - emergencyLastRefreshAt >= EMERGENCY_REFRESH_MS
+    ) {
+      refreshEmergencyData().catch(noop);
+    }
+  });
 });
 
 window.loadEmergencyData = loadEmergencyData;
